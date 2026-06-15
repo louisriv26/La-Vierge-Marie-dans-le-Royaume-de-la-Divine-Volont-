@@ -113,6 +113,7 @@ html, body {
    Left sidebar (list) + right reader panel
 ════════════════════════════════════════════════ */
 @media (min-width: 768px) {
+  :root { --sidebar-w: 340px; }
   body { background: var(--ivory-deep); }
 
   /* Kill the mobile stack */
@@ -238,7 +239,7 @@ html, body {
   .ws-cal-cell.appendix { color: var(--border); cursor: default; }
 
   /* Sidebar list */
-  .ws-list-scroll { flex: 1; overflow-y: auto; }
+  .ws-list-scroll { flex: 1; overflow-y: auto; padding-bottom: 8px; }
   .ws-section-label {
     font-size: 9px; text-transform: uppercase; letter-spacing: 0.09em;
     color: var(--muted); padding: 12px 16px 6px;
@@ -309,7 +310,7 @@ html, body {
   }
   .wr-hero { background: var(--primary); padding: 24px 48px 20px; }
   .wr-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
-  .wr-hero-title { font-family: var(--font-reader); font-size: 22px; color: var(--white); line-height: 1.45; max-width: 640px; }
+  .wr-hero-title { font-family: var(--font-reader); font-size: 24px; color: var(--white); line-height: 1.45; max-width: 640px; }
   .wr-body { padding: 24px 48px 40px; max-width: 720px; }
 
   /* Reader nav bar */
@@ -375,11 +376,11 @@ html, body {
    Wider sidebar, wider reading column
 ════════════════════════════════════════════════ */
 @media (min-width: 1200px) {
-  :root { --sidebar-w: 340px; --reader-size: 18px; }
+  :root { --sidebar-w: 380px; --reader-size: 18px; }
 
   .wr-body { max-width: 760px; }
   .wr-hero { padding: 28px 60px 22px; }
-  .wr-hero-title { font-size: 24px; }
+  .wr-hero-title { font-size: 26px; }
   .wr-body { padding: 28px 60px 48px; }
   #wide-reader-topbar { padding: 14px 40px 12px; }
   #wide-reader-nav { padding: 12px 40px; }
@@ -658,6 +659,9 @@ html, body {
   background: var(--practice-bg);
   padding: 12px 14px;
   flex-shrink: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .ws-today-label {
   font-size: 9px;
@@ -1338,7 +1342,7 @@ const App = {
           </div>
         </div>
       </div>
-      ${this.renderNearbyDays(dayNum)}`;
+      <div style="height:20px"></div>`;
   },
 
   renderNearbyDays(cur) {
