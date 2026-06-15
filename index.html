@@ -441,7 +441,7 @@ html, body {
 ════════════════════════════════════════════════ */
 /* Loading */
 #screen-loading {
-  display: flex; align-items: center; justify-content: center;
+  align-items: center; justify-content: center;
   flex-direction: column; gap: 20px; background: var(--ivory); flex: 1;
 }
 .loading-crown { font-size: 40px; animation: pulse 2s ease-in-out infinite; }
@@ -724,6 +724,12 @@ html, body {
     </nav>
   </div>
 
+  <!-- Wide loading overlay -->
+  <div id="wide-loading" style="position:absolute;inset:0;background:var(--ivory);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;z-index:99;">
+    <div class="loading-crown">✦</div>
+    <div class="loading-text">Chargement…</div>
+  </div>
+
   <!-- Text size panel (wide) -->
   <div id="wide-textsize-panel">
     <div class="textsize-panel-label">Taille du texte</div>
@@ -886,6 +892,9 @@ const App = {
     this.updateWideProgress();
     const dateStr = new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long'}).format(new Date());
     document.getElementById('wide-date-label').textContent = dateStr;
+    // Hide wide loading overlay
+    const wl = document.getElementById('wide-loading');
+    if (wl) wl.style.display = 'none';
     // Auto-open today's day on wide layout
     const todayUnit = State.dayMap[State.todayDayNum] || State.corpus[0];
     if (todayUnit) this.openUnit(todayUnit.unit_id);
