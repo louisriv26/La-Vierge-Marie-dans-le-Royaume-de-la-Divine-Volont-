@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="90" fill="#2C4A7C"/>
-  <!-- Star crown above M -->
-  <text x="256" y="160" font-family="serif" font-size="80" fill="#C9A84C" text-anchor="middle">✦</text>
-  <!-- M monogram -->
-  <text x="256" y="340" font-family="Georgia,serif" font-size="260" font-weight="bold" fill="#F8F6FC" text-anchor="middle" dominant-baseline="middle">M</text>
-  <!-- Subtitle -->
-  <text x="256" y="430" font-family="Georgia,serif" font-size="44" fill="#C9A84C" text-anchor="middle" letter-spacing="6">MARIE</text>
-</svg>
