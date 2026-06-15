@@ -2,8 +2,6 @@
 <html lang="fr">
 <head>
 <script>
-// Runtime base-path detection — works for root deploy AND subpath
-// e.g. https://user.github.io/  OR  https://user.github.io/marie/
 window.APP_BASE = (function() {
   var p = location.pathname;
   var base = p.endsWith('/') ? p : p.substring(0, p.lastIndexOf('/') + 1);
@@ -50,13 +48,13 @@ window.APP_BASE = (function() {
   --note-bg: #FFFBE8;
   --note-border: #C9A84C;
   --danger: #C0392B;
+  --sidebar-w: 300px;
+  --rail-w: 220px;
 
   --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --font-reader: 'IM Fell English', 'Crimson Text', Georgia, serif;
-
-  --reader-size: 17px;       /* controlled by text-size slider */
+  --reader-size: 17px;
   --reader-lh: 1.82;
-
   --nav-h: 60px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --radius-sm: 8px;
@@ -66,23 +64,15 @@ window.APP_BASE = (function() {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary: #4A7CB8;
-    --primary-light: #5E92CC;
-    --accent: #D4A843;
-    --accent-light: #E8C45A;
-    --ivory: #1A1720;
-    --ivory-deep: #201C2C;
-    --ink: #E0DCF0;
-    --muted: #8A8498;
-    --border: #2E2840;
-    --border-light: #261F38;
+    --primary: #4A7CB8; --primary-light: #5E92CC;
+    --accent: #D4A843; --accent-light: #E8C45A;
+    --ivory: #1A1720; --ivory-deep: #201C2C;
+    --ink: #E0DCF0; --muted: #8A8498;
+    --border: #2E2840; --border-light: #261F38;
     --white: #201C2C;
-    --soul-bg: #1E1B2C;
-    --mary-bg: #1A1F30;
-    --practice-bg: #1E1C12;
-    --prayer-bg: #1A1720;
-    --note-bg: #1C1A0C;
-    --note-border: #C9A84C;
+    --soul-bg: #1E1B2C; --mary-bg: #1A1F30;
+    --practice-bg: #1E1C12; --prayer-bg: #1A1720;
+    --note-bg: #1C1A0C; --note-border: #C9A84C;
   }
 }
 
@@ -99,7 +89,8 @@ html, body {
 }
 
 /* ════════════════════════════════════════════════
-   APP SHELL
+   MOBILE LAYOUT  (< 768px)
+   Classic single-column stacked screens
 ════════════════════════════════════════════════ */
 #app {
   display: flex;
@@ -113,158 +104,298 @@ html, body {
 .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
 .screen.active { display: flex; }
 
-/* Loading */
-#screen-loading {
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 20px; background: var(--ivory); flex: 1;
-}
-.loading-crown { font-size: 40px; animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.loading-text { font-family: var(--font-reader); font-size: 14px; color: var(--muted); letter-spacing: 0.05em; }
-
-/* ── Top bar ── */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px 10px; background: var(--ivory); flex-shrink: 0;
-}
-.topbar-title { font-family: var(--font-reader); font-size: 17px; color: var(--ink); font-style: italic; }
-.topbar-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
-.topbar-actions { display: flex; gap: 6px; }
-.topbar-action {
-  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-  border: 0.5px solid var(--border); border-radius: var(--radius-sm);
-  color: var(--muted); cursor: pointer; background: transparent; font-size: 17px;
-  transition: color 0.15s, background 0.15s;
-}
-.topbar-action:hover { background: var(--ivory-deep); color: var(--primary); }
+/* Hide wide shell on mobile */
+#wide-shell { display: none; }
 
 /* ════════════════════════════════════════════════
-   HOME SCREEN
+   TABLET LAYOUT  (768px – 1199px)
+   Left sidebar (list) + right reader panel
 ════════════════════════════════════════════════ */
-.calendar-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
-.calendar-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-cell {
-  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; font-size: 11.5px; font-weight: 500; cursor: pointer;
-  color: var(--muted); border: 1.5px solid transparent; transition: all 0.15s;
-  position: relative; -webkit-tap-highlight-color: transparent; background: transparent;
-}
-.cal-cell:hover:not(:disabled) { color: var(--primary); border-color: var(--border); }
-.cal-cell.today { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
-.cal-cell.read { color: var(--accent); border-color: var(--accent); }
-.cal-cell.read::after {
-  content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
-  width: 3px; height: 3px; border-radius: 50%; background: var(--accent);
-}
-.cal-cell.appendix { font-size: 10px; color: var(--border); border-color: var(--border-light); cursor: default; }
+@media (min-width: 768px) {
+  body { background: var(--ivory-deep); }
 
-.progress-wrap { padding: 6px 16px 10px; flex-shrink: 0; }
-.progress-row { display: flex; align-items: center; gap: 10px; }
-.progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
-.progress-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
-.divider { height: 0.5px; background: var(--border); margin: 0 16px; flex-shrink: 0; }
+  /* Kill the mobile stack */
+  #app { display: none; }
 
-.hero-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 0; }
-.hero-card {
-  background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
-  overflow: hidden; margin-bottom: 12px; cursor: pointer; transition: transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
+  /* Show wide shell */
+  #wide-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Top bar spanning full width */
+  #wide-topbar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--primary);
+    color: var(--white);
+    flex-shrink: 0;
+    height: 52px;
+    padding: 0 20px;
+  }
+  .wt-brand {
+    font-family: var(--font-reader);
+    font-size: 18px;
+    font-style: italic;
+    color: var(--white);
+    flex: 1;
+  }
+  .wt-date {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.04em;
+  }
+  .wt-nav {
+    display: flex;
+    gap: 4px;
+    margin-left: 20px;
+  }
+  .wt-nav-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wt-nav-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+  .wt-nav-btn.active { background: rgba(255,255,255,0.18); color: var(--white); }
+  .wt-nav-icon { font-size: 16px; }
+
+  /* Main body: sidebar + reader */
+  #wide-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar — list panel */
+  #wide-sidebar {
+    width: var(--sidebar-w);
+    border-right: 0.5px solid var(--border);
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .ws-header {
+    padding: 14px 16px 10px;
+    border-bottom: 0.5px solid var(--border);
+    flex-shrink: 0;
+  }
+  .ws-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+  }
+  .ws-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .ws-progress-track {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .ws-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s;
+  }
+  .ws-progress-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* Sidebar calendar strip */
+  .ws-cal-wrap { padding: 10px 14px 6px; flex-shrink: 0; border-bottom: 0.5px solid var(--border); }
+  .ws-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .ws-cal-cell {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; font-size: 11px; font-weight: 500; cursor: pointer;
+    color: var(--muted); border: 1.5px solid transparent;
+    transition: all 0.12s; background: transparent;
+  }
+  .ws-cal-cell:hover:not(:disabled) { color: var(--primary); border-color: var(--border); }
+  .ws-cal-cell.today { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
+  .ws-cal-cell.read { color: var(--accent); border-color: var(--accent); }
+  .ws-cal-cell.appendix { color: var(--border); cursor: default; }
+
+  /* Sidebar list */
+  .ws-list-scroll { flex: 1; overflow-y: auto; }
+  .ws-section-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--muted); padding: 12px 16px 6px;
+    position: sticky; top: 0; background: var(--white); z-index: 1;
+  }
+  .ws-list-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; cursor: pointer;
+    border-left: 2.5px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .ws-list-item:hover { background: var(--ivory-deep); }
+  .ws-list-item.active {
+    background: var(--mary-bg);
+    border-left-color: var(--primary);
+  }
+  .ws-day-circle {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; flex-shrink: 0;
+    border: 1.5px solid var(--border); color: var(--muted); background: var(--ivory);
+  }
+  .ws-day-circle.today-c { background: var(--primary); color: var(--white); border-color: var(--primary); }
+  .ws-day-circle.read-c { background: var(--accent); color: var(--white); border-color: var(--accent); }
+  .ws-item-info { flex: 1; min-width: 0; }
+  .ws-item-title {
+    font-family: var(--font-reader); font-size: 13px; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
+  }
+  .ws-item-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  /* Main reader area */
+  #wide-reader {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--ivory);
+    min-width: 0;
+  }
+
+  /* Reader header bar */
+  #wide-reader-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 28px 10px;
+    border-bottom: 0.5px solid var(--border);
+    background: var(--ivory);
+    flex-shrink: 0;
+  }
+  .wrt-day { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
+  .wrt-title { font-family: var(--font-reader); font-size: 15px; color: var(--ink); flex: 1; }
+  .wrt-actions { display: flex; gap: 6px; }
+  .wrt-btn {
+    padding: 6px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    background: transparent; color: var(--muted); cursor: pointer; font-size: 12px;
+    font-family: var(--font-ui); transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+  }
+  .wrt-btn:hover, .wrt-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
+  .wrt-btn.done { color: var(--accent); border-color: var(--accent); background: var(--practice-bg); }
+
+  /* Reader scroll */
+  #wide-reader-scroll {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .wr-hero { background: var(--primary); padding: 24px 48px 20px; }
+  .wr-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
+  .wr-hero-title { font-family: var(--font-reader); font-size: 22px; color: var(--white); line-height: 1.45; max-width: 640px; }
+  .wr-body { padding: 24px 48px 40px; max-width: 720px; }
+
+  /* Reader nav bar */
+  #wide-reader-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 28px; border-top: 0.5px solid var(--border);
+    background: var(--ivory); flex-shrink: 0;
+  }
+  .wrn-btn {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    background: transparent; color: var(--muted); cursor: pointer; font-size: 13px;
+    font-family: var(--font-ui); transition: all 0.15s; max-width: 220px;
+  }
+  .wrn-btn:hover { color: var(--primary); border-color: var(--primary); }
+  .wrn-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .wrn-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wrn-center { font-size: 12px; color: var(--muted); }
+
+  /* Mon Espace panel replaces the reader */
+  #wide-espace {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 48px;
+    background: var(--ivory);
+    display: none;
+  }
+  #wide-espace.active { display: block; }
+
+  /* Toast: no bottom nav on wide layout */
+  .toast {
+    bottom: 16px;
+  }
+
+  /* Text size panel — wide layout */
+  #wide-textsize-panel {
+    display: none;
+    position: absolute;
+    top: 52px; right: 12px;
+    background: var(--white); border: 0.5px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px 18px; width: 260px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 60;
+  }
+  #wide-textsize-panel.open { display: block; }
+
+  /* Welcome state when nothing is open */
+  #wide-welcome {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--muted);
+    background: var(--ivory);
+  }
+  .ww-icon { font-size: 48px; opacity: 0.3; }
+  .ww-text { font-family: var(--font-reader); font-size: 17px; font-style: italic; }
 }
-.hero-card:active { transform: scale(0.99); }
-.hero-card-header { background: var(--primary); padding: 16px 18px 14px; }
-.hero-day-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
-.hero-day-num { font-family: var(--font-reader); font-size: 34px; color: var(--white); line-height: 1; margin-bottom: 6px; }
-.hero-ordinal { font-family: var(--font-reader); font-size: 13px; color: rgba(255,255,255,0.7); font-style: italic; }
-.hero-card-body { padding: 16px 18px; }
-.hero-title { font-family: var(--font-reader); font-size: 16px; color: var(--ink); line-height: 1.5; margin-bottom: 10px; }
-.hero-excerpt {
-  font-family: var(--font-reader); font-size: 14px; color: var(--muted); line-height: 1.65; font-style: italic;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px;
-}
-.hero-cta { display: flex; align-items: center; justify-content: space-between; }
-.hero-read-btn {
-  display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: var(--white);
-  border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500;
-  cursor: pointer; font-family: var(--font-ui); transition: background 0.15s;
-}
-.hero-read-btn:hover { background: var(--primary-light); }
-.hero-nav-btns { display: flex; gap: 6px; }
-.hero-nav-btn {
-  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-  border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted);
-  cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s;
-}
-.hero-nav-btn:hover { color: var(--primary); border-color: var(--primary); }
-.hero-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.list-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 14px 0 8px; }
 
 /* ════════════════════════════════════════════════
-   LIST SCREEN
+   DESKTOP LAYOUT  (≥ 1200px)
+   Wider sidebar, wider reading column
 ════════════════════════════════════════════════ */
-.list-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 16px 0; }
-.list-card {
-  display: flex; align-items: center; gap: 12px; background: var(--white);
-  border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px;
-  margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
-  -webkit-tap-highlight-color: transparent;
+@media (min-width: 1200px) {
+  :root { --sidebar-w: 340px; --reader-size: 18px; }
+
+  .wr-body { max-width: 760px; }
+  .wr-hero { padding: 28px 60px 22px; }
+  .wr-hero-title { font-size: 24px; }
+  .wr-body { padding: 28px 60px 48px; }
+  #wide-reader-topbar { padding: 14px 40px 12px; }
+  #wide-reader-nav { padding: 12px 40px; }
+  #wide-espace { padding: 32px 60px; }
 }
-.list-card:hover { border-color: var(--primary); background: var(--ivory-deep); }
-.list-day-circle {
-  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 600; flex-shrink: 0; border: 1.5px solid var(--border);
-  color: var(--muted); background: var(--ivory);
-}
-.list-day-circle.today-circle { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
-.list-day-circle.read-circle { background: var(--accent); color: var(--white); border-color: var(--accent); }
-.list-info { flex: 1; min-width: 0; }
-.list-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.list-chevron { color: var(--border); font-size: 14px; flex-shrink: 0; }
 
 /* ════════════════════════════════════════════════
-   READER SCREEN
+   SHARED READER STYLES  (mobile + wide)
 ════════════════════════════════════════════════ */
-#screen-reader { background: var(--ivory); }
+/* Mobile versions keep existing styles; wide uses .wr-body scoped versions */
 
-.reader-topbar {
-  display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px;
-  background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0;
-}
-.reader-back {
-  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-  border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted);
-  cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0;
-}
-.reader-back:hover { color: var(--primary); border-color: var(--primary); }
-.reader-topbar-info { flex: 1; min-width: 0; }
-.reader-topbar-day { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; }
-.reader-topbar-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.reader-topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.reader-icon-btn {
-  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-  border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted);
-  cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s;
-}
-.reader-icon-btn:hover, .reader-icon-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
-
-.reader-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-
-.reader-hero { background: var(--primary); padding: 20px 20px 18px; }
-.reader-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
-.reader-hero-title { font-family: var(--font-reader); font-size: 19px; color: var(--white); line-height: 1.45; }
-
-.reader-body { padding: 0 20px 20px; }
-
-/* Section labels */
 .section-label {
   font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--muted); margin: 22px 0 10px; display: flex; align-items: center; gap: 8px;
 }
 .section-label::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
 
-/* Paragraph types */
 .para-soul {
   font-family: var(--font-reader); font-size: var(--reader-size); color: var(--ink);
   line-height: var(--reader-lh); font-style: italic; margin-bottom: 1.1em;
@@ -287,25 +418,6 @@ html, body {
   background: var(--prayer-bg); border: 0.5px solid var(--border);
   border-radius: var(--radius-md); padding: 16px 20px; margin: 4px 0 12px; position: relative;
 }
-
-/* Note display under a paragraph */
-.para-note {
-  background: var(--note-bg); border: 0.5px solid var(--note-border);
-  border-radius: var(--radius-sm); padding: 10px 13px; margin-top: -8px; margin-bottom: 1.1em;
-  display: flex; align-items: flex-start; gap: 8px;
-}
-.para-note-icon { color: var(--accent); font-size: 13px; flex-shrink: 0; margin-top: 1px; }
-.para-note-text {
-  font-family: var(--font-ui); font-size: 13px; color: var(--ink); line-height: 1.55;
-  flex: 1; white-space: pre-wrap; word-break: break-word;
-}
-.para-note-del {
-  color: var(--muted); font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
-  transition: color 0.15s; line-height: 1;
-}
-.para-note-del:hover { color: var(--danger); }
-
-/* Note button — always visible as a small corner indicator (mobile-safe, no hover dep) */
 .para-note-btn {
   position: absolute; right: 6px; top: 6px;
   width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
@@ -314,47 +426,111 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 .para-note-btn:hover, .para-note-btn:active { color: var(--accent); background: var(--practice-bg); }
+.para-note {
+  background: var(--note-bg); border: 0.5px solid var(--note-border);
+  border-radius: var(--radius-sm); padding: 10px 13px; margin-top: -8px; margin-bottom: 1.1em;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.para-note-icon { color: var(--accent); font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+.para-note-text { font-family: var(--font-ui); font-size: 13px; color: var(--ink); line-height: 1.55; flex: 1; white-space: pre-wrap; word-break: break-word; }
+.para-note-del { color: var(--muted); font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
+.para-note-del:hover { color: var(--danger); }
 
-/* Reader nav */
-.reader-nav {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px 6px; flex-shrink: 0; border-top: 0.5px solid var(--border);
+/* ════════════════════════════════════════════════
+   MOBILE-ONLY STYLES  (kept intact)
+════════════════════════════════════════════════ */
+/* Loading */
+#screen-loading {
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px; background: var(--ivory); flex: 1;
 }
-.reader-nav-btn {
-  display: flex; align-items: center; gap: 5px; padding: 8px 12px;
-  border: 0.5px solid var(--border); border-radius: var(--radius-sm);
-  background: transparent; color: var(--muted); cursor: pointer; font-size: 12.5px;
-  font-family: var(--font-ui); transition: all 0.15s; max-width: 45%;
-}
+.loading-crown { font-size: 40px; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.loading-text { font-family: var(--font-reader); font-size: 14px; color: var(--muted); letter-spacing: 0.05em; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; background: var(--ivory); flex-shrink: 0; }
+.topbar-title { font-family: var(--font-reader); font-size: 17px; color: var(--ink); font-style: italic; }
+.topbar-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
+.topbar-actions { display: flex; gap: 6px; }
+.topbar-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 17px; transition: color 0.15s, background 0.15s; }
+.topbar-action:hover { background: var(--ivory-deep); color: var(--primary); }
+
+.calendar-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
+.calendar-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 11.5px; font-weight: 500; cursor: pointer; color: var(--muted); border: 1.5px solid transparent; transition: all 0.15s; position: relative; -webkit-tap-highlight-color: transparent; background: transparent; }
+.cal-cell:hover:not(:disabled) { color: var(--primary); border-color: var(--border); }
+.cal-cell.today { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
+.cal-cell.read { color: var(--accent); border-color: var(--accent); }
+.cal-cell.read::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--accent); }
+.cal-cell.appendix { font-size: 10px; color: var(--border); border-color: var(--border-light); cursor: default; }
+
+.progress-wrap { padding: 6px 16px 10px; flex-shrink: 0; }
+.progress-row { display: flex; align-items: center; gap: 10px; }
+.progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+.progress-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.divider { height: 0.5px; background: var(--border); margin: 0 16px; flex-shrink: 0; }
+
+.hero-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 0; }
+.hero-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; }
+.hero-card:active { transform: scale(0.99); }
+.hero-card-header { background: var(--primary); padding: 16px 18px 14px; }
+.hero-day-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
+.hero-day-num { font-family: var(--font-reader); font-size: 34px; color: var(--white); line-height: 1; margin-bottom: 6px; }
+.hero-ordinal { font-family: var(--font-reader); font-size: 13px; color: rgba(255,255,255,0.7); font-style: italic; }
+.hero-card-body { padding: 16px 18px; }
+.hero-title { font-family: var(--font-reader); font-size: 16px; color: var(--ink); line-height: 1.5; margin-bottom: 10px; }
+.hero-excerpt { font-family: var(--font-reader); font-size: 14px; color: var(--muted); line-height: 1.65; font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px; }
+.hero-cta { display: flex; align-items: center; justify-content: space-between; }
+.hero-read-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-ui); transition: background 0.15s; }
+.hero-read-btn:hover { background: var(--primary-light); }
+.hero-nav-btns { display: flex; gap: 6px; }
+.hero-nav-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
+.hero-nav-btn:hover { color: var(--primary); border-color: var(--primary); }
+.hero-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.list-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 14px 0 8px; }
+
+.list-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 16px 0; }
+.list-card { display: flex; align-items: center; gap: 12px; background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; -webkit-tap-highlight-color: transparent; }
+.list-card:hover { border-color: var(--primary); background: var(--ivory-deep); }
+.list-day-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; border: 1.5px solid var(--border); color: var(--muted); background: var(--ivory); }
+.list-day-circle.today-circle { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
+.list-day-circle.read-circle { background: var(--accent); color: var(--white); border-color: var(--accent); }
+.list-info { flex: 1; min-width: 0; }
+.list-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.list-chevron { color: var(--border); font-size: 14px; flex-shrink: 0; }
+
+#screen-reader { background: var(--ivory); }
+.reader-topbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px; background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+.reader-back { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0; }
+.reader-back:hover { color: var(--primary); border-color: var(--primary); }
+.reader-topbar-info { flex: 1; min-width: 0; }
+.reader-topbar-day { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; }
+.reader-topbar-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reader-topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.reader-icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
+.reader-icon-btn:hover, .reader-icon-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
+.reader-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.reader-hero { background: var(--primary); padding: 20px 20px 18px; }
+.reader-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
+.reader-hero-title { font-family: var(--font-reader); font-size: 19px; color: var(--white); line-height: 1.45; }
+.reader-body { padding: 0 20px 20px; }
+.reader-nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 6px; flex-shrink: 0; border-top: 0.5px solid var(--border); }
+.reader-nav-btn { display: flex; align-items: center; gap: 5px; padding: 8px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; font-size: 12.5px; font-family: var(--font-ui); transition: all 0.15s; max-width: 45%; }
 .reader-nav-btn:hover { color: var(--primary); border-color: var(--primary); }
 .reader-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .reader-nav-btn .nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
 .reader-nav-center { font-size: 11px; color: var(--muted); text-align: center; }
-
-/* Reader action bar */
-.reader-actionbar {
-  display: flex; align-items: center; padding: 10px 16px calc(10px + var(--safe-bottom));
-  background: var(--ivory); border-top: 0.5px solid var(--border); gap: 8px; flex-shrink: 0;
-}
-.action-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 7px 4px; border: 0.5px solid var(--border); border-radius: var(--radius-sm);
-  background: transparent; color: var(--muted); cursor: pointer; font-size: 11px;
-  font-family: var(--font-ui); transition: all 0.15s; -webkit-tap-highlight-color: transparent;
-}
+.reader-actionbar { display: flex; align-items: center; padding: 10px 16px calc(10px + var(--safe-bottom)); background: var(--ivory); border-top: 0.5px solid var(--border); gap: 8px; flex-shrink: 0; }
+.action-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-family: var(--font-ui); transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
 .action-btn .action-icon { font-size: 18px; }
 .action-btn:hover, .action-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
 .action-btn.complete-btn.done { color: var(--accent); border-color: var(--accent); background: var(--practice-bg); }
 
-/* ════════════════════════════════════════════════
-   TEXT SIZE PANEL
-════════════════════════════════════════════════ */
-.textsize-panel {
-  display: none; position: absolute; bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px); left: 50%;
-  transform: translateX(-50%); background: var(--white); border: 0.5px solid var(--border);
-  border-radius: var(--radius-md); padding: 14px 18px; width: 260px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 50;
-}
+/* Text size panel (mobile) */
+.textsize-panel { display: none; position: absolute; bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px); left: 50%; transform: translateX(-50%); background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 14px 18px; width: 260px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 50; }
 .textsize-panel.open { display: block; }
 .textsize-panel-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; }
 .textsize-row { display: flex; align-items: center; gap: 10px; }
@@ -362,62 +538,19 @@ html, body {
 .textsize-large { font-size: 19px; color: var(--muted); font-family: var(--font-reader); }
 .textsize-slider { flex: 1; accent-color: var(--primary); cursor: pointer; }
 .textsize-value { font-size: 12px; color: var(--primary); font-weight: 500; min-width: 30px; text-align: right; }
-.textsize-preview {
-  margin-top: 12px; padding: 10px 12px; background: var(--ivory); border-radius: var(--radius-sm);
-  font-family: var(--font-reader); font-size: var(--reader-size); color: var(--ink);
-  line-height: var(--reader-lh); font-style: italic;
-}
+.textsize-preview { margin-top: 12px; padding: 10px 12px; background: var(--ivory); border-radius: var(--radius-sm); font-family: var(--font-reader); font-size: var(--reader-size); color: var(--ink); line-height: var(--reader-lh); font-style: italic; }
 
-/* ════════════════════════════════════════════════
-   NOTE MODAL
-════════════════════════════════════════════════ */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-  z-index: 80; align-items: flex-end; justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal-sheet {
-  background: var(--ivory); border-radius: 20px 20px 0 0; padding: 0; width: 100%;
-  max-width: 480px; max-height: 80vh; display: flex; flex-direction: column;
-  animation: slideUp 0.22s ease;
-}
-@keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
-.modal-header { padding: 14px 18px 10px; border-bottom: 0.5px solid var(--border); }
-.modal-title { font-family: var(--font-reader); font-size: 16px; color: var(--ink); }
-.modal-subtitle { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.modal-body { padding: 14px 18px; flex: 1; overflow-y: auto; }
-.note-excerpt {
-  font-family: var(--font-reader); font-size: 14px; color: var(--muted); font-style: italic;
-  line-height: 1.6; padding: 10px 12px; background: var(--soul-bg); border-radius: var(--radius-sm);
-  margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-}
-.note-textarea {
-  width: 100%; min-height: 120px; background: var(--white); border: 0.5px solid var(--border);
-  border-radius: var(--radius-sm); padding: 12px; font-size: 15px; font-family: var(--font-ui);
-  color: var(--ink); line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.15s;
-}
-.note-textarea:focus { border-color: var(--primary); }
-.modal-footer { padding: 12px 18px calc(12px + var(--safe-bottom)); display: flex; gap: 8px; border-top: 0.5px solid var(--border); }
-.modal-btn {
-  flex: 1; padding: 11px; border-radius: var(--radius-sm); border: 0.5px solid var(--border);
-  font-size: 14px; font-family: var(--font-ui); cursor: pointer; transition: all 0.15s;
-}
-.modal-btn-cancel { background: transparent; color: var(--muted); }
-.modal-btn-cancel:hover { background: var(--ivory-deep); }
-.modal-btn-save { background: var(--primary); color: var(--white); border-color: var(--primary); }
-.modal-btn-save:hover { background: var(--primary-light); }
+/* Bottom nav (mobile) */
+.bottom-nav { display: flex; align-items: stretch; background: var(--ivory); border-top: 0.5px solid var(--border); padding-bottom: var(--safe-bottom); flex-shrink: 0; height: calc(var(--nav-h) + var(--safe-bottom)); }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; background: transparent; border: none; color: var(--muted); font-size: 10px; font-family: var(--font-ui); letter-spacing: 0.03em; transition: color 0.15s; -webkit-tap-highlight-color: transparent; padding-bottom: 2px; }
+.nav-btn .nav-icon { font-size: 22px; }
+.nav-btn.active { color: var(--primary); }
 
-/* ════════════════════════════════════════════════
-   MON ESPACE
-════════════════════════════════════════════════ */
-.espace-scroll { flex: 1; overflow-y: auto; padding: 16px; }
+/* Mon Espace (shared styles) */
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
 .stat-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
 .stat-num { font-size: 26px; font-weight: 500; line-height: 1; }
-.stat-num.blue { color: var(--primary); }
-.stat-num.gold { color: var(--accent); }
-.stat-num.green { color: #27AE60; }
+.stat-num.blue { color: var(--primary); } .stat-num.gold { color: var(--accent); } .stat-num.green { color: #27AE60; }
 .stat-label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
 .espace-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 16px 0 10px; }
 .fav-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 13px 15px; margin-bottom: 7px; cursor: pointer; transition: border-color 0.15s; }
@@ -431,38 +564,32 @@ html, body {
 .espace-empty { text-align: center; padding: 40px 20px; }
 .espace-empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.35; }
 .espace-empty-text { font-family: var(--font-reader); font-size: 15px; color: var(--muted); font-style: italic; line-height: 1.6; }
+.espace-scroll { flex: 1; overflow-y: auto; padding: 16px; }
 
-/* ════════════════════════════════════════════════
-   BOTTOM NAV
-════════════════════════════════════════════════ */
-.bottom-nav {
-  display: flex; align-items: stretch; background: var(--ivory); border-top: 0.5px solid var(--border);
-  padding-bottom: var(--safe-bottom); flex-shrink: 0;
-  height: calc(var(--nav-h) + var(--safe-bottom));
-}
-.nav-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; cursor: pointer; background: transparent; border: none; color: var(--muted);
-  font-size: 10px; font-family: var(--font-ui); letter-spacing: 0.03em; transition: color 0.15s;
-  -webkit-tap-highlight-color: transparent; padding-bottom: 2px;
-}
-.nav-btn .nav-icon { font-size: 22px; }
-.nav-btn.active { color: var(--primary); }
+/* Note modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 80; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-sheet { background: var(--ivory); border-radius: 20px 20px 0 0; padding: 0; width: 100%; max-width: 560px; max-height: 80vh; display: flex; flex-direction: column; animation: slideUp 0.22s ease; }
+@keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+.modal-header { padding: 14px 18px 10px; border-bottom: 0.5px solid var(--border); }
+.modal-title { font-family: var(--font-reader); font-size: 16px; color: var(--ink); }
+.modal-subtitle { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.modal-body { padding: 14px 18px; flex: 1; overflow-y: auto; }
+.note-excerpt { font-family: var(--font-reader); font-size: 14px; color: var(--muted); font-style: italic; line-height: 1.6; padding: 10px 12px; background: var(--soul-bg); border-radius: var(--radius-sm); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.note-textarea { width: 100%; min-height: 120px; background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px; font-size: 15px; font-family: var(--font-ui); color: var(--ink); line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.15s; }
+.note-textarea:focus { border-color: var(--primary); }
+.modal-footer { padding: 12px 18px calc(12px + var(--safe-bottom)); display: flex; gap: 8px; border-top: 0.5px solid var(--border); }
+.modal-btn { flex: 1; padding: 11px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); font-size: 14px; font-family: var(--font-ui); cursor: pointer; transition: all 0.15s; }
+.modal-btn-cancel { background: transparent; color: var(--muted); }
+.modal-btn-cancel:hover { background: var(--ivory-deep); }
+.modal-btn-save { background: var(--primary); color: var(--white); border-color: var(--primary); }
+.modal-btn-save:hover { background: var(--primary-light); }
 
-/* ════════════════════════════════════════════════
-   TOAST
-════════════════════════════════════════════════ */
-.toast {
-  position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%;
-  transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--ivory);
-  padding: 9px 18px; border-radius: 20px; font-size: 13px; pointer-events: none;
-  opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 100; white-space: nowrap;
-}
+/* Toast */
+.toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--ivory); padding: 9px 18px; border-radius: 20px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 100; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ════════════════════════════════════════════════
-   SCROLLBAR + UTILITIES
-════════════════════════════════════════════════ */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -471,15 +598,16 @@ html, body {
 </head>
 
 <body>
-<div id="app">
 
-  <!-- Loading -->
+<!-- ══════════════════════════════════════════════
+     MOBILE LAYOUT  (< 768px)
+══════════════════════════════════════════════ -->
+<div id="app">
   <div id="screen-loading" class="screen active">
     <div class="loading-crown">✦</div>
     <div class="loading-text">Chargement…</div>
   </div>
 
-  <!-- ── Accueil ── -->
   <div id="screen-home" class="screen">
     <div class="topbar">
       <div>
@@ -487,12 +615,12 @@ html, body {
         <div class="topbar-sub" id="home-date-label">—</div>
       </div>
       <div class="topbar-actions">
-        <button class="topbar-action" onclick="App.showScreen('list')" title="Tous les jours" aria-label="Voir tous les jours">☰</button>
+        <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">☰</button>
       </div>
     </div>
     <div class="calendar-wrap">
       <div class="calendar-label">Ce mois</div>
-      <div class="calendar-grid" id="cal-grid" role="grid" aria-label="Calendrier des 31 jours"></div>
+      <div class="calendar-grid" id="cal-grid" role="grid"></div>
     </div>
     <div class="progress-wrap">
       <div class="progress-row">
@@ -506,19 +634,14 @@ html, body {
     <div class="hero-scroll" id="hero-scroll"></div>
   </div>
 
-  <!-- ── Jours ── -->
   <div id="screen-list" class="screen">
     <div class="topbar">
-      <div>
-        <div class="topbar-title">Les 31 Jours</div>
-        <div class="topbar-sub">Vierge Marie — Luisa Piccarreta</div>
-      </div>
+      <div><div class="topbar-title">Les 31 Jours</div><div class="topbar-sub">Vierge Marie — Luisa Piccarreta</div></div>
       <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
     </div>
     <div class="list-scroll" id="list-scroll"></div>
   </div>
 
-  <!-- ── Lecteur ── -->
   <div id="screen-reader" class="screen">
     <div class="reader-topbar">
       <button class="reader-back" id="reader-back-btn" aria-label="Retour">←</button>
@@ -527,10 +650,9 @@ html, body {
         <div class="reader-topbar-title" id="reader-topbar-title"></div>
       </div>
       <div class="reader-topbar-actions">
-        <button class="reader-icon-btn" id="btn-textsize" onclick="App.toggleTextsizePanel()" title="Taille du texte" aria-label="Taille du texte">Aᵃ</button>
+        <button class="reader-icon-btn" id="btn-textsize" onclick="App.toggleTextsizePanel()" aria-label="Taille du texte">Aᵃ</button>
       </div>
     </div>
-
     <div class="reader-scroll" id="reader-scroll">
       <div class="reader-hero">
         <div class="reader-hero-badge" id="reader-hero-badge"></div>
@@ -538,154 +660,204 @@ html, body {
       </div>
       <div class="reader-body" id="reader-body"></div>
     </div>
-
     <div class="reader-nav">
       <button class="reader-nav-btn" id="reader-prev" disabled>← <span class="nav-label" id="reader-prev-label">Précédent</span></button>
       <div class="reader-nav-center" id="reader-nav-center"></div>
       <button class="reader-nav-btn" id="reader-next" disabled><span class="nav-label" id="reader-next-label">Suivant</span> →</button>
     </div>
-
     <div class="reader-actionbar">
       <button class="action-btn complete-btn" id="btn-complete" onclick="App.toggleComplete()">
-        <span class="action-icon" id="complete-icon">○</span>
-        <span id="complete-label">Terminé</span>
+        <span class="action-icon" id="complete-icon">○</span><span id="complete-label">Terminé</span>
       </button>
       <button class="action-btn" id="btn-fav" onclick="App.toggleFavorite()">
-        <span class="action-icon" id="fav-icon">♡</span>
-        <span>Favori</span>
+        <span class="action-icon" id="fav-icon">♡</span><span>Favori</span>
       </button>
       <button class="action-btn" onclick="App.shareDay()">
-        <span class="action-icon">↑</span>
-        <span>Partager</span>
+        <span class="action-icon">↑</span><span>Partager</span>
       </button>
     </div>
-
-    <!-- Text size panel (anchored above action bar) -->
     <div class="textsize-panel" id="textsize-panel">
       <div class="textsize-panel-label">Taille du texte</div>
       <div class="textsize-row">
         <span class="textsize-small" aria-hidden="true">A</span>
-        <input type="range" class="textsize-slider" id="textsize-slider"
-               min="14" max="22" step="1" value="17"
-               aria-label="Taille du texte"
-               oninput="App.applyTextSize(this.value)">
+        <input type="range" class="textsize-slider" id="textsize-slider" min="14" max="22" step="1" value="17" aria-label="Taille du texte" oninput="App.applyTextSize(this.value)">
         <span class="textsize-large" aria-hidden="true">A</span>
         <span class="textsize-value" id="textsize-value">17</span>
       </div>
-      <div class="textsize-preview" id="textsize-preview">
-        « Ma fille, écoute-moi… »
-      </div>
+      <div class="textsize-preview">« Ma fille, écoute-moi… »</div>
     </div>
   </div>
 
-  <!-- ── Mon Espace ── -->
   <div id="screen-espace" class="screen">
     <div class="topbar">
-      <div>
-        <div class="topbar-title">Mon Espace</div>
-        <div class="topbar-sub">Favoris · Notes · Progression</div>
-      </div>
+      <div><div class="topbar-title">Mon Espace</div><div class="topbar-sub">Favoris · Notes · Progression</div></div>
     </div>
     <div class="espace-scroll" id="espace-scroll"></div>
   </div>
 
-  <!-- Bottom nav -->
   <nav class="bottom-nav" id="bottom-nav" aria-label="Navigation principale">
-    <button class="nav-btn active" id="nav-home" onclick="App.showScreen('home')" aria-label="Accueil">
-      <span class="nav-icon">⌂</span>Accueil
-    </button>
-    <button class="nav-btn" id="nav-list" onclick="App.showScreen('list')" aria-label="Jours">
-      <span class="nav-icon">◎</span>Jours
-    </button>
-    <button class="nav-btn" id="nav-espace" onclick="App.showScreen('espace')" aria-label="Mon Espace">
-      <span class="nav-icon">♡</span>Mon Espace
-    </button>
+    <button class="nav-btn active" id="nav-home" onclick="App.showScreen('home')" aria-label="Accueil"><span class="nav-icon">⌂</span>Accueil</button>
+    <button class="nav-btn" id="nav-list" onclick="App.showScreen('list')" aria-label="Jours"><span class="nav-icon">◎</span>Jours</button>
+    <button class="nav-btn" id="nav-espace" onclick="App.showScreen('espace')" aria-label="Mon Espace"><span class="nav-icon">♡</span>Mon Espace</button>
   </nav>
+</div>
 
-  <!-- Toast -->
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- ══════════════════════════════════════════════
+     WIDE LAYOUT  (≥ 768px — iPad, desktop)
+══════════════════════════════════════════════ -->
+<div id="wide-shell">
 
-  <!-- Note modal -->
-  <div class="modal-overlay" id="note-modal" onclick="App.closeNoteModal(event)">
-    <div class="modal-sheet" onclick="event.stopPropagation()">
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <div class="modal-title">Ajouter une note</div>
-        <div class="modal-subtitle" id="note-modal-subtitle"></div>
+  <!-- Top bar -->
+  <div id="wide-topbar">
+    <div class="wt-brand">31 Jours avec Marie</div>
+    <div class="wt-date" id="wide-date-label">—</div>
+    <nav class="wt-nav" aria-label="Navigation principale">
+      <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
+        <span class="wt-nav-icon">◎</span> Jours
+      </button>
+      <button class="wt-nav-btn" id="wnav-espace" onclick="App.wideNav('espace')" aria-label="Mon Espace" aria-pressed="false">
+        <span class="wt-nav-icon">♡</span> Mon Espace
+      </button>
+      <button class="wt-nav-btn" id="wnav-textsize" onclick="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">
+        Aᵃ
+      </button>
+    </nav>
+  </div>
+
+  <!-- Text size panel (wide) -->
+  <div id="wide-textsize-panel">
+    <div class="textsize-panel-label">Taille du texte</div>
+    <div class="textsize-row">
+      <span class="textsize-small" aria-hidden="true">A</span>
+      <input type="range" class="textsize-slider" id="wide-textsize-slider" min="14" max="22" step="1" value="17" aria-label="Taille du texte" oninput="App.applyTextSize(this.value)">
+      <span class="textsize-large" aria-hidden="true">A</span>
+      <span class="textsize-value" id="wide-textsize-value">17</span>
+    </div>
+    <div class="textsize-preview">« Ma fille, écoute-moi… »</div>
+  </div>
+
+  <div id="wide-body">
+
+    <!-- Sidebar -->
+    <aside id="wide-sidebar">
+      <!-- Calendar -->
+      <div class="ws-cal-wrap">
+        <div class="ws-cal-grid" id="wide-cal-grid" role="grid"></div>
       </div>
-      <div class="modal-body">
-        <div class="note-excerpt" id="note-modal-excerpt"></div>
-        <textarea class="note-textarea" id="note-textarea"
-                  placeholder="Votre réflexion personnelle…"
-                  maxlength="1000" rows="5"></textarea>
-        <div style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px">
-          <span id="note-char-count">0</span> / 1000
+      <!-- Progress -->
+      <div class="ws-header">
+        <div class="ws-title">Progression</div>
+        <div class="ws-progress-row">
+          <div class="ws-progress-track">
+            <div class="ws-progress-fill" id="wide-progress-fill" style="width:0%"></div>
+          </div>
+          <div class="ws-progress-label" id="wide-progress-label">0 / 31</div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="modal-btn modal-btn-cancel" onclick="App.closeNoteModal()">Annuler</button>
-        <button class="modal-btn modal-btn-save" onclick="App.saveNote()">Enregistrer</button>
+      <!-- List -->
+      <div class="ws-list-scroll" id="wide-list-scroll"></div>
+    </aside>
+
+    <!-- Reader panel -->
+    <main id="wide-reader">
+      <!-- Welcome state -->
+      <div id="wide-welcome">
+        <div class="ww-icon">✦</div>
+        <div class="ww-text" id="wide-welcome-text">Sélectionnez un jour pour commencer</div>
       </div>
+
+      <!-- Reader content (hidden until a day is open) -->
+      <div id="wide-reader-content" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+        <div id="wide-reader-topbar">
+          <div>
+            <div class="wrt-day" id="wide-reader-day-badge"></div>
+            <div class="wrt-title" id="wide-reader-topbar-title"></div>
+          </div>
+          <div class="wrt-actions">
+            <button class="wrt-btn complete-btn" id="wide-btn-complete" onclick="App.toggleComplete()">
+              <span id="wide-complete-icon">○</span> <span id="wide-complete-label">Terminé</span>
+            </button>
+            <button class="wrt-btn" id="wide-btn-fav" onclick="App.toggleFavorite()">
+              <span id="wide-fav-icon">♡</span> Favori
+            </button>
+            <button class="wrt-btn" onclick="App.shareDay()">↑ Partager</button>
+          </div>
+        </div>
+
+        <div id="wide-reader-scroll">
+          <div class="wr-hero">
+            <div class="wr-hero-badge" id="wide-hero-badge"></div>
+            <div class="wr-hero-title" id="wide-hero-title"></div>
+          </div>
+          <div class="wr-body" id="wide-reader-body"></div>
+        </div>
+
+        <div id="wide-reader-nav">
+          <button class="wrn-btn" id="wide-prev" disabled>← <span class="wrn-label" id="wide-prev-label">Précédent</span></button>
+          <div class="wrn-center" id="wide-nav-center"></div>
+          <button class="wrn-btn" id="wide-next" disabled><span class="wrn-label" id="wide-next-label">Suivant</span> →</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Mon Espace panel -->
+    <div id="wide-espace"></div>
+
+  </div><!-- /wide-body -->
+</div><!-- /wide-shell -->
+
+<!-- Toast (shared) -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Note modal (shared) -->
+<div class="modal-overlay" id="note-modal" onclick="App.closeNoteModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Ajouter une note</div>
+      <div class="modal-subtitle" id="note-modal-subtitle"></div>
+    </div>
+    <div class="modal-body">
+      <div class="note-excerpt" id="note-modal-excerpt"></div>
+      <textarea class="note-textarea" id="note-textarea" placeholder="Votre réflexion personnelle…" maxlength="1000" rows="5"></textarea>
+      <div style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px"><span id="note-char-count">0</span> / 1000</div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-cancel" onclick="App.closeNoteModal()">Annuler</button>
+      <button class="modal-btn modal-btn-save" onclick="App.saveNote()">Enregistrer</button>
     </div>
   </div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════════════════════
-//  STORAGE KEYS
-// ════════════════════════════════════════════════════════════════
-const SK = {
-  READ:       'mjv_read',
-  FAVORITES:  'mjv_favorites',
-  NOTES:      'mjv_notes',       // { paragraph_id: { text, pid, unit_id, ts } }
-  TEXT_SIZE:  'mjv_textsize',
-};
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize' };
 
-// ════════════════════════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════════════════════════
 const State = {
-  corpus:       null,
-  dayMap:       {},          // day_number → unit
-  currentSeq:   1,
-  prevScreen:   'home',
-  todayDayNum:  new Date().getDate(),
-  read:         new Set(),
-  favorites:    new Set(),   // Set<paragraph_id>
-  notes:        {},          // { [paragraph_id]: { text, unit_id, ts } }
-  textSize:     17,
-  noteTargetPid: null,       // paragraph_id being noted
+  corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
+  todayDayNum: new Date().getDate(),
+  read: new Set(), favorites: new Set(), notes: {}, textSize: 17,
+  noteTargetPid: null, widePanel: 'jours',
 };
 
-// ════════════════════════════════════════════════════════════════
-//  PERSISTENCE
-// ════════════════════════════════════════════════════════════════
+// ── Helpers ──────────────────────────────────────────────────
+const isWide = () => window.innerWidth >= 768;
+
 function loadStorage() {
   try {
-    const r = localStorage.getItem(SK.READ);
-    State.read = r ? new Set(JSON.parse(r)) : new Set();
-    const f = localStorage.getItem(SK.FAVORITES);
-    State.favorites = f ? new Set(JSON.parse(f)) : new Set();
-    const n = localStorage.getItem(SK.NOTES);
-    State.notes = n ? JSON.parse(n) : {};
-    const ts = localStorage.getItem(SK.TEXT_SIZE);
-    State.textSize = ts ? parseInt(ts) : 17;
-  } catch(e) {
-    State.read = new Set(); State.favorites = new Set();
-    State.notes = {}; State.textSize = 17;
-  }
+    State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]'));
+    State.favorites = new Set(JSON.parse(localStorage.getItem(SK.FAVORITES) || '[]'));
+    State.notes = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
+    State.textSize = parseInt(localStorage.getItem(SK.TEXT_SIZE) || '17');
+  } catch(e) { State.read=new Set(); State.favorites=new Set(); State.notes={}; State.textSize=17; }
 }
 const saveRead      = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); } catch(e){} };
 const saveFavorites = () => { try { localStorage.setItem(SK.FAVORITES, JSON.stringify([...State.favorites])); } catch(e){} };
 const saveNotes     = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); } catch(e){} };
 const saveTextSize  = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); } catch(e){} };
 
-// ════════════════════════════════════════════════════════════════
-//  APP
-// ════════════════════════════════════════════════════════════════
+// ── App ──────────────────────────────────────────────────────
 const App = {
 
-  // ── Init ─────────────────────────────────────────────────────
   async init() {
     loadStorage();
     this.applyTextSize(State.textSize, false);
@@ -696,19 +868,36 @@ const App = {
       State.corpus = await res.json();
       State.corpus.forEach(u => { if (u.day_number) State.dayMap[u.day_number] = u; });
     } catch(e) {
-      document.getElementById('screen-loading').innerHTML =
-        '<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)">Erreur de chargement.<br>Vérifiez votre connexion.</div>';
+      const msg = '<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)">Erreur de chargement.<br>Vérifiez votre connexion.</div>';
+      document.getElementById('screen-loading').innerHTML = msg;
+      document.getElementById('wide-welcome').querySelector('.ww-text').textContent = 'Erreur de chargement.';
       return;
     }
 
+    // Mobile init
     this.buildCalendar();
     this.buildList();
     this.renderHome();
     this.showScreen('home', true);
+
+    // Wide init
+    this.buildWideCalendar();
+    this.buildWideList();
+    this.updateWideProgress();
+    const dateStr = new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long'}).format(new Date());
+    document.getElementById('wide-date-label').textContent = dateStr;
+    // Auto-open today's day on wide layout
+    const todayUnit = State.dayMap[State.todayDayNum] || State.corpus[0];
+    if (todayUnit) this.openUnit(todayUnit.unit_id);
+
     this.registerSW();
+
     document.addEventListener('click', e => {
       if (!e.target.closest('#textsize-panel') && !e.target.closest('#btn-textsize')) {
         document.getElementById('textsize-panel').classList.remove('open');
+      }
+      if (!e.target.closest('#wide-textsize-panel') && !e.target.closest('#wnav-textsize')) {
+        document.getElementById('wide-textsize-panel').classList.remove('open');
       }
     });
   },
@@ -717,41 +906,57 @@ const App = {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.APP_BASE + 'sw.js', { scope: window.APP_BASE }).catch(() => {});
   },
 
-  // ── Navigation ───────────────────────────────────────────────
+  // ── Mobile navigation ────────────────────────────────────────
   showScreen(name, initial = false) {
     ['loading','home','list','reader','espace'].forEach(s => {
       document.getElementById('screen-' + s)?.classList.toggle('active', s === name);
     });
-    const nav = document.getElementById('bottom-nav');
-    nav.style.display = name === 'reader' ? 'none' : '';
+    document.getElementById('bottom-nav').style.display = name === 'reader' ? 'none' : '';
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     const map = { home:'nav-home', list:'nav-list', espace:'nav-espace' };
     if (map[name]) document.getElementById(map[name])?.classList.add('active');
     if (!initial && name !== 'reader') State.prevScreen = name;
-    if (name === 'espace') this.renderEspace();
+    if (name === 'espace') this.renderEspace('espace-scroll');
     if (name === 'home') this.updateCalendar();
-    // Close text size panel when leaving reader
     if (name !== 'reader') document.getElementById('textsize-panel').classList.remove('open');
   },
 
-  // ── Calendar ─────────────────────────────────────────────────
+  // ── Wide navigation ──────────────────────────────────────────
+  wideNav(panel) {
+    State.widePanel = panel;
+    document.querySelectorAll('.wt-nav-btn[aria-pressed]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('.wt-nav-btn').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.getElementById('wnav-' + panel);
+    if (activeBtn) { activeBtn.classList.add('active'); activeBtn.setAttribute('aria-pressed', 'true'); }
+    const readerContent = document.getElementById('wide-reader-content');
+    const welcome = document.getElementById('wide-welcome');
+    const espace = document.getElementById('wide-espace');
+    if (panel === 'jours') {
+      espace.classList.remove('active');
+      // Show reader if a day is open, otherwise welcome
+      const hasOpen = State.currentSeq > 0 && State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
+      readerContent.style.display = hasOpen ? 'flex' : 'none';
+      welcome.style.display = hasOpen ? 'none' : 'flex';
+    } else if (panel === 'espace') {
+      readerContent.style.display = 'none';
+      welcome.style.display = 'none';
+      espace.classList.add('active');
+      this.renderEspace('wide-espace');
+    }
+  },
+
+  // ── Calendar (mobile) ────────────────────────────────────────
   buildCalendar() {
     const grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
-    const today = State.todayDayNum;
     for (let i = 1; i <= 31; i++) {
       const cell = document.createElement('button');
-      cell.className = 'cal-cell';
-      cell.textContent = i;
-      cell.dataset.day = i;
+      cell.className = 'cal-cell'; cell.textContent = i; cell.dataset.day = i;
       cell.setAttribute('aria-label', `Jour ${i}`);
       const unit = State.dayMap[i];
-      if (!unit) {
-        cell.classList.add('appendix');
-        cell.disabled = true;
-        cell.setAttribute('aria-disabled', 'true');
-      } else {
-        if (i === today) cell.classList.add('today');
+      if (!unit) { cell.classList.add('appendix'); cell.disabled = true; }
+      else {
+        if (i === State.todayDayNum) cell.classList.add('today');
         if (State.read.has(i)) cell.classList.add('read');
         cell.addEventListener('click', () => this.openDay(i));
       }
@@ -766,12 +971,83 @@ const App = {
       cell.classList.toggle('read', State.read.has(d));
     });
     const count = State.read.size;
-    document.getElementById('progress-fill').style.width = (count / 31 * 100) + '%';
+    document.getElementById('progress-fill').style.width = (count/31*100) + '%';
     document.getElementById('progress-label').textContent = count + ' / 31';
-    document.querySelector('.progress-bar-track').setAttribute('aria-valuenow', count);
   },
 
-  // ── Home ─────────────────────────────────────────────────────
+  // ── Calendar (wide) ──────────────────────────────────────────
+  buildWideCalendar() {
+    const grid = document.getElementById('wide-cal-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= 31; i++) {
+      const cell = document.createElement('button');
+      cell.className = 'ws-cal-cell'; cell.textContent = i; cell.dataset.wday = i;
+      cell.setAttribute('aria-label', `Jour ${i}`);
+      const unit = State.dayMap[i];
+      if (!unit) { cell.classList.add('appendix'); cell.disabled = true; }
+      else {
+        if (i === State.todayDayNum) cell.classList.add('today');
+        if (State.read.has(i)) cell.classList.add('read');
+        cell.addEventListener('click', () => this.openDay(i));
+      }
+      grid.appendChild(cell);
+    }
+  },
+
+  updateWideCalendar() {
+    document.querySelectorAll('.ws-cal-cell').forEach(cell => {
+      const d = parseInt(cell.dataset.wday);
+      if (!State.dayMap[d]) return;
+      cell.classList.toggle('read', State.read.has(d));
+    });
+  },
+
+  updateWideProgress() {
+    const count = State.read.size;
+    document.getElementById('wide-progress-fill').style.width = (count/31*100) + '%';
+    document.getElementById('wide-progress-label').textContent = count + ' / 31';
+  },
+
+  // ── Sidebar list (wide) ──────────────────────────────────────
+  buildWideList() {
+    const scroll = document.getElementById('wide-list-scroll');
+    const main = State.corpus.filter(u => u.unit_type === 'main_day');
+    const apps = State.corpus.filter(u => u.unit_type === 'appendix');
+    scroll.innerHTML =
+      '<div class="ws-section-label">Méditations du mois</div>' +
+      main.map(u => this.wideListItem(u)).join('') +
+      '<div class="ws-section-label">Compléments</div>' +
+      apps.map(u => this.wideListItem(u)).join('') +
+      '<div style="height:12px"></div>';
+  },
+
+  wideListItem(u) {
+    const isToday = u.day_number === State.todayDayNum;
+    const isRead  = State.read.has(u.day_number);
+    const isActive = u.sequence_meditative === State.currentSeq;
+    const label = u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number;
+    const cirCls = isToday ? 'today-c' : (isRead ? 'read-c' : '');
+    const meta = u.day_number ? (u.date_default||'') : 'Appendice ' + u.appendix_number;
+    const nc = this.unitNoteCount(u);
+    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent);margin-left:3px">✎${nc}</span>` : '';
+    return `<div class="ws-list-item${isActive?' active':''}" data-uid="${u.unit_id}" onclick="App.openUnit('${u.unit_id}')">
+      <div class="ws-day-circle ${cirCls}">${label}</div>
+      <div class="ws-item-info">
+        <div class="ws-item-title">${this.esc(u.title)}${badge}</div>
+        <div class="ws-item-meta">${meta}</div>
+      </div>
+    </div>`;
+  },
+
+  refreshWideListItem(unitId) {
+    const el = document.querySelector(`[data-uid="${unitId}"]`);
+    if (!el) return;
+    const unit = State.corpus.find(u => u.unit_id === unitId);
+    if (!unit) return;
+    el.outerHTML = this.wideListItem(unit);
+  },
+
+  // ── Home (mobile) ────────────────────────────────────────────
   renderHome() {
     const today = State.todayDayNum;
     const unit = State.dayMap[today] || State.corpus[0];
@@ -801,64 +1077,55 @@ const App = {
           </div>
         </div>
       </div>
-      ${this.renderNearbyDays(dayNum)}
-    `;
+      ${this.renderNearbyDays(dayNum)}`;
   },
 
-  renderNearbyDays(currentDay) {
+  renderNearbyDays(cur) {
     const nearby = [];
     for (let i = -2; i <= 2; i++) {
-      const d = currentDay + i;
-      if (d >= 1 && d <= 31 && d !== currentDay && State.dayMap[d]) nearby.push(State.dayMap[d]);
+      const d = cur+i; if (d>=1&&d<=31&&d!==cur&&State.dayMap[d]) nearby.push(State.dayMap[d]);
     }
     if (!nearby.length) return '';
-    return `
-      <div class="list-section-label" style="margin-top:6px">Autres jours</div>
-      ${nearby.map(u => this.renderListCard(u)).join('')}
-      <div style="height:20px"></div>
-    `;
+    return '<div class="list-section-label" style="margin-top:6px">Autres jours</div>' +
+      nearby.map(u => this.renderListCard(u)).join('') +
+      '<div style="height:20px"></div>';
   },
 
-  // ── List ─────────────────────────────────────────────────────
   buildList() {
     const main = State.corpus.filter(u => u.unit_type === 'main_day');
     const apps = State.corpus.filter(u => u.unit_type === 'appendix');
-    document.getElementById('list-scroll').innerHTML = `
-      <div class="list-section-label">Méditations du mois</div>
-      ${main.map(u => this.renderListCard(u)).join('')}
-      <div class="list-section-label" style="margin-top:16px">Compléments — Appendices</div>
-      ${apps.map(u => this.renderListCard(u)).join('')}
-      <div style="height:16px"></div>
-    `;
+    document.getElementById('list-scroll').innerHTML =
+      '<div class="list-section-label">Méditations du mois</div>' +
+      main.map(u => this.renderListCard(u)).join('') +
+      '<div class="list-section-label" style="margin-top:16px">Compléments — Appendices</div>' +
+      apps.map(u => this.renderListCard(u)).join('') +
+      '<div style="height:16px"></div>';
   },
 
   renderListCard(u) {
     const today = State.todayDayNum;
     const isToday = u.day_number === today;
-    const isRead = State.read.has(u.day_number);
+    const isRead  = State.read.has(u.day_number);
     const label = u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number;
-    const cls = isToday ? 'today-circle' : (isRead ? 'read-circle' : '');
-    const meta = u.day_number ? (u.date_default || '') : 'Appendice ' + u.appendix_number;
-    const noteCount = this.unitNoteCount(u);
-    const noteBadge = noteCount > 0 ? `<span style="font-size:10px;color:var(--accent);margin-left:4px">✎${noteCount}</span>` : '';
-    return `
-      <div class="list-card" onclick="App.openUnit('${u.unit_id}')">
-        <div class="list-day-circle ${cls}">${label}</div>
-        <div class="list-info">
-          <div class="list-title">${this.esc(u.title)}${noteBadge}</div>
-          <div class="list-meta">${meta}</div>
-        </div>
-        <div class="list-chevron">›</div>
+    const cls   = isToday ? 'today-circle' : (isRead ? 'read-circle' : '');
+    const meta  = u.day_number ? (u.date_default||'') : 'Appendice ' + u.appendix_number;
+    const nc    = this.unitNoteCount(u);
+    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent);margin-left:4px">✎${nc}</span>` : '';
+    return `<div class="list-card" onclick="App.openUnit('${u.unit_id}')">
+      <div class="list-day-circle ${cls}">${label}</div>
+      <div class="list-info">
+        <div class="list-title">${this.esc(u.title)}${badge}</div>
+        <div class="list-meta">${meta}</div>
       </div>
-    `;
+      <div class="list-chevron">›</div>
+    </div>`;
   },
 
   unitNoteCount(u) {
-    return u.sections.reduce((acc, s) =>
-      acc + s.paragraphs.filter(p => State.notes[p.paragraph_id]).length, 0);
+    return u.sections.reduce((a,s) => a + s.paragraphs.filter(p => State.notes[p.paragraph_id]).length, 0);
   },
 
-  // ── Reader ────────────────────────────────────────────────────
+  // ── Open unit (works for both layouts) ───────────────────────
   openDay(dayNum) {
     const unit = State.dayMap[dayNum];
     if (unit) this.openUnit(unit.unit_id);
@@ -872,82 +1139,84 @@ const App = {
     const badge = unit.day_number
       ? `Jour ${unit.day_number} · 31 Jours avec Marie`
       : `Appendice ${unit.appendix_number} · Complément`;
-    document.getElementById('reader-day-badge').textContent = badge;
-    document.getElementById('reader-topbar-title').textContent = unit.title;
-    document.getElementById('reader-hero-badge').textContent = badge;
-    document.getElementById('reader-hero-title').textContent = unit.title;
-    document.getElementById('reader-back-btn').onclick = () => this.showScreen(State.prevScreen);
 
-    this.renderReaderBody(unit);
-    this.updateReaderNav(unit);
-    this.updateActionBar(unit);
-    document.getElementById('reader-scroll').scrollTop = 0;
-    document.getElementById('textsize-panel').classList.remove('open');
-    this.showScreen('reader');
+    if (isWide()) {
+      // Wide: update sidebar active state
+      document.querySelectorAll('.ws-list-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.uid === unitId);
+      });
+      // Show reader panel
+      const rc = document.getElementById('wide-reader-content');
+      document.getElementById('wide-welcome').style.display = 'none';
+      rc.style.display = 'flex';
+      // Switch to jours panel if espace is open
+      if (State.widePanel === 'espace') this.wideNav('jours');
+
+      // Populate wide reader
+      document.getElementById('wide-hero-badge').textContent = badge;
+      document.getElementById('wide-hero-title').textContent = unit.title;
+      document.getElementById('wide-reader-day-badge').textContent = badge;
+      document.getElementById('wide-reader-topbar-title').textContent = unit.title;
+      this.renderReaderBody(unit, 'wide-reader-body');
+      this.updateWideNav(unit);
+      this.updateWideActionBar(unit);
+      document.getElementById('wide-reader-scroll').scrollTop = 0;
+      document.getElementById('wide-textsize-panel').classList.remove('open');
+    } else {
+      // Mobile: populate mobile reader
+      document.getElementById('reader-day-badge').textContent = badge;
+      document.getElementById('reader-topbar-title').textContent = unit.title;
+      document.getElementById('reader-hero-badge').textContent = badge;
+      document.getElementById('reader-hero-title').textContent = unit.title;
+      document.getElementById('reader-back-btn').onclick = () => this.showScreen(State.prevScreen);
+      this.renderReaderBody(unit, 'reader-body');
+      this.updateReaderNav(unit);
+      this.updateActionBar(unit);
+      document.getElementById('reader-scroll').scrollTop = 0;
+      document.getElementById('textsize-panel').classList.remove('open');
+      this.showScreen('reader');
+    }
   },
 
-  renderReaderBody(unit) {
+  // ── Reader body (shared) ─────────────────────────────────────
+  renderReaderBody(unit, bodyId) {
     const sectionLabels = {
-      soul_intro:       '✦ L\'âme',
-      lesson:           '✦ Leçon de la Reine du Ciel',
-      soul_response:    '✦ Réponse de l\'âme',
-      queen_response:   '✦ La Reine d\'amour',
-      practice:         '✦ Petite pratique',
-      jaculatory_prayer:'✦ Oraison jaculatoire',
-      unit_intro_note:  '✦ Introduction',
+      soul_intro:'✦ L\'âme', lesson:'✦ Leçon de la Reine du Ciel',
+      soul_response:'✦ Réponse de l\'âme', queen_response:'✦ La Reine d\'amour',
+      practice:'✦ Petite pratique', jaculatory_prayer:'✦ Oraison jaculatoire',
+      unit_intro_note:'✦ Introduction',
     };
     const paraClass = {
-      soul_intro: 'para-soul', soul_response: 'para-soul',
-      lesson: 'para-mary', queen_response: 'para-mary', unit_intro_note: 'para-mary',
-      practice: 'para-practice', jaculatory_prayer: 'para-prayer',
+      soul_intro:'para-soul', soul_response:'para-soul',
+      lesson:'para-mary', queen_response:'para-mary', unit_intro_note:'para-mary',
+      practice:'para-practice', jaculatory_prayer:'para-prayer',
     };
     let html = '';
     unit.sections.forEach(sec => {
       const label = sectionLabels[sec.section_type] || sec.section_title_source || sec.section_type;
-      const cls = paraClass[sec.section_type] || 'para-mary';
+      const cls   = paraClass[sec.section_type] || 'para-mary';
       html += `<div class="section-label">${this.esc(label)}</div>`;
       sec.paragraphs.forEach(p => {
-        const noteData = State.notes[p.paragraph_id];
-        html += `
-          <p class="${cls}" data-pid="${p.paragraph_id}">
-            ${this.formatText(p.text)}
-            <button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">✎</button>
-          </p>
-        `;
-        if (noteData) {
-          html += `
-            <div class="para-note" data-note-pid="${p.paragraph_id}">
-              <span class="para-note-icon">✎</span>
-              <span class="para-note-text">${this.esc(noteData.text)}</span>
-              <button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer la note" aria-label="Supprimer la note">×</button>
-            </div>
-          `;
+        const note = State.notes[p.paragraph_id];
+        html += `<p class="${cls}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">✎</button></p>`;
+        if (note) {
+          html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
         }
       });
     });
-    document.getElementById('reader-body').innerHTML = html;
+    document.getElementById(bodyId).innerHTML = html;
   },
 
+  // ── Mobile reader nav + actions ──────────────────────────────
   updateReaderNav(unit) {
     const seq = unit.sequence_meditative;
-    const total = State.corpus.length;
     const prevU = State.corpus.find(u => u.sequence_meditative === seq - 1);
     const nextU = State.corpus.find(u => u.sequence_meditative === seq + 1);
-    const prevBtn = document.getElementById('reader-prev');
-    const nextBtn = document.getElementById('reader-next');
-    prevBtn.disabled = !prevU;
-    nextBtn.disabled = !nextU;
-    if (prevU) {
-      document.getElementById('reader-prev-label').textContent =
-        prevU.day_number ? 'Jour ' + prevU.day_number : 'App. ' + prevU.appendix_number;
-      prevBtn.onclick = () => this.openUnit(prevU.unit_id);
-    }
-    if (nextU) {
-      document.getElementById('reader-next-label').textContent =
-        nextU.day_number ? 'Jour ' + nextU.day_number : 'App. ' + nextU.appendix_number;
-      nextBtn.onclick = () => this.openUnit(nextU.unit_id);
-    }
-    document.getElementById('reader-nav-center').textContent = seq + ' / ' + total;
+    const pb = document.getElementById('reader-prev'), nb = document.getElementById('reader-next');
+    pb.disabled = !prevU; nb.disabled = !nextU;
+    if (prevU) { document.getElementById('reader-prev-label').textContent = prevU.day_number ? 'Jour '+prevU.day_number : 'App. '+prevU.appendix_number; pb.onclick = () => this.openUnit(prevU.unit_id); }
+    if (nextU) { document.getElementById('reader-next-label').textContent = nextU.day_number ? 'Jour '+nextU.day_number : 'App. '+nextU.appendix_number; nb.onclick = () => this.openUnit(nextU.unit_id); }
+    document.getElementById('reader-nav-center').textContent = seq + ' / ' + State.corpus.length;
   },
 
   updateActionBar(unit) {
@@ -955,19 +1224,46 @@ const App = {
     document.getElementById('complete-icon').textContent = isDone ? '✓' : '○';
     document.getElementById('complete-label').textContent = isDone ? 'Lu' : 'Terminé';
     document.getElementById('btn-complete').classList.toggle('done', !!isDone);
-    const allPids = unit.sections.flatMap(s => s.paragraphs.map(p => p.paragraph_id));
-    const hasFav = allPids.some(pid => State.favorites.has(pid));
+    const hasFav = unit.sections.flatMap(s=>s.paragraphs.map(p=>p.paragraph_id)).some(pid=>State.favorites.has(pid));
     document.getElementById('fav-icon').textContent = hasFav ? '♥' : '♡';
     document.getElementById('btn-fav').classList.toggle('active', hasFav);
   },
 
+  // ── Wide reader nav + actions ─────────────────────────────────
+  updateWideNav(unit) {
+    const seq = unit.sequence_meditative;
+    const prevU = State.corpus.find(u => u.sequence_meditative === seq-1);
+    const nextU = State.corpus.find(u => u.sequence_meditative === seq+1);
+    const pb = document.getElementById('wide-prev'), nb = document.getElementById('wide-next');
+    pb.disabled = !prevU; nb.disabled = !nextU;
+    if (prevU) { document.getElementById('wide-prev-label').textContent = prevU.day_number ? 'Jour '+prevU.day_number : 'App. '+prevU.appendix_number; pb.onclick = () => this.openUnit(prevU.unit_id); }
+    if (nextU) { document.getElementById('wide-next-label').textContent = nextU.day_number ? 'Jour '+nextU.day_number : 'App. '+nextU.appendix_number; nb.onclick = () => this.openUnit(nextU.unit_id); }
+    document.getElementById('wide-nav-center').textContent = seq + ' / ' + State.corpus.length;
+  },
+
+  updateWideActionBar(unit) {
+    const isDone = unit.day_number && State.read.has(unit.day_number);
+    document.getElementById('wide-complete-icon').textContent = isDone ? '✓' : '○';
+    document.getElementById('wide-complete-label').textContent = isDone ? 'Lu' : 'Terminé';
+    document.getElementById('wide-btn-complete').classList.toggle('done', !!isDone);
+    const hasFav = unit.sections.flatMap(s=>s.paragraphs.map(p=>p.paragraph_id)).some(pid=>State.favorites.has(pid));
+    document.getElementById('wide-fav-icon').textContent = hasFav ? '♥' : '♡';
+    document.getElementById('wide-btn-fav').classList.toggle('active', hasFav);
+  },
+
+  // ── Actions ──────────────────────────────────────────────────
   toggleComplete() {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (!unit?.day_number) return;
     const d = unit.day_number;
     if (State.read.has(d)) { State.read.delete(d); this.showToast('Marqué comme non lu'); }
     else { State.read.add(d); this.showToast('Jour ' + d + ' terminé ✓'); }
-    saveRead(); this.updateActionBar(unit); this.updateCalendar();
+    saveRead();
+    this.updateActionBar(unit);
+    this.updateWideActionBar(unit);
+    this.updateCalendar();
+    this.updateWideCalendar();
+    this.updateWideProgress();
   },
 
   toggleFavorite() {
@@ -978,57 +1274,60 @@ const App = {
     const pid = lesson.paragraphs[0].paragraph_id;
     if (State.favorites.has(pid)) { State.favorites.delete(pid); this.showToast('Retiré des favoris'); }
     else { State.favorites.add(pid); this.showToast('Ajouté aux favoris ♥'); }
-    saveFavorites(); this.updateActionBar(unit);
+    saveFavorites();
+    this.updateActionBar(unit);
+    this.updateWideActionBar(unit);
   },
 
   shareDay() {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (!unit) return;
-    const text = `31 Jours avec Marie — ${unit.ordinal_source || 'Jour ' + unit.day_number}\n${unit.title}`;
-    if (navigator.share) navigator.share({ title: '31 Jours avec Marie', text }).catch(() => {});
-    else navigator.clipboard?.writeText(text).then(() => this.showToast('Copié !')).catch(() => {});
+    const text = `31 Jours avec Marie — ${unit.ordinal_source||'Jour '+unit.day_number}\n${unit.title}`;
+    if (navigator.share) navigator.share({ title: '31 Jours avec Marie', text }).catch(()=>{});
+    else navigator.clipboard?.writeText(text).then(()=>this.showToast('Copié !')).catch(()=>{});
   },
 
-  // ── Text size ────────────────────────────────────────────────
+  // ── Text size ─────────────────────────────────────────────────
   toggleTextsizePanel() {
     const panel = document.getElementById('textsize-panel');
     const isOpen = panel.classList.toggle('open');
     document.getElementById('btn-textsize').classList.toggle('active', isOpen);
-    if (isOpen) {
-      document.getElementById('textsize-slider').value = State.textSize;
-      document.getElementById('textsize-value').textContent = State.textSize;
-    }
+    if (isOpen) document.getElementById('textsize-slider').value = State.textSize;
   },
-
-  applyTextSize(size, save = true) {
+  toggleWideTextsizePanel() {
+    const panel = document.getElementById('wide-textsize-panel');
+    const isOpen = panel.classList.toggle('open');
+    const btn = document.getElementById('wnav-textsize');
+    btn.classList.toggle('active', isOpen);
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (isOpen) document.getElementById('wide-textsize-slider').value = State.textSize;
+  },
+  applyTextSize(size, save=true) {
     size = Math.max(14, Math.min(22, parseInt(size)));
     State.textSize = size;
-    document.documentElement.style.setProperty('--reader-size', size + 'px');
-    document.documentElement.style.setProperty('--reader-lh', size > 19 ? '1.88' : '1.82');
-    document.getElementById('textsize-value').textContent = size;
-    document.getElementById('textsize-slider').value = size;
+    document.documentElement.style.setProperty('--reader-size', size+'px');
+    document.documentElement.style.setProperty('--reader-lh', size>19?'1.88':'1.82');
+    ['textsize-value','wide-textsize-value'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = size;
+    });
+    ['textsize-slider','wide-textsize-slider'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = size;
+    });
     if (save) saveTextSize();
   },
 
-  // ── Notes ────────────────────────────────────────────────────
+  // ── Notes ─────────────────────────────────────────────────────
   openNoteModal(pid) {
     State.noteTargetPid = pid;
-    // Find the paragraph and its unit
-    let para = null, unit = null;
+    let para=null, unit=null;
     for (const u of State.corpus) {
-      for (const s of u.sections) {
-        for (const p of s.paragraphs) {
-          if (p.paragraph_id === pid) { para = p; unit = u; break; }
-        }
-        if (para) break;
-      }
-      if (para) break;
+      for (const s of u.sections) { for (const p of s.paragraphs) { if (p.paragraph_id===pid){para=p;unit=u;} } }
     }
     if (!para) return;
     const existing = State.notes[pid];
-    const dayLabel = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
+    const dayLabel = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
     document.getElementById('note-modal-subtitle').textContent = dayLabel + ' · ' + pid;
-    document.getElementById('note-modal-excerpt').textContent = para.text.slice(0, 160) + (para.text.length > 160 ? '…' : '');
+    document.getElementById('note-modal-excerpt').textContent = para.text.slice(0,160) + (para.text.length>160?'…':'');
     const ta = document.getElementById('note-textarea');
     ta.value = existing ? existing.text : '';
     document.getElementById('note-char-count').textContent = ta.value.length;
@@ -1036,127 +1335,97 @@ const App = {
     document.getElementById('note-modal').classList.add('open');
     setTimeout(() => ta.focus(), 300);
   },
-
   closeNoteModal(e) {
     if (e && e.target !== document.getElementById('note-modal')) return;
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
   },
-
   saveNote() {
-    const pid = State.noteTargetPid;
-    if (!pid) return;
+    const pid = State.noteTargetPid; if (!pid) return;
     const text = document.getElementById('note-textarea').value.trim();
-    if (text) {
-      // Find unit
-      let unit = null;
-      for (const u of State.corpus) {
-        if (u.sections.some(s => s.paragraphs.some(p => p.paragraph_id === pid))) { unit = u; break; }
-      }
-      State.notes[pid] = { text, unit_id: unit?.unit_id, pid, ts: Date.now() };
-      this.showToast('Note enregistrée ✎');
-    } else {
-      delete State.notes[pid];
-      this.showToast('Note supprimée');
-    }
+    let unit = null;
+    for (const u of State.corpus) { if (u.sections.some(s=>s.paragraphs.some(p=>p.paragraph_id===pid))){unit=u;break;} }
+    if (text) { State.notes[pid] = { text, unit_id: unit?.unit_id, pid, ts: Date.now() }; this.showToast('Note enregistrée ✎'); }
+    else { delete State.notes[pid]; this.showToast('Note supprimée'); }
     saveNotes();
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
-    // Refresh reader body and list badge
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
-    if (unit) this.renderReaderBody(unit);
-    this.buildList();
+    const openUnit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    if (openUnit) {
+      this.renderReaderBody(openUnit, isWide() ? 'wide-reader-body' : 'reader-body');
+      this.buildList();
+      if (isWide()) {
+        this.buildWideList();
+        const activeUid = State.corpus.find(u => u.sequence_meditative === State.currentSeq)?.unit_id;
+        document.querySelectorAll('.ws-list-item').forEach(el => el.classList.toggle('active', el.dataset.uid === activeUid));
+      }
+    }
   },
-
   deleteNote(pid) {
-    delete State.notes[pid];
-    saveNotes();
-    this.showToast('Note supprimée');
+    delete State.notes[pid]; saveNotes(); this.showToast('Note supprimée');
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
-    if (unit) this.renderReaderBody(unit);
-    this.buildList();
+    if (unit) {
+      this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
+      this.buildList();
+      if (isWide()) {
+        this.buildWideList();
+        const activeUid = State.corpus.find(u => u.sequence_meditative === State.currentSeq)?.unit_id;
+        document.querySelectorAll('.ws-list-item').forEach(el => el.classList.toggle('active', el.dataset.uid === activeUid));
+      }
+    }
   },
 
-  // ── Mon Espace ───────────────────────────────────────────────
-  renderEspace() {
-    const readCount = State.read.size;
-    const favCount = State.favorites.size;
-    const noteCount = Object.keys(State.notes).length;
-    let html = `
-      <div class="stat-grid">
-        <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
-        <div class="stat-card"><div class="stat-num gold">${favCount}</div><div class="stat-label">Favoris</div></div>
-        <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
-      </div>
-    `;
-
-    // Favorites
+  // ── Mon Espace ────────────────────────────────────────────────
+  renderEspace(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const readCount = State.read.size, favCount = State.favorites.size, noteCount = Object.keys(State.notes).length;
+    let html = `<div class="stat-grid">
+      <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
+      <div class="stat-card"><div class="stat-num gold">${favCount}</div><div class="stat-label">Favoris</div></div>
+      <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
+    </div>`;
     if (State.favorites.size > 0) {
-      html += `<div class="espace-section-title">Passages favoris</div>`;
+      html += '<div class="espace-section-title">Passages favoris</div>';
       State.favorites.forEach(pid => {
-        let para = null, unit = null;
-        for (const u of State.corpus) {
-          for (const s of u.sections) {
-            for (const p of s.paragraphs) { if (p.paragraph_id === pid) { para = p; unit = u; } }
-          }
-        }
-        if (!para || !unit) return;
-        const label = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
-        html += `
-          <div class="fav-card" onclick="App.openUnit('${unit.unit_id}')">
-            <div class="fav-card-day">${this.esc(label)}</div>
-            <div class="fav-card-text">${this.esc(para.text)}</div>
-          </div>`;
+        let para=null, unit=null;
+        for (const u of State.corpus) { for (const s of u.sections) { for (const p of s.paragraphs) { if(p.paragraph_id===pid){para=p;unit=u;} } } }
+        if (!para||!unit) return;
+        const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
+        html += `<div class="fav-card" onclick="App.openUnit('${unit.unit_id}')"><div class="fav-card-day">${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></div>`;
       });
     }
-
-    // Notes
-    const noteEntries = Object.entries(State.notes).sort((a,b) => b[1].ts - a[1].ts);
+    const noteEntries = Object.entries(State.notes).sort((a,b)=>b[1].ts-a[1].ts);
     if (noteEntries.length > 0) {
       html += `<div class="espace-section-title" style="margin-top:${favCount>0?'16px':'0'}">Mes notes</div>`;
-      noteEntries.forEach(([pid, note]) => {
-        const unit = State.corpus.find(u => u.unit_id === note.unit_id);
-        if (!unit) return;
-        const label = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
-        const date = new Date(note.ts).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
-        html += `
-          <div class="note-espace-card" onclick="App.openUnit('${unit.unit_id}')">
-            <div class="note-espace-meta">${this.esc(label)} · ${date}</div>
-            <div class="note-espace-text">${this.esc(note.text)}</div>
-          </div>`;
+      noteEntries.forEach(([pid,note]) => {
+        const unit = State.corpus.find(u=>u.unit_id===note.unit_id); if (!unit) return;
+        const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
+        const date = new Date(note.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+        html += `<div class="note-espace-card" onclick="App.openUnit('${unit.unit_id}')"><div class="note-espace-meta">${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></div>`;
       });
     }
-
-    if (readCount === 0 && favCount === 0 && noteCount === 0) {
-      html += `
-        <div class="espace-empty">
-          <div class="espace-empty-icon">✦</div>
-          <div class="espace-empty-text">Votre progression, vos favoris<br>et vos notes apparaîtront ici.</div>
-        </div>`;
+    if (!readCount && !favCount && !noteCount) {
+      html += '<div class="espace-empty"><div class="espace-empty-icon">✦</div><div class="espace-empty-text">Votre progression, vos favoris<br>et vos notes apparaîtront ici.</div></div>';
     }
     html += '<div style="height:16px"></div>';
-    document.getElementById('espace-scroll').innerHTML = html;
+    el.innerHTML = html;
   },
 
-  // ── Utilities ────────────────────────────────────────────────
+  // ── Utilities ─────────────────────────────────────────────────
   showToast(msg) {
     const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
+    t.textContent = msg; t.classList.add('show');
     clearTimeout(t._timer);
     t._timer = setTimeout(() => t.classList.remove('show'), 2200);
   },
-
   esc(str) {
     if (!str) return '';
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   },
-
   formatText(text) {
     if (!text) return '';
-    let t = this.esc(text);
-    t = t.replace(/«\s?([\s\S]*?)\s?»/g, '<em>« $1 »</em>');
-    return t;
+    return this.esc(text).replace(/«\s?([\s\S]*?)\s?»/g, '<em>« $1 »</em>');
   },
 };
 
