@@ -1,8 +1,6 @@
-// Cache key — bump this when deploying updates
-const CACHE = 'mjv-v1.1.1';
+// ── Version — must match APP_VERSION in index.html ─────────────────
+const CACHE = 'mjv-v1.3.0';
 
-// SW scope is set by the caller (index.html passes { scope: APP_BASE })
-// All asset paths are relative to the SW file location
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +23,9 @@ self.addEventListener('activate', e => {
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
+      // Notify all open tabs to reload so they get the new shell immediately
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then(clients => clients.forEach(c => c.postMessage({ type: 'SW_UPDATED' })))
   );
 });
 
@@ -34,12 +35,10 @@ self.addEventListener('fetch', e => {
   const isCrossOrigin = url.origin !== self.location.origin;
 
   if (isCrossOrigin) {
-    // Fonts: cache-first, no CORS issues
+    // Fonts: cache-first
     e.respondWith(
       caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-        if (res && res.status === 200) {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-        }
+        if (res && res.status === 200) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
         return res;
       }).catch(() => caches.match(e.request)))
     );
@@ -47,26 +46,36 @@ self.addEventListener('fetch', e => {
   }
 
   if (isCorpus) {
-    // Corpus: network-first so updates deploy cleanly
+    // Corpus: network-first — always get fresh text
     e.respondWith(
       fetch(e.request)
         .then(res => {
-          if (res && res.status === 200) {
-            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-          }
+          if (res && res.status === 200) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
           return res;
         })
         .catch(() => caches.match(e.request))
     );
   } else {
-    // Shell: cache-first for fast load
-    e.respondWith(
-      caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-        if (res && res.status === 200 && e.request.method === 'GET') {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-        }
-        return res;
-      }))
-    );
+    // Shell: network-first for index.html so new deployments always load fresh,
+    // cache-first for everything else (icons, etc.)
+    const isShell = url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
+    if (isShell) {
+      e.respondWith(
+        fetch(e.request)
+          .then(res => {
+            if (res && res.status === 200) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+            return res;
+          })
+          .catch(() => caches.match(e.request))
+      );
+    } else {
+      e.respondWith(
+        caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+          if (res && res.status === 200 && e.request.method === 'GET')
+            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          return res;
+        }))
+      );
+    }
   }
 });

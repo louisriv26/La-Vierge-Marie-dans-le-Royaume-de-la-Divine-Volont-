@@ -56,6 +56,7 @@ window.APP_BASE = (function() {
   --reader-size: 17px;
   --reader-lh: 1.82;
   --nav-h: 60px;
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -129,13 +130,13 @@ html, body {
   /* Top bar spanning full width */
   #wide-topbar {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 0;
     background: var(--primary);
     color: var(--white);
     flex-shrink: 0;
-    height: 52px;
-    padding: 0 20px;
+    min-height: calc(52px + var(--safe-top));
+    padding: calc(var(--safe-top) + 0px) 20px 8px;
   }
   .wt-brand {
     font-family: var(--font-reader);
@@ -448,7 +449,7 @@ html, body {
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .loading-text { font-family: var(--font-reader); font-size: 14px; color: var(--muted); letter-spacing: 0.05em; }
 
-.topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; background: var(--ivory); flex-shrink: 0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--safe-top) + 14px) 18px 10px; background: var(--ivory); flex-shrink: 0; }
 .topbar-title { font-family: var(--font-reader); font-size: 17px; color: var(--ink); font-style: italic; }
 .topbar-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
 .topbar-actions { display: flex; gap: 6px; }
@@ -503,7 +504,7 @@ html, body {
 .list-chevron { color: var(--border); font-size: 14px; flex-shrink: 0; }
 
 #screen-reader { background: var(--ivory); }
-.reader-topbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px; background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+.reader-topbar { display: flex; align-items: center; gap: 10px; padding: calc(var(--safe-top) + 12px) 16px 8px; background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
 .reader-back { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0; }
 .reader-back:hover { color: var(--primary); border-color: var(--primary); }
 .reader-topbar-info { flex: 1; min-width: 0; }
@@ -686,6 +687,58 @@ html, body {
   padding: 8px 10px;
 }
 
+/* Reader: "Pour aujourd'hui" reminder at end of day text */
+.reader-today-reminder {
+  background: var(--practice-bg);
+  border: 0.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin: 24px 0 16px;
+}
+.rtr-header {
+  background: var(--accent);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rtr-header-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+.rtr-section {
+  padding: 12px 16px;
+  border-top: 0.5px solid rgba(201,168,76,0.3);
+}
+.rtr-section:first-of-type { border-top: none; }
+.rtr-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.rtr-pratique {
+  font-family: var(--font-reader);
+  font-size: var(--reader-size);
+  color: var(--ink);
+  line-height: var(--reader-lh);
+}
+.rtr-oraison {
+  font-family: var(--font-reader);
+  font-size: var(--reader-size);
+  color: var(--primary);
+  line-height: var(--reader-lh);
+  font-style: italic;
+  text-align: center;
+}
+/* Active day button in reader action bar */
+.action-btn.active-day-btn { color: var(--accent); border-color: var(--accent); background: var(--practice-bg); }
+
 /* Version badge */
 .version-badge {
   font-size: 10px;
@@ -728,7 +781,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version">v1.2</div>
+        <div class="mobile-version">v1.3</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">☰</button>
@@ -748,7 +801,7 @@ html, body {
     </div>
     <div class="divider"></div>
     <!-- Pour aujourd'hui: Pratique + Oraison — always visible -->
-    <div id="today-actions-wrap" style="padding:14px 16px 0;flex-shrink:0;"></div>
+    <div id="today-actions-wrap" style="padding:14px 16px 0;flex-shrink:0;max-height:220px;overflow-y:auto;"></div>
     <div class="hero-scroll" id="hero-scroll"></div>
   </div>
 
@@ -790,6 +843,10 @@ html, body {
       <button class="action-btn" id="btn-fav" onclick="App.toggleFavorite()">
         <span class="action-icon" id="fav-icon">♡</span><span>Favori</span>
       </button>
+      <button class="action-btn" id="btn-activate" onclick="App.activateDay()">
+        <span class="action-icon" id="activate-icon">✦</span>
+        <span id="activate-label">Activer</span>
+      </button>
       <button class="action-btn" onclick="App.shareDay()">
         <span class="action-icon">↑</span><span>Partager</span>
       </button>
@@ -829,7 +886,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie">v1.2</span>
+    <span class="version-badge" title="31 Jours avec Marie">v1.3</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -906,6 +963,9 @@ html, body {
             <button class="wrt-btn" id="wide-btn-fav" onclick="App.toggleFavorite()">
               <span id="wide-fav-icon">♡</span> Favori
             </button>
+            <button class="wrt-btn" id="wide-btn-activate" onclick="App.activateDay()">
+              <span id="wide-activate-icon">✦</span> <span id="wide-activate-label">Activer</span>
+            </button>
             <button class="wrt-btn" onclick="App.shareDay()">↑ Partager</button>
           </div>
         </div>
@@ -956,13 +1016,16 @@ html, body {
 </div>
 
 <script>
-const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize' };
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
+
+const APP_VERSION = '1.3';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
   read: new Set(), favorites: new Set(), notes: {}, textSize: 17,
   noteTargetPid: null, widePanel: 'jours',
+  activeDay: null,  // devotional day — may differ from calendar day
 };
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -974,12 +1037,14 @@ function loadStorage() {
     State.favorites = new Set(JSON.parse(localStorage.getItem(SK.FAVORITES) || '[]'));
     State.notes = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
     State.textSize = parseInt(localStorage.getItem(SK.TEXT_SIZE) || '17');
-  } catch(e) { State.read=new Set(); State.favorites=new Set(); State.notes={}; State.textSize=17; }
+    State.activeDay = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0') || null;
+  } catch(e) { State.read=new Set(); State.favorites=new Set(); State.notes={}; State.textSize=17; State.activeDay=null; }
 }
 const saveRead      = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); } catch(e){} };
 const saveFavorites = () => { try { localStorage.setItem(SK.FAVORITES, JSON.stringify([...State.favorites])); } catch(e){} };
 const saveNotes     = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); } catch(e){} };
 const saveTextSize  = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); } catch(e){} };
+const saveActiveDay = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); } catch(e){} };
 
 // ── App ──────────────────────────────────────────────────────
 const App = {
@@ -988,8 +1053,18 @@ const App = {
     loadStorage();
     this.applyTextSize(State.textSize, false);
 
+    // Reload when SW pushes an update
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'SW_UPDATED') window.location.reload();
+      });
+    }
+
     try {
-      const res = await fetch(window.APP_BASE + 'corpus/days.json');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      const res = await fetch(window.APP_BASE + 'corpus/days.json', { signal: controller.signal });
+      clearTimeout(timeout);
       if (!res.ok) throw new Error(res.status);
       State.corpus = await res.json();
       State.corpus.forEach(u => { if (u.day_number) State.dayMap[u.day_number] = u; });
@@ -998,6 +1073,11 @@ const App = {
       document.getElementById('screen-loading').innerHTML = msg;
       document.getElementById('wide-welcome').querySelector('.ww-text').textContent = 'Erreur de chargement.';
       return;
+    } finally {
+      // Always hide spinner — even if corpus load fails
+      document.getElementById('screen-loading')?.classList.remove('active');
+      const wl = document.getElementById('wide-loading');
+      if (wl) wl.style.display = 'none';
     }
 
     // Mobile init
@@ -1013,9 +1093,6 @@ const App = {
     const dateStr = new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long'}).format(new Date());
     document.getElementById('wide-date-label').textContent = dateStr;
     this.renderTodayCard();
-    // Hide wide loading overlay
-    const wl = document.getElementById('wide-loading');
-    if (wl) wl.style.display = 'none';
     // Auto-open today's day on wide layout
     const todayUnit = State.dayMap[State.todayDayNum] || State.corpus[0];
     if (todayUnit) this.openUnit(todayUnit.unit_id);
@@ -1180,6 +1257,7 @@ const App = {
 
   // ── Today card: Pratique + Oraison ───────────────────────────
   getTodayData(dayNum) {
+    // Use provided dayNum, which renderTodayCard passes as activeDay ?? todayDayNum
     const unit = State.dayMap[dayNum];
     if (!unit) return null;
     const pratique = unit.sections.find(s => s.section_type === 'practice');
@@ -1192,7 +1270,9 @@ const App = {
   },
 
   renderTodayCard() {
-    const data = this.getTodayData(State.todayDayNum);
+    // Use activeDay if set, otherwise fall back to calendar day
+    const dayToShow = State.activeDay || State.todayDayNum;
+    const data = this.getTodayData(dayToShow);
     if (!data) return;
 
     // Mobile card
@@ -1385,6 +1465,22 @@ const App = {
         }
       });
     });
+    // If this is the active devotional day, append the "Pour aujourd'hui" reminder
+    const effectiveActiveDay = State.activeDay || State.todayDayNum;
+    if (unit.day_number && unit.day_number === effectiveActiveDay) {
+      const data = this.getTodayData(unit.day_number);
+      if (data) {
+        html += `
+          <div class="reader-today-reminder">
+            <div class="rtr-header">
+              <span class="rtr-header-label">✦ Pour aujourd'hui — ${this.esc(data.ordinal)}</span>
+            </div>
+            ${data.pratique ? `<div class="rtr-section"><div class="rtr-section-label">Petite pratique</div><div class="rtr-pratique">${this.esc(data.pratique)}</div></div>` : ''}
+            ${data.oraison  ? `<div class="rtr-section"><div class="rtr-section-label">Oraison jaculatoire</div><div class="rtr-oraison">${this.esc(data.oraison)}</div></div>` : ''}
+          </div>`;
+      }
+    }
+
     document.getElementById(bodyId).innerHTML = html;
   },
 
@@ -1408,6 +1504,15 @@ const App = {
     const hasFav = unit.sections.flatMap(s=>s.paragraphs.map(p=>p.paragraph_id)).some(pid=>State.favorites.has(pid));
     document.getElementById('fav-icon').textContent = hasFav ? '♥' : '♡';
     document.getElementById('btn-fav').classList.toggle('active', hasFav);
+    // Active day button
+    const effectiveActive = State.activeDay || State.todayDayNum;
+    const isActiveDay = unit.day_number && unit.day_number === effectiveActive;
+    const activBtn = document.getElementById('btn-activate');
+    if (activBtn) {
+      document.getElementById('activate-icon').textContent = isActiveDay ? '✦' : '◇';
+      document.getElementById('activate-label').textContent = isActiveDay ? 'Actif' : 'Activer';
+      activBtn.classList.toggle('active-day-btn', isActiveDay);
+    }
   },
 
   // ── Wide reader nav + actions ─────────────────────────────────
@@ -1430,6 +1535,15 @@ const App = {
     const hasFav = unit.sections.flatMap(s=>s.paragraphs.map(p=>p.paragraph_id)).some(pid=>State.favorites.has(pid));
     document.getElementById('wide-fav-icon').textContent = hasFav ? '♥' : '♡';
     document.getElementById('wide-btn-fav').classList.toggle('active', hasFav);
+    // Active day button
+    const effectiveActive = State.activeDay || State.todayDayNum;
+    const isActiveDay = unit.day_number && unit.day_number === effectiveActive;
+    const wideActivBtn = document.getElementById('wide-btn-activate');
+    if (wideActivBtn) {
+      document.getElementById('wide-activate-icon').textContent = isActiveDay ? '✦' : '◇';
+      document.getElementById('wide-activate-label').textContent = isActiveDay ? 'Actif' : 'Activer';
+      wideActivBtn.classList.toggle('active', isActiveDay);
+    }
   },
 
   // ── Actions ──────────────────────────────────────────────────
@@ -1466,6 +1580,28 @@ const App = {
     const text = `31 Jours avec Marie — ${unit.ordinal_source||'Jour '+unit.day_number}\n${unit.title}`;
     if (navigator.share) navigator.share({ title: '31 Jours avec Marie', text }).catch(()=>{});
     else navigator.clipboard?.writeText(text).then(()=>this.showToast('Copié !')).catch(()=>{});
+  },
+
+  // ── Active day ──────────────────────────────────────────────────
+  activateDay() {
+    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    if (!unit?.day_number) return;
+    const d = unit.day_number;
+    const effectiveActive = State.activeDay || State.todayDayNum;
+    if (effectiveActive === d) {
+      // Deactivate — revert to calendar day
+      State.activeDay = null;
+      this.showToast('Jour de pratique réinitialisé');
+    } else {
+      State.activeDay = d;
+      this.showToast('Jour ' + d + ' activé comme jour de pratique ✦');
+    }
+    saveActiveDay();
+    this.updateActionBar(unit);
+    this.updateWideActionBar(unit);
+    this.renderTodayCard();
+    // Re-render reader body to show/hide reminder
+    this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
   },
 
   // ── Text size ─────────────────────────────────────────────────
