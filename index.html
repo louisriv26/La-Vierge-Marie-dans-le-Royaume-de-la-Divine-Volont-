@@ -590,6 +590,121 @@ html, body {
 .toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--ivory); padding: 9px 18px; border-radius: 20px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 100; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+
+/* ════════════════════════════════════════════════
+   POUR AUJOURD'HUI — Pratique + Oraison card
+════════════════════════════════════════════════ */
+.today-actions-card {
+  background: var(--white);
+  border: 0.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.tac-header {
+  background: var(--practice-bg);
+  border-bottom: 0.5px solid var(--accent);
+  padding: 10px 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tac-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.tac-day {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--font-reader);
+  font-style: italic;
+}
+.tac-section {
+  padding: 11px 16px;
+  border-bottom: 0.5px solid var(--border-light);
+}
+.tac-section:last-child { border-bottom: none; }
+.tac-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.tac-text {
+  font-family: var(--font-reader);
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.65;
+}
+.tac-oraison {
+  font-style: italic;
+  color: var(--primary);
+  text-align: center;
+  font-size: 15px;
+  font-family: var(--font-reader);
+  line-height: 1.65;
+}
+
+/* Wide sidebar: today card pinned at bottom of sidebar */
+.ws-today-card {
+  border-top: 0.5px solid var(--accent);
+  background: var(--practice-bg);
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+.ws-today-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.ws-today-pratique {
+  font-family: var(--font-reader);
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.ws-today-oraison {
+  font-family: var(--font-reader);
+  font-size: 12.5px;
+  color: var(--primary);
+  line-height: 1.6;
+  font-style: italic;
+  text-align: center;
+  background: var(--prayer-bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+/* Version badge */
+.version-badge {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  font-family: var(--font-ui);
+  letter-spacing: 0.04em;
+  cursor: default;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.version-badge:hover { color: rgba(255,255,255,0.8); }
+/* Mobile version — in topbar */
+.mobile-version {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -613,6 +728,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
+        <div class="mobile-version">v1.2</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">☰</button>
@@ -631,6 +747,8 @@ html, body {
       </div>
     </div>
     <div class="divider"></div>
+    <!-- Pour aujourd'hui: Pratique + Oraison — always visible -->
+    <div id="today-actions-wrap" style="padding:14px 16px 0;flex-shrink:0;"></div>
     <div class="hero-scroll" id="hero-scroll"></div>
   </div>
 
@@ -711,6 +829,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
+    <span class="version-badge" title="31 Jours avec Marie">v1.2</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -762,6 +881,7 @@ html, body {
       </div>
       <!-- List -->
       <div class="ws-list-scroll" id="wide-list-scroll"></div>
+      <div class="ws-today-card" id="ws-today-card"></div>
     </aside>
 
     <!-- Reader panel -->
@@ -892,6 +1012,7 @@ const App = {
     this.updateWideProgress();
     const dateStr = new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long'}).format(new Date());
     document.getElementById('wide-date-label').textContent = dateStr;
+    this.renderTodayCard();
     // Hide wide loading overlay
     const wl = document.getElementById('wide-loading');
     if (wl) wl.style.display = 'none';
@@ -1056,6 +1177,56 @@ const App = {
     el.outerHTML = this.wideListItem(unit);
   },
 
+
+  // ── Today card: Pratique + Oraison ───────────────────────────
+  getTodayData(dayNum) {
+    const unit = State.dayMap[dayNum];
+    if (!unit) return null;
+    const pratique = unit.sections.find(s => s.section_type === 'practice');
+    const oraison  = unit.sections.find(s => s.section_type === 'jaculatory_prayer');
+    return {
+      pratique: pratique ? pratique.paragraphs.map(p => p.text).join(' ') : '',
+      oraison:  oraison  ? oraison.paragraphs.map(p => p.text).join(' ') : '',
+      ordinal:  unit.ordinal_source || ('Jour ' + dayNum),
+    };
+  },
+
+  renderTodayCard() {
+    const data = this.getTodayData(State.todayDayNum);
+    if (!data) return;
+
+    // Mobile card
+    const mobileWrap = document.getElementById('today-actions-wrap');
+    if (mobileWrap) {
+      mobileWrap.innerHTML = `
+        <div class="today-actions-card">
+          <div class="tac-header">
+            <span class="tac-label">✦ Pour aujourd'hui</span>
+            <span class="tac-day">${this.esc(data.ordinal)}</span>
+          </div>
+          ${data.pratique ? `
+          <div class="tac-section">
+            <div class="tac-section-label">Petite pratique</div>
+            <div class="tac-text">${this.esc(data.pratique)}</div>
+          </div>` : ''}
+          ${data.oraison ? `
+          <div class="tac-section">
+            <div class="tac-section-label">Oraison jaculatoire</div>
+            <div class="tac-oraison">${this.esc(data.oraison)}</div>
+          </div>` : ''}
+        </div>`;
+    }
+
+    // Wide sidebar card pinned at bottom
+    const wideCard = document.getElementById('ws-today-card');
+    if (wideCard) {
+      wideCard.innerHTML = `
+        <div class="ws-today-label">✦ Pour aujourd'hui — ${this.esc(data.ordinal)}</div>
+        ${data.pratique ? `<div class="ws-today-pratique">${this.esc(data.pratique)}</div>` : ''}
+        ${data.oraison  ? `<div class="ws-today-oraison">${this.esc(data.oraison)}</div>`  : ''}`;
+    }
+  },
+
   // ── Home (mobile) ────────────────────────────────────────────
   renderHome() {
     const today = State.todayDayNum;
@@ -1063,6 +1234,7 @@ const App = {
     const dayNum = unit.day_number;
     const dateStr = new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long'}).format(new Date());
     document.getElementById('home-date-label').textContent = dateStr;
+    this.renderTodayCard();
     this.updateCalendar();
     const si = unit.sections.find(s => s.section_type === 'soul_intro');
     const le = unit.sections.find(s => s.section_type === 'lesson');
