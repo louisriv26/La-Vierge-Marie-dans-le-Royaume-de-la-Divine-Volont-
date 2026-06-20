@@ -492,6 +492,13 @@ html, body {
 
 .progress-wrap { padding: 6px 16px 10px; flex-shrink: 0; }
 .progress-row { display: flex; align-items: center; gap: 10px; }
+
+/* ── Appendix circles row ──────────────────────────────────────── */
+.appendix-row { display: flex; gap: 5px; padding: 6px 0 2px; align-items: center; }
+.appendix-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; flex-shrink: 0; }
+.app-circle { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
+.app-circle.read { background: var(--accent); border-color: var(--accent); color: #fff; }
+.app-circle:hover { border-color: var(--primary); color: var(--primary); }
 .progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
 .progress-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
@@ -846,7 +853,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version">v1.3</div>
+        <div class="mobile-version">v1.5</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.toggleDark()" aria-label="Mode sombre" title="Mode sombre">☽</button>
@@ -856,6 +863,7 @@ html, body {
     <div class="calendar-wrap">
       <div class="calendar-label">Ce mois</div>
       <div class="calendar-grid" id="cal-grid" role="grid"></div>
+      <div class="appendix-row" id="app-row-mobile"></div>
     </div>
     <div class="progress-wrap">
       <div class="progress-row">
@@ -963,7 +971,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie">v1.3</span>
+    <span class="version-badge" title="31 Jours avec Marie">v1.5</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1006,6 +1014,7 @@ html, body {
       <!-- Calendar -->
       <div class="ws-cal-wrap">
         <div class="ws-cal-grid" id="wide-cal-grid" role="grid"></div>
+        <div class="appendix-row" id="app-row-wide"></div>
       </div>
       <!-- Progress -->
       <div class="ws-header">
@@ -1067,7 +1076,11 @@ html, body {
       </div>
 
       <!-- Aide panel (inside main, replaces reader content) -->
-      <div id="wide-aide" style="display:none;flex:1;overflow-y:auto;background:var(--ivory);"></div>
+      <div id="wide-aide" style="display:none;flex:1;overflow-y:auto;background:var(--ivory);">
+        <div style="position:sticky;top:0;z-index:2;background:var(--ivory);padding:10px 28px 0;display:flex;justify-content:flex-end;">
+          <button onclick="App.wideNav('jours')" style="background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:13px;cursor:pointer;">✕ Fermer</button>
+        </div>
+      </div>
 
     </main>
 
@@ -1103,7 +1116,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.5';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1175,6 +1188,7 @@ const App = {
     this.buildWideCalendar();
     this.buildWideList();
     this.updateWideProgress();
+    this.updateAppendixRows();
     const dateStr = new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long'}).format(new Date());
     document.getElementById('wide-date-label').textContent = dateStr;
     this.renderTodayCard();
@@ -1232,6 +1246,8 @@ const App = {
       const hasOpen = State.currentSeq > 0 && State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
       readerContent.style.display = hasOpen ? 'flex' : 'none';
       welcome.style.display = hasOpen ? 'none' : 'flex';
+      welcome.style.visibility = 'visible';
+      welcome.style.opacity = '1';
     } else if (panel === 'espace') {
       readerContent.style.display = 'none';
       welcome.style.display = 'none';
@@ -1265,6 +1281,25 @@ const App = {
     }
   },
 
+  buildAppendixRow(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el || !State.corpus) return;
+    const apps = State.corpus.filter(u => u.unit_type === 'appendix')
+      .sort((a, b) => a.appendix_number - b.appendix_number);
+    if (!apps.length) { el.style.display = 'none'; return; }
+    el.innerHTML = '<span class="appendix-label">App.</span>' +
+      apps.map(u => {
+        const isRead = State.read.has(u.unit_id);
+        const cls = isRead ? ' read' : '';
+        return '<button class="app-circle' + cls + '" title="' + u.title + '" onclick="App.openUnit(' + "'" + u.unit_id + "'" + ')">A' + u.appendix_number + '</button>';
+      }).join('');
+  },
+
+  updateAppendixRows() {
+    this.buildAppendixRow('app-row-mobile');
+    this.buildAppendixRow('app-row-wide');
+  },
+
   updateCalendar() {
     document.querySelectorAll('.cal-cell').forEach(cell => {
       const d = parseInt(cell.dataset.day);
@@ -1277,6 +1312,7 @@ const App = {
     const total = State.corpus ? State.corpus.length : 37;
     document.getElementById('progress-fill').style.width = (count/total*100) + '%';
     document.getElementById('progress-label').textContent = count + ' / ' + total;
+    this.updateAppendixRows();
   },
 
   // ── Calendar (wide) ──────────────────────────────────────────
@@ -1307,6 +1343,7 @@ const App = {
       cell.classList.toggle('read', State.read.has(unit.unit_id));
       cell.classList.toggle('active-day', State.activeDay === d);
     });
+    this.updateAppendixRows();
   },
 
   updateWideProgress() {
@@ -1813,7 +1850,12 @@ const App = {
   renderHelp(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    el.innerHTML = `
+    // Remove previous help content if any, keep the sticky close button (first child)
+    const existing = el.querySelector('.help-content');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = 'help-content';
+    div.innerHTML = `
     <div style="padding:16px 16px 0">
 
       <div class="help-section">
@@ -2046,6 +2088,7 @@ const App = {
 
       <div style="height:32px"></div>
     </div>`;
+    el.appendChild(div);
   },
   renderEspace(containerId) {
     const el = document.getElementById(containerId);
