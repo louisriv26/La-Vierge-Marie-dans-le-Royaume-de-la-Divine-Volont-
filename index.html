@@ -1065,13 +1065,14 @@ html, body {
           <button class="wrn-btn" id="wide-next" disabled><span class="wrn-label" id="wide-next-label">Suivant</span> →</button>
         </div>
       </div>
+
+      <!-- Aide panel (inside main, replaces reader content) -->
+      <div id="wide-aide" style="display:none;flex:1;overflow-y:auto;background:var(--ivory);"></div>
+
     </main>
 
     <!-- Mon Espace panel -->
     <div id="wide-espace"></div>
-
-    <!-- Aide panel -->
-    <div id="wide-aide" style="display:none;flex:1;overflow-y:auto;padding:28px 48px;background:var(--ivory);"></div>
 
   </div><!-- /wide-body -->
 </div><!-- /wide-shell -->
@@ -1510,8 +1511,8 @@ const App = {
       const rc = document.getElementById('wide-reader-content');
       document.getElementById('wide-welcome').style.display = 'none';
       rc.style.display = 'flex';
-      // Switch to jours panel if espace is open
-      if (State.widePanel === 'espace') this.wideNav('jours');
+      // Switch to jours panel if espace or aide is open
+      if (State.widePanel === 'espace' || State.widePanel === 'aide') this.wideNav('jours');
 
       // Populate wide reader
       document.getElementById('wide-hero-badge').textContent = badge;
@@ -2043,9 +2044,6 @@ const App = {
         </div>
       </div>
 
-      <div class="help-tip">
-        « Maman Reine, enferme-moi dans le Temple sacré de la Volonté de Dieu. »
-      </div>
       <div style="height:32px"></div>
     </div>`;
   },
