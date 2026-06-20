@@ -677,6 +677,19 @@ html, body {
 }
 
 /* ── Help section ──────────────────────────────────────────── */
+/* ── Reset section ───────────────────────────────────────────── */
+.cycle-section { padding: 0 16px; }
+.cycle-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.3s, background 0.3s; }
+.cycle-card.ready { border-color: var(--accent); background: var(--practice-bg); }
+.cycle-icon { font-size: 24px; flex-shrink: 0; opacity: 0.35; transition: opacity 0.3s; }
+.cycle-card.ready .cycle-icon { opacity: 1; }
+.cycle-text { flex: 1; }
+.cycle-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 3px; transition: color 0.3s; }
+.cycle-card.ready .cycle-label { color: var(--accent); }
+.cycle-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.cycle-btn { flex-shrink: 0; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--border); color: var(--muted); font-size: 12px; font-weight: 700; cursor: not-allowed; white-space: nowrap; transition: all 0.3s; }
+.cycle-card.ready .cycle-btn { border-color: var(--accent); background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
+
 .help-section { margin-bottom: 24px; }
 .help-section-title {
   font-family: var(--font-reader); font-size: 16px; color: var(--primary);
@@ -846,10 +859,10 @@ html, body {
     </div>
     <div class="progress-wrap">
       <div class="progress-row">
-        <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="31">
+        <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="37">
           <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
         </div>
-        <div class="progress-label" id="progress-label">0 / 31</div>
+        <div class="progress-label" id="progress-label">0 / 37</div>
       </div>
     </div>
     <div class="divider"></div>
@@ -1001,7 +1014,7 @@ html, body {
           <div class="ws-progress-track">
             <div class="ws-progress-fill" id="wide-progress-fill" style="width:0%"></div>
           </div>
-          <div class="ws-progress-label" id="wide-progress-label">0 / 31</div>
+          <div class="ws-progress-label" id="wide-progress-label">0 / 37</div>
         </div>
       </div>
       <!-- List -->
@@ -1243,7 +1256,7 @@ const App = {
       if (!unit) { cell.classList.add('appendix'); cell.disabled = true; }
       else {
         if (i === State.todayDayNum) cell.classList.add('today');
-        if (State.read.has(i)) cell.classList.add('read');
+        if (State.read.has(unit.unit_id)) cell.classList.add('read');
         if (State.activeDay === i) cell.classList.add('active-day');
         cell.addEventListener('click', () => this.openDay(i));
       }
@@ -1254,13 +1267,15 @@ const App = {
   updateCalendar() {
     document.querySelectorAll('.cal-cell').forEach(cell => {
       const d = parseInt(cell.dataset.day);
-      if (!State.dayMap[d]) return;
-      cell.classList.toggle('read', State.read.has(d));
+      const unit = State.dayMap[d];
+      if (!unit) return;
+      cell.classList.toggle('read', State.read.has(unit.unit_id));
       cell.classList.toggle('active-day', State.activeDay === d);
     });
     const count = State.read.size;
-    document.getElementById('progress-fill').style.width = (count/31*100) + '%';
-    document.getElementById('progress-label').textContent = count + ' / 31';
+    const total = State.corpus ? State.corpus.length : 37;
+    document.getElementById('progress-fill').style.width = (count/total*100) + '%';
+    document.getElementById('progress-label').textContent = count + ' / ' + total;
   },
 
   // ── Calendar (wide) ──────────────────────────────────────────
@@ -1275,7 +1290,7 @@ const App = {
       if (!unit) { cell.classList.add('appendix'); cell.disabled = true; }
       else {
         if (i === State.todayDayNum) cell.classList.add('today');
-        if (State.read.has(i)) cell.classList.add('read');
+        if (State.read.has(unit.unit_id)) cell.classList.add('read');
         if (State.activeDay === i) cell.classList.add('active-day');
         cell.addEventListener('click', () => this.openDay(i));
       }
@@ -1286,16 +1301,18 @@ const App = {
   updateWideCalendar() {
     document.querySelectorAll('.ws-cal-cell').forEach(cell => {
       const d = parseInt(cell.dataset.wday);
-      if (!State.dayMap[d]) return;
-      cell.classList.toggle('read', State.read.has(d));
+      const unit = State.dayMap[d];
+      if (!unit) return;
+      cell.classList.toggle('read', State.read.has(unit.unit_id));
       cell.classList.toggle('active-day', State.activeDay === d);
     });
   },
 
   updateWideProgress() {
     const count = State.read.size;
-    document.getElementById('wide-progress-fill').style.width = (count/31*100) + '%';
-    document.getElementById('wide-progress-label').textContent = count + ' / 31';
+    const total = State.corpus ? State.corpus.length : 37;
+    document.getElementById('wide-progress-fill').style.width = (count/total*100) + '%';
+    document.getElementById('wide-progress-label').textContent = count + ' / ' + total;
   },
 
   // ── Sidebar list (wide) ──────────────────────────────────────
@@ -1313,7 +1330,7 @@ const App = {
 
   wideListItem(u) {
     const isToday = u.day_number === State.todayDayNum;
-    const isRead  = State.read.has(u.day_number);
+    const isRead  = State.read.has(u.unit_id);
     const isActive = u.sequence_meditative === State.currentSeq;
     const label = u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number;
     const cirCls = isToday ? 'today-c' : (isRead ? 'read-c' : '');
@@ -1449,7 +1466,7 @@ const App = {
   renderListCard(u) {
     const today = State.todayDayNum;
     const isToday = u.day_number === today;
-    const isRead  = State.read.has(u.day_number);
+    const isRead  = State.read.has(u.unit_id);
     const label = u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number;
     const cls   = isToday ? 'today-circle' : (isRead ? 'read-circle' : '');
     const meta  = u.day_number ? (u.date_default||'') : 'Appendice ' + u.appendix_number;
@@ -1580,7 +1597,7 @@ const App = {
   },
 
   updateActionBar(unit) {
-    const isDone = unit.day_number && State.read.has(unit.day_number);
+    const isDone = State.read.has(unit.unit_id);
     document.getElementById('complete-icon').textContent = isDone ? '✓' : '○';
     document.getElementById('complete-label').textContent = isDone ? 'Lu' : 'Terminé';
     document.getElementById('btn-complete').classList.toggle('done', !!isDone);
@@ -1611,7 +1628,7 @@ const App = {
   },
 
   updateWideActionBar(unit) {
-    const isDone = unit.day_number && State.read.has(unit.day_number);
+    const isDone = State.read.has(unit.unit_id);
     document.getElementById('wide-complete-icon').textContent = isDone ? '✓' : '○';
     document.getElementById('wide-complete-label').textContent = isDone ? 'Lu' : 'Terminé';
     document.getElementById('wide-btn-complete').classList.toggle('done', !!isDone);
@@ -1632,15 +1649,17 @@ const App = {
   // ── Actions ──────────────────────────────────────────────────
   toggleComplete() {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
-    if (!unit?.day_number) return;
-    const d = unit.day_number;
-    if (State.read.has(d)) { State.read.delete(d); this.showToast('Marqué comme non lu'); }
-    else { State.read.add(d); this.showToast('Jour ' + d + ' terminé ✓'); }
+    if (!unit) return;
+    const key = unit.unit_id;
+    const label = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
+    if (State.read.has(key)) { State.read.delete(key); this.showToast('Marqué comme non lu'); }
+    else { State.read.add(key); this.showToast(label + ' terminé ✓'); }
     saveRead();
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
     this.updateCalendar();
     this.updateWideCalendar();
+    this.updateProgress();
     this.updateWideProgress();
   },
 
@@ -1794,92 +1813,241 @@ const App = {
     const el = document.getElementById(containerId);
     if (!el) return;
     el.innerHTML = `
+    <div style="padding:16px 16px 0">
+
       <div class="help-section">
-        <div class="help-section-title">✦ Commencer</div>
-        <div class="help-item">
-          <div class="help-icon">◎</div>
-          <div class="help-text">
-            <div class="help-label">Choisir un jour</div>
-            <div class="help-desc">Appuyez sur un numéro du calendrier ou parcourez la liste « Jours » pour ouvrir une méditation.</div>
-          </div>
-        </div>
+        <div class="help-section-title">✶ À propos de cette application</div>
+        <p class="help-desc" style="margin-bottom:12px">
+          <strong>31 Jours avec Marie</strong> est une application de méditation spirituelle basée sur
+          l’ouvrage <em>La Vierge Marie dans le Royaume de la Divine Volonté</em> de Luisa Piccarreta.
+          Elle propose 31 méditations quotidiennes accompagnées de 6 appendices, soit 37 unités au total.
+          L’application fonctionne hors-ligne une fois installée.
+        </p>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Navigation principale</div>
+
         <div class="help-item">
           <div class="help-icon">⌂</div>
           <div class="help-text">
             <div class="help-label">Accueil</div>
-            <div class="help-desc">L'écran d'accueil affiche la méditation du jour courant avec un extrait et le raccourci « Lire ».</div>
+            <div class="help-desc">Affiche le calendrier du mois, la barre de progression, la méditation du jour courant et la carte « Pour aujourd’hui » avec la petite pratique et l’oraison jaculatoire.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">◎</div>
+          <div class="help-text">
+            <div class="help-label">Jours</div>
+            <div class="help-desc">Liste complète des 31 méditations suivies des 6 appendices. Les jours lus apparaissent en or. Appuyez sur n’importe quelle ligne pour ouvrir la méditation.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">♡</div>
+          <div class="help-text">
+            <div class="help-label">Mon Espace</div>
+            <div class="help-desc">Regroupe vos statistiques (jours lus, favoris, notes), vos passages favoris, vos notes personnelles et les options de réinitialisation.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">?</div>
+          <div class="help-text">
+            <div class="help-label">Aide</div>
+            <div class="help-desc">Cette page. Accessible à tout moment depuis la barre de navigation.</div>
           </div>
         </div>
       </div>
+
       <div class="help-section">
-        <div class="help-section-title">✦ Lire une méditation</div>
+        <div class="help-section-title">✶ Le calendrier</div>
+
         <div class="help-item">
-          <div class="help-icon">✦</div>
+          <div class="help-icon">1–31</div>
           <div class="help-text">
-            <div class="help-label">Structure d'un jour</div>
-            <div class="help-desc">Chaque méditation comporte : l'introduction de l'Âme, la Leçon de la Reine du Ciel, la Réponse de l'Âme, une Petite pratique et une Oraison jaculatoire.</div>
+            <div class="help-label">Jours du mois</div>
+            <div class="help-desc">Chaque chiffre correspond à une méditation. Appuyez pour l’ouvrir directement. Les jours au-delà du 31 (ou avant le 1er) sont grisés et non navigables.</div>
           </div>
         </div>
+
+        <div class="help-item">
+          <div class="help-icon" style="background:var(--primary);color:#fff;font-size:12px">15</div>
+          <div class="help-text">
+            <div class="help-label">Aujourd’hui</div>
+            <div class="help-desc">Le jour calendaire actuel est mis en valeur en bleu Marian avec un halo doré. L’application s’ouvre automatiquement sur ce jour.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon" style="background:var(--accent);color:#fff;font-size:12px">8</div>
+          <div class="help-text">
+            <div class="help-label">Jour lu</div>
+            <div class="help-desc">Les jours marqués comme terminés apparaissent en or. La barre de progression se met à jour automatiquement sur 37 (31 jours + 6 appendices).</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon" style="box-shadow:0 0 0 2.5px var(--accent),0 0 0 4.5px rgba(201,168,76,0.3);font-size:12px">20</div>
+          <div class="help-text">
+            <div class="help-label">Jour de pratique actif</div>
+            <div class="help-desc">Un double anneau doré indique votre jour de pratique personnel défini manuellement (voir ci-dessous). Il peut être différent du jour calendaire.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Lire une méditation</div>
+
+        <div class="help-item">
+          <div class="help-icon">✶</div>
+          <div class="help-text">
+            <div class="help-label">Structure d’un jour</div>
+            <div class="help-desc">Chaque méditation est composée de cinq parties dans cet ordre :<br>
+            <strong>1. L’Âme</strong> — Introduction de l’âme (fond lavande, italique)<br>
+            <strong>2. Leçon de la Reine du Ciel</strong> — Enseignement de Marie<br>
+            <strong>3. Réponse de l’Âme</strong> — Acte de l’âme en réponse (fond lavande, italique)<br>
+            <strong>4. Petite pratique</strong> — Action concrète pour la journée (fond crème, bordure or)<br>
+            <strong>5. Oraison jaculatoire</strong> — Brève prière de la journée (centrée, en bleu)</div>
+          </div>
+        </div>
+
         <div class="help-item">
           <div class="help-icon">Aᵃ</div>
           <div class="help-text">
             <div class="help-label">Taille du texte</div>
-            <div class="help-desc">Ajustez la taille de lecture avec le curseur Aᵃ (en haut à droite). Le réglage est mémorisé.</div>
+            <div class="help-desc">Le bouton Aᵃ (en haut à droite) ouvre un curseur pour ajuster la taille de lecture de 14 à 22 px. Le réglage est mémorisé entre les sessions.</div>
           </div>
         </div>
+
         <div class="help-item">
           <div class="help-icon">←→</div>
           <div class="help-text">
             <div class="help-label">Navigation entre jours</div>
-            <div class="help-desc">Les flèches « Jour précédent / suivant » en bas du lecteur permettent de passer d'une méditation à l'autre en séquence.</div>
+            <div class="help-desc">Les boutons « Jour précédent » et « Jour suivant » en bas du lecteur permettent de parcourir les 37 unités en séquence, y compris les appendices après le Jour 31.</div>
           </div>
         </div>
       </div>
+
       <div class="help-section">
-        <div class="help-section-title">✦ Marquer et personnaliser</div>
+        <div class="help-section-title">✶ Les appendices</div>
+        <p class="help-desc" style="margin-bottom:10px">
+          Après le Jour 31, l’application propose 6 appendices issus du même ouvrage. Ils prolongent naturellement le cycle des 31 jours et peuvent être parcourus à la suite ou repris séparément.
+        </p>
         <div class="help-item">
-          <div class="help-icon">○</div>
+          <div class="help-icon">A1–A6</div>
           <div class="help-text">
-            <div class="help-label">Marquer comme lu</div>
-            <div class="help-desc">Le bouton « Terminé » marque le jour comme lu. Il apparaît en or dans le calendrier et la barre de progression avance.</div>
+            <div class="help-label">Accès aux appendices</div>
+            <div class="help-desc">Ils apparaissent dans la liste « Jours » après le Jour 31, et dans le lecteur via le bouton « Jour suivant » depuis le Jour 31. Ils peuvent être marqués comme lus et contribuent à la progression (compteur /37).</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Marquer et progresser</div>
+
+        <div class="help-item">
+          <div class="help-icon">✓</div>
+          <div class="help-text">
+            <div class="help-label">Marquer comme terminé</div>
+            <div class="help-desc">Le bouton « Terminé » (en haut du lecteur) marque le jour ou l’appendice comme lu. Le chiffre dans le calendrier devient or, la barre de progression avance. Appuyez à nouveau pour annuler.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">0/37</div>
+          <div class="help-text">
+            <div class="help-label">Barre de progression</div>
+            <div class="help-desc">Affichée sous le calendrier. Elle compte les 31 jours <em>et</em> les 6 appendices pour un total de 37. Compléter un cycle entier = 37/37.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Favoris et notes</div>
+
+        <div class="help-item">
+          <div class="help-icon">♡</div>
+          <div class="help-text">
+            <div class="help-label">Ajouter un favori</div>
+            <div class="help-desc">Chaque paragraphe dispose d’une icône cœur (visible au survol ou au tap). Appuyez pour sauvegarder le passage. Retrouvez tous vos favoris dans Mon Espace.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">✎</div>
+          <div class="help-text">
+            <div class="help-label">Notes personnelles</div>
+            <div class="help-desc">L’icône crayon ouvre une zone de note privée (jusqu’à 1 000 caractères) attachée à ce paragraphe spécifique. Vos notes sont conservées même lors des mises à jour de l’application. Elles s’affichent en jaune sous le paragraphe concerné.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Jour de pratique actif</div>
+        <div class="help-item">
+          <div class="help-icon">✶</div>
+          <div class="help-text">
+            <div class="help-label">Activer un jour</div>
+            <div class="help-desc">Le bouton « Activer » dans le lecteur désigne ce jour comme votre jour de pratique personnel, indépendamment de la date du calendrier. La carte « Pour aujourd’hui » sur l’accueil et dans le lecteur affiche toujours la pratique et l’oraison de <em>ce</em> jour. Un double anneau doré l’identifie dans le calendrier. Appuyez à nouveau pour revenir au jour calendaire.</div>
           </div>
         </div>
         <div class="help-item">
           <div class="help-icon">♡</div>
           <div class="help-text">
-            <div class="help-label">Favoris</div>
-            <div class="help-desc">Appuyez sur le cœur (♡) à côté d'un paragraphe pour le sauvegarder dans Mon Espace.</div>
-          </div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">✎</div>
-          <div class="help-text">
-            <div class="help-label">Notes personnelles</div>
-            <div class="help-desc">Le crayon (✎) visible sur chaque paragraphe ouvre un espace de note privé (1 000 caractères). Vos notes survivent aux mises à jour.</div>
-          </div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">✦</div>
-          <div class="help-text">
-            <div class="help-label">Jour de pratique actif</div>
-            <div class="help-desc">Le bouton « Activer » dans le lecteur désigne un jour comme votre jour de pratique personnel — indépendamment de la date du calendrier. Une couronne or apparaît sur ce jour dans le calendrier. La carte « Pour aujourd'hui » sur l'accueil reflète ce choix. Appuyez de nouveau sur « Activer » pour revenir au jour calendaire.</div>
+            <div class="help-label">Cas d’usage</div>
+            <div class="help-desc">Utile si vous avancez plus lentement que le rythme calendaire, ou si vous souhaitez approfondir un jour particulier pendant plusieurs jours consécutifs sans perdre le lien avec sa pratique.</div>
           </div>
         </div>
       </div>
+
       <div class="help-section">
-        <div class="help-section-title">✦ Affichage</div>
+        <div class="help-section-title">✶ Affichage</div>
+
         <div class="help-item">
           <div class="help-icon">☽</div>
           <div class="help-text">
             <div class="help-label">Mode sombre</div>
-            <div class="help-desc">Le bouton ☽ bascule entre le mode clair et le mode sombre. Le choix est mémorisé même si votre appareil change de mode automatiquement.</div>
+            <div class="help-desc">Le bouton ☽ (en haut de l’écran) bascule entre le mode clair et le mode sombre. Le choix est mémorisé et prime sur le réglage automatique de l’appareil.</div>
           </div>
         </div>
       </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Fin de cycle</div>
+        <div class="help-item">
+          <div class="help-icon">✶</div>
+          <div class="help-text">
+            <div class="help-label">Nouveau cycle</div>
+            <div class="help-desc">Dans <strong>Mon Espace</strong>, le bouton « Nouveau cycle » s'allume en or dès que vous avez marqué 31 jours ou plus — que ce soit dans l'application, sur votre mobile ou dans le livre. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos notes et favoris sont toujours conservés.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Installation et mode hors-ligne</div>
+        <div class="help-item">
+          <div class="help-icon">⤓</div>
+          <div class="help-text">
+            <div class="help-label">Installer sur l’écran d’accueil</div>
+            <div class="help-desc">Sur iPhone : appuyez sur « Partager » puis « Sur l’écran d’accueil ». Sur Android : le navigateur propose automatiquement « Installer ». Une fois installée, l’application fonctionne entièrement hors-ligne.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">↺</div>
+          <div class="help-text">
+            <div class="help-label">Mises à jour</div>
+            <div class="help-desc">L’application se met à jour automatiquement dès qu’une connexion est disponible. Une notification peut apparaître puis l’application se recharge — vos données sont préservées.</div>
+          </div>
+        </div>
+      </div>
+
       <div class="help-tip">
         « Maman Reine, enferme-moi dans le Temple sacré de la Volonté de Dieu. »
       </div>
-      <div style="height:24px"></div>`;
+      <div style="height:32px"></div>
+    </div>`;
   },
   renderEspace(containerId) {
     const el = document.getElementById(containerId);
@@ -1913,7 +2081,22 @@ const App = {
     if (!readCount && !favCount && !noteCount) {
       html += '<div class="espace-empty"><div class="espace-empty-icon">✦</div><div class="espace-empty-text">Votre progression, vos favoris<br>et vos notes apparaîtront ici.</div></div>';
     }
-    html += '<div style="height:16px"></div>';
+    html += `
+      <div class="espace-section-title" style="margin-top:24px">Fin de cycle</div>
+      <div class="cycle-section">
+        <div class="cycle-card${readCount >= 31 ? ' ready' : ''}">
+          <div class="cycle-icon">✶</div>
+          <div class="cycle-text">
+            <div class="cycle-label">${readCount >= 31 ? 'Prêt pour un nouveau cycle !' : 'Disponible à partir du Jour 31'}</div>
+            <div class="cycle-desc">${readCount >= 31
+              ? 'Vos notes et favoris seront conservés.'
+              : 'Revenez ici lorsque vous approchez de la fin des 31 jours.'}</div>
+          </div>
+          <button class="cycle-btn" ${readCount >= 31 ? 'onclick="App.startNewCycle()"' : 'disabled'}>↺ Nouveau cycle</button>
+        </div>
+      </div>
+    `;
+    html += '<div style="height:24px"></div>';
     el.innerHTML = html;
   },
 

@@ -10,14 +10,24 @@ This repository is deployed via **GitHub Pages** (Settings → Pages → Branch:
 
 Live URL: `https://<username>.github.io/<repo-name>/`
 
-## Features
+## Version sync (mandatory on every deploy)
+
+Three locations must always match:
+- `sw.js` line 2: `const CACHE = 'mjv-v1.4.0';`
+- `index.html`: `const APP_VERSION = '1.4';`
+- `index.html` visible badge: `v1.4`
+
+## Features (v1.4)
 
 - Date-aware: opens to today's meditation automatically
 - Offline-capable (service worker, cache-first)
 - Text size slider (14–22px, persisted)
 - Notes tied to stable paragraph references
 - Favorites and reading progress (localStorage, no account needed)
-- Dark mode (system preference)
+- Dark mode: manual toggle ☽ (persisted) + system preference fallback
+- Active day ring: gold double-ring on calendar for the active practice day
+- Help section: dedicated Aide screen (mobile) and panel (desktop/iPad)
+- Wider sidebar on iPad (340px) and desktop (380px)
 - Installable as PWA on iOS and Android
 
 ## Corpus
