@@ -525,6 +525,16 @@ html, body {
 .hero-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .list-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 14px 0 8px; }
 
+/* Search bar */
+.search-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
+.search-row { display: flex; align-items: center; gap: 6px; background: var(--ivory-deep); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; }
+.search-icon { color: var(--muted); font-size: 13px; flex-shrink: 0; }
+.search-input { flex: 1; border: none; background: transparent; color: var(--ink); font-size: 13px; font-family: var(--font-ui); outline: none; }
+.search-input::placeholder { color: var(--muted); }
+.search-clear { color: var(--muted); font-size: 14px; cursor: pointer; padding: 0 2px; display: none; background: transparent; border: none; line-height: 1; }
+.search-clear.visible { display: block; }
+.search-empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; font-style: italic; }
+
 .list-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 16px 0; }
 .list-card { display: flex; align-items: center; gap: 12px; background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; -webkit-tap-highlight-color: transparent; }
 .list-card:hover { border-color: var(--primary); background: var(--ivory-deep); }
@@ -855,7 +865,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version">v1.7</div>
+        <div class="mobile-version">v1.8</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.toggleDark()" aria-label="Mode sombre" title="Mode sombre">☽</button>
@@ -885,6 +895,13 @@ html, body {
     <div class="topbar">
       <div><div class="topbar-title">Les 31 Jours</div><div class="topbar-sub">Vierge Marie — Luisa Piccarreta</div></div>
       <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
+    </div>
+    <div class="search-wrap">
+      <div class="search-row">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" oninput="App.onSearch(this.value,'list-scroll','search-clear')">
+        <button class="search-clear" id="search-clear" aria-label="Effacer" onclick="App.clearSearch('search-input','list-scroll','search-clear')">✕</button>
+      </div>
     </div>
     <div class="list-scroll" id="list-scroll"></div>
   </div>
@@ -973,7 +990,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie">v1.7</span>
+    <span class="version-badge" title="31 Jours avec Marie">v1.8</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1028,7 +1045,14 @@ html, body {
           <div class="ws-progress-label" id="wide-progress-label">0 / 37</div>
         </div>
       </div>
-      <!-- List -->
+      <!-- Search + List -->
+      <div class="search-wrap" style="padding:6px 12px 2px;">
+        <div class="search-row">
+          <span class="search-icon">⌕</span>
+          <input class="search-input" id="wide-search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" oninput="App.onSearch(this.value,'wide-list-scroll','wide-search-clear')">
+          <button class="search-clear" id="wide-search-clear" aria-label="Effacer" onclick="App.clearSearch('wide-search-input','wide-list-scroll','wide-search-clear')">✕</button>
+        </div>
+      </div>
       <div class="ws-list-scroll" id="wide-list-scroll"></div>
       <div class="ws-today-card" id="ws-today-card"></div>
     </aside>
@@ -1118,7 +1142,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.8';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1503,6 +1527,51 @@ const App = {
       '<div class="list-section-label" style="margin-top:16px">Compléments — Appendices</div>' +
       apps.map(u => this.renderListCard(u)).join('') +
       '<div style="height:16px"></div>';
+    // Re-apply any active search query
+    const q = document.getElementById('search-input')?.value || '';
+    if (q) this.renderSearchResults(q, 'list-scroll', 'search-clear');
+  },
+
+  onSearch(query, scrollId, clearId) {
+    document.getElementById(clearId)?.classList.toggle('visible', query.length > 0);
+    this.renderSearchResults(query, scrollId, clearId);
+  },
+
+  clearSearch(inputId, scrollId, clearId) {
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    document.getElementById(clearId)?.classList.remove('visible');
+    // Rebuild full list
+    if (scrollId === 'list-scroll') this.buildList();
+    else this.buildWideList();
+  },
+
+  renderSearchResults(query, scrollId, clearId) {
+    const el = document.getElementById(scrollId);
+    if (!el) return;
+    if (!query.trim()) {
+      if (scrollId === 'list-scroll') this.buildList();
+      else this.buildWideList();
+      return;
+    }
+    const strip = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const q = strip(query.trim());
+    const matches = State.corpus.filter(u => {
+      const title = strip(u.title);
+      return title.includes(q);
+    });
+    if (matches.length === 0) {
+      el.innerHTML = `<div class="search-empty">Aucun résultat pour « ${this.esc(query)} »</div>`;
+      return;
+    }
+    // Use list cards for mobile, wide list items for sidebar
+    if (scrollId === 'list-scroll') {
+      el.innerHTML = matches.map(u => this.renderListCard(u)).join('') + '<div style="height:16px"></div>';
+    } else {
+      el.innerHTML = matches.map(u => this.wideListItem(u)).join('');
+      const activeUid = State.corpus.find(u => u.sequence_meditative === State.currentSeq)?.unit_id;
+      el.querySelectorAll('.ws-list-item').forEach(item => item.classList.toggle('active', item.dataset.uid === activeUid));
+    }
   },
 
   renderListCard(u) {
