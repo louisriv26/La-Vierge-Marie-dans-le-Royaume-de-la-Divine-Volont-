@@ -846,6 +846,42 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+/* Debug overlay */
+#debug-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.75);
+  align-items: center; justify-content: center;
+}
+#debug-overlay.open { display: flex; }
+#debug-box {
+  background: var(--ivory-deep);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  min-width: 280px; max-width: 90vw;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink);
+}
+#debug-box h3 {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+#debug-box table { border-collapse: collapse; width: 100%; }
+#debug-box td { padding: 4px 0; vertical-align: top; }
+#debug-box td:first-child { color: var(--muted); padding-right: 16px; white-space: nowrap; }
+#debug-box td:last-child { font-weight: 600; word-break: break-all; }
+#debug-close {
+  margin-top: 16px; width: 100%;
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 9px; font-size: 13px; cursor: pointer;
+}
 </style>
 </head>
 
@@ -865,7 +901,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version">v1.8</div>
+        <div class="mobile-version" onclick="App.debugTap()">v1.9</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.toggleDark()" aria-label="Mode sombre" title="Mode sombre">☽</button>
@@ -990,7 +1026,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie">v1.8</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v1.9</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1119,6 +1155,14 @@ html, body {
 <!-- Toast (shared) -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<div id="debug-overlay" role="dialog" aria-modal="true" aria-label="Debug" onclick="if(event.target===this)App.hideDebug()">
+  <div id="debug-box">
+    <h3>⚙ Debug</h3>
+    <table id="debug-table"></table>
+    <button id="debug-close" onclick="App.hideDebug()">Fermer</button>
+  </div>
+</div>
+
 <!-- Note modal (shared) -->
 <div class="modal-overlay" id="note-modal" onclick="App.closeNoteModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -1142,7 +1186,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '1.8';
+const APP_VERSION = '1.9';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -2230,6 +2274,37 @@ const App = {
   },
 
   // ── Utilities ─────────────────────────────────────────────────
+  debugTap() {
+    const now = Date.now();
+    if (!this._dbgTaps) this._dbgTaps = [];
+    this._dbgTaps = this._dbgTaps.filter(t => now - t < 800);
+    this._dbgTaps.push(now);
+    if (this._dbgTaps.length >= 3) { this._dbgTaps = []; this.showDebug(); }
+  },
+  showDebug() {
+    const swVer = 'mjv-v' + APP_VERSION + '.0';
+    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const rows = [
+      ['App', APP_VERSION],
+      ['SW cache', swVer],
+      ['Corpus', State.corpus.length + ' unités'],
+      ['Lu', State.read.size + ' / ' + State.corpus.length],
+      ['activeDay', State.activeDay ?? 'null'],
+      ['todayDayNum', State.todayDayNum],
+      ['currentSeq', State.currentSeq ?? '—'],
+      ['unit ouvert', unit ? unit.unit_id : '—'],
+      ['Favoris', State.favorites.size],
+      ['Notes', Object.keys(State.notes).length],
+      ['Thème', document.documentElement.dataset.theme ?? 'system'],
+      ['Layout', window.innerWidth + 'px'],
+    ];
+    const tbody = rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+    document.getElementById('debug-table').innerHTML = tbody;
+    document.getElementById('debug-overlay').classList.add('open');
+  },
+  hideDebug() {
+    document.getElementById('debug-overlay').classList.remove('open');
+  },
   showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
