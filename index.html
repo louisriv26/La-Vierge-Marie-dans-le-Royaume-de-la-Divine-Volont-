@@ -24,7 +24,9 @@ window.APP_BASE = (function() {
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2C4A7C">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#2C4A7C" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1720" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Marie">
@@ -853,7 +855,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version">v1.6</div>
+        <div class="mobile-version">v1.7</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.toggleDark()" aria-label="Mode sombre" title="Mode sombre">☽</button>
@@ -971,7 +973,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie">v1.6</span>
+    <span class="version-badge" title="31 Jours avec Marie">v1.7</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1116,7 +1118,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '1.6';
+const APP_VERSION = '1.7';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1728,8 +1730,7 @@ const App = {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (!unit?.day_number) return;
     const d = unit.day_number;
-    const effectiveActive = State.activeDay || State.todayDayNum;
-    if (effectiveActive === d) {
+    if (State.activeDay === d) {
       // Deactivate — revert to calendar day
       State.activeDay = null;
       this.showToast('Jour de pratique réinitialisé');
