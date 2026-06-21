@@ -853,7 +853,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version">v1.5</div>
+        <div class="mobile-version">v1.6</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.toggleDark()" aria-label="Mode sombre" title="Mode sombre">☽</button>
@@ -971,7 +971,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie">v1.5</span>
+    <span class="version-badge" title="31 Jours avec Marie">v1.6</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1116,7 +1116,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.6';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1235,6 +1235,7 @@ const App = {
     document.querySelectorAll('.wt-nav-btn').forEach(b => b.classList.remove('active'));
     const activeBtn = document.getElementById('wnav-' + panel);
     if (activeBtn) { activeBtn.classList.add('active'); activeBtn.setAttribute('aria-pressed', 'true'); }
+    const reader = document.getElementById('wide-reader');
     const readerContent = document.getElementById('wide-reader-content');
     const welcome = document.getElementById('wide-welcome');
     const espace = document.getElementById('wide-espace');
@@ -1243,17 +1244,18 @@ const App = {
     espace.classList.remove('active');
     aide.style.display = 'none';
     if (panel === 'jours') {
+      reader.style.display = '';
       const hasOpen = State.currentSeq > 0 && State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
       readerContent.style.display = hasOpen ? 'flex' : 'none';
       welcome.style.display = hasOpen ? 'none' : 'flex';
       welcome.style.visibility = 'visible';
       welcome.style.opacity = '1';
     } else if (panel === 'espace') {
-      readerContent.style.display = 'none';
-      welcome.style.display = 'none';
+      reader.style.display = 'none';
       espace.classList.add('active');
       this.renderEspace('wide-espace');
     } else if (panel === 'aide') {
+      reader.style.display = '';
       readerContent.style.display = 'none';
       welcome.style.display = 'none';
       aide.style.display = 'block';
@@ -1697,7 +1699,6 @@ const App = {
     this.updateWideActionBar(unit);
     this.updateCalendar();
     this.updateWideCalendar();
-    this.updateProgress();
     this.updateWideProgress();
   },
 
@@ -1744,6 +1745,23 @@ const App = {
     this.renderTodayCard();
     // Re-render reader body to show/hide reminder
     this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
+  },
+
+  // ── Cycle reset ───────────────────────────────────────────────
+  startNewCycle() {
+    if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Notes et favoris seront conservés.')) return;
+    State.read = new Set();
+    State.activeDay = null;
+    saveRead();
+    saveActiveDay();
+    this.updateCalendar();
+    this.updateWideCalendar();
+    this.updateWideProgress();
+    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    if (unit) { this.updateActionBar(unit); this.updateWideActionBar(unit); }
+    if (isWide()) this.renderEspace('wide-espace');
+    else this.renderEspace('espace-scroll');
+    this.showToast('Nouveau cycle commencé ✦');
   },
 
   // ── Text size ─────────────────────────────────────────────────
