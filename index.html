@@ -1214,19 +1214,20 @@ const saveNotes     = () => { try { localStorage.setItem(SK.NOTES, JSON.stringif
 const saveTextSize  = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); } catch(e){} };
 const saveActiveDay = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); } catch(e){} };
 
+// Top-level SW update listener — must be outside DOMContentLoaded so it fires
+// even if the SW activates before the app finishes initialising.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'SW_UPDATED') window.location.reload();
+  });
+}
+
 // ── App ──────────────────────────────────────────────────────
 const App = {
 
   async init() {
     loadStorage();
     this.applyTextSize(State.textSize, false);
-
-    // Reload when SW pushes an update
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', e => {
-        if (e.data?.type === 'SW_UPDATED') window.location.reload();
-      });
-    }
 
     try {
       const controller = new AbortController();
@@ -2115,6 +2116,17 @@ const App = {
           <div class="help-text">
             <div class="help-label">Accès aux appendices</div>
             <div class="help-desc">Ils apparaissent dans la liste « Jours » après le Jour 31, et dans le lecteur via le bouton « Jour suivant » depuis le Jour 31. Ils peuvent être marqués comme lus et contribuent à la progression (compteur /37).</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Recherche</div>
+        <div class="help-item">
+          <div class="help-icon">⌕</div>
+          <div class="help-text">
+            <div class="help-label">Filtrer la liste</div>
+            <div class="help-desc">La barre de recherche en haut de la liste « Jours » filtre les 37 unités (31 jours + 6 appendices) par titre en temps réel. Tapez quelques lettres — les accents ne sont pas obligatoires (« eterne » trouve « Éternel »). Appuyez sur ✕ pour effacer et retrouver la liste complète.</div>
           </div>
         </div>
       </div>
