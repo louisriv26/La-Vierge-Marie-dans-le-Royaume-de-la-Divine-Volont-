@@ -2,12 +2,13 @@
 <html lang="fr">
 <head>
 <script>
-// Apply dark mode immediately to avoid flash
+// Apply dark mode immediately to avoid flash; set theme button icon
 (function(){
   try {
     const saved = localStorage.getItem('mjv_theme');
     if (saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
     else if (saved === 'light') document.documentElement.setAttribute('data-theme','light');
+    // Icon is set after DOMContentLoaded via App.init — buttons don't exist yet here
   } catch(e){}
 })();
 </script>
@@ -901,10 +902,10 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v1.9</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.0</div>
       </div>
       <div class="topbar-actions">
-        <button class="topbar-action" id="dark-toggle-btn" onclick="App.toggleDark()" aria-label="Mode sombre" title="Mode sombre">☽</button>
+        <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
         <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">☰</button>
       </div>
     </div>
@@ -1026,7 +1027,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v1.9</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1040,7 +1041,7 @@ html, body {
       <button class="wt-nav-btn" id="wnav-aide" onclick="App.wideNav('aide')" aria-label="Aide" aria-pressed="false">
         <span class="wt-nav-icon">?</span> Aide
       </button>
-      <button class="wt-nav-btn" id="wnav-dark" onclick="App.toggleDark()" aria-label="Mode sombre" title="Mode sombre">☽</button>
+      <button class="wt-nav-btn" id="wnav-dark" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
     </nav>
   </div>
 
@@ -1186,7 +1187,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1228,6 +1229,7 @@ const App = {
   async init() {
     loadStorage();
     this.applyTextSize(State.textSize, false);
+    this.syncThemeIcon();
 
     try {
       const controller = new AbortController();
@@ -1968,16 +1970,40 @@ const App = {
   },
 
   // ── Dark mode ───────────────────────────────────────────────
-  toggleDark() {
+  cycleTheme() {
     const html = document.documentElement;
-    const current = html.getAttribute('data-theme');
-    const isDark = current === 'dark' ||
-      (!current && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    const next = isDark ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    try { localStorage.setItem('mjv_theme', next); } catch(e) {}
-    this.showToast(next === 'dark' ? 'Mode sombre activé' : 'Mode clair activé');
+    const current = localStorage.getItem('mjv_theme') || 'system';
+    const order = ['system', 'dark', 'light'];
+    const next = order[(order.indexOf(current) + 1) % 3];
+    if (next === 'system') {
+      html.removeAttribute('data-theme');
+      try { localStorage.removeItem('mjv_theme'); } catch(e) {}
+    } else {
+      html.setAttribute('data-theme', next);
+      try { localStorage.setItem('mjv_theme', next); } catch(e) {}
+    }
+    const icons = { system: '◑', dark: '☽', light: '☀' };
+    const labels = { system: 'Thème système', dark: 'Mode sombre', light: 'Mode clair' };
+    document.querySelectorAll('#dark-toggle-btn, #wnav-dark').forEach(btn => {
+      btn.textContent = icons[next];
+      btn.title = labels[next];
+      btn.setAttribute('aria-label', labels[next]);
+    });
+    this.showToast(labels[next] + ' ✓');
   },
+  syncThemeIcon() {
+    const saved = localStorage.getItem('mjv_theme');
+    const mode = (saved === 'dark' || saved === 'light') ? saved : 'system';
+    const icons  = { system: '◑', dark: '☽', light: '☀' };
+    const labels = { system: 'Thème système', dark: 'Mode sombre', light: 'Mode clair' };
+    document.querySelectorAll('#dark-toggle-btn, #wnav-dark').forEach(btn => {
+      btn.textContent = icons[mode];
+      btn.title = labels[mode];
+      btn.setAttribute('aria-label', labels[mode]);
+    });
+  },
+  // keep old name as alias for any lingering references
+  toggleDark() { this.cycleTheme(); },
 
   // ── Help / Aide ─────────────────────────────────────────────
   renderHelp(containerId) {
@@ -2193,10 +2219,10 @@ const App = {
         <div class="help-section-title">✶ Affichage</div>
 
         <div class="help-item">
-          <div class="help-icon">☽</div>
+          <div class="help-icon">◑</div>
           <div class="help-text">
-            <div class="help-label">Mode sombre</div>
-            <div class="help-desc">Le bouton ☽ (en haut de l’écran) bascule entre le mode clair et le mode sombre. Le choix est mémorisé et prime sur le réglage automatique de l’appareil.</div>
+            <div class="help-label">Thème</div>
+            <div class="help-desc">Le bouton de thème (en haut de l’écran) alterne entre trois modes : <strong>◑ Système</strong> (suit le réglage de l’appareil), <strong>☽ Sombre</strong> et <strong>☀ Clair</strong>. L’icône reflète le mode actif. Le choix est mémorisé entre les sessions.</div>
           </div>
         </div>
       </div>
