@@ -975,7 +975,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.1</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.1.1</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1100,7 +1100,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.1</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.1.1</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1273,7 +1273,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.1.1';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -2137,7 +2137,15 @@ const App = {
           <div class="help-icon">⌂</div>
           <div class="help-text">
             <div class="help-label">Accueil</div>
-            <div class="help-desc">Affiche le calendrier du mois, la barre de progression, la méditation du jour courant et la carte « Pour aujourd’hui » avec la petite pratique et l’oraison jaculatoire.</div>
+            <div class="help-desc">Affiche le calendrier du mois, la barre de progression, la méditation du jour courant et la carte « Pour aujourd’hui ». Appuyez sur cette carte pour l’ouvrir en grand au centre de l’écran.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">✦</div>
+          <div class="help-text">
+            <div class="help-label">Carte « Pour aujourd’hui »</div>
+            <div class="help-desc">Affiche la petite pratique et l’oraison jaculatoire du jour actif. Appuyez dessus — sur l’écran d’accueil ou dans la barre latérale — pour l’ouvrir dans une fenêtre centrée à taille de lecture confortable. Appuyez sur ✕ Fermer ou en dehors de la fenêtre pour la refermer.</div>
           </div>
         </div>
 
@@ -2306,7 +2314,7 @@ const App = {
           <div class="help-icon">✶</div>
           <div class="help-text">
             <div class="help-label">Activer un jour</div>
-            <div class="help-desc">Le bouton « Activer » dans le lecteur désigne ce jour comme votre jour de pratique personnel, indépendamment de la date du calendrier. La carte « Pour aujourd’hui » sur l’accueil et dans le lecteur affiche toujours la pratique et l’oraison de <em>ce</em> jour. Un double anneau doré l’identifie dans le calendrier. Appuyez à nouveau pour revenir au jour calendaire.</div>
+            <div class="help-desc">Le bouton « Activer » dans le lecteur désigne ce jour comme votre jour de pratique personnel, indépendamment de la date du calendrier. La carte « Pour aujourd’hui » sur l’accueil et dans la barre latérale affiche toujours la pratique et l’oraison de <em>ce</em> jour — appuyez dessus pour l’ouvrir en grand. Un double anneau doré l’identifie dans le calendrier. Appuyez à nouveau sur « Activer » pour revenir au jour calendaire.</div>
           </div>
         </div>
         <div class="help-item">
