@@ -1,5 +1,5 @@
 // ── Version — must match APP_VERSION in index.html ─────────────────
-const CACHE = 'mjv-v2.0.0';
+const CACHE = 'mjv-v2.1.0';
 
 const ASSETS = [
   './',

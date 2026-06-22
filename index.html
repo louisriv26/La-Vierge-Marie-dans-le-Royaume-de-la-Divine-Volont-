@@ -732,6 +732,79 @@ html, body {
   font-family: var(--font-reader); font-size: 13px; color: var(--ink); line-height: 1.65;
   font-style: italic;
 }
+/* Today card — clickable hint */
+.today-actions-card,
+.ws-today-card {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.today-actions-card:hover,
+.ws-today-card:hover { opacity: 0.85; }
+
+/* Today modal */
+#today-modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0,0,0,0.55);
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+#today-modal.open { display: flex; }
+#today-modal-box {
+  background: var(--ivory);
+  border: 0.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  width: 100%; max-width: 560px;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+#today-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--practice-bg);
+  border-bottom: 0.5px solid var(--accent);
+  padding: 14px 20px 12px;
+  flex-shrink: 0;
+}
+#today-modal-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent);
+}
+#today-modal-day {
+  font-size: 12px; color: var(--muted);
+  font-family: var(--font-reader); font-style: italic;
+}
+#today-modal-close {
+  background: transparent; border: 0.5px solid var(--border);
+  border-radius: 8px; padding: 5px 12px;
+  color: var(--muted); font-size: 13px; cursor: pointer;
+}
+#today-modal-body {
+  overflow-y: auto; padding: 20px 24px 28px;
+  -webkit-overflow-scrolling: touch;
+}
+.tmod-section { margin-bottom: 20px; }
+.tmod-section:last-child { margin-bottom: 0; }
+.tmod-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+.tmod-text {
+  font-family: var(--font-reader);
+  font-size: 18px; color: var(--ink); line-height: 1.75;
+}
+.tmod-oraison {
+  font-family: var(--font-reader);
+  font-size: 18px; color: var(--primary); line-height: 1.75;
+  font-style: italic; text-align: center;
+  background: var(--prayer-bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+}
+
 /* Dark mode toggle button icon update */
 [data-theme="dark"] #dark-toggle-btn,
 [data-theme="dark"] #wnav-dark { opacity: 0.6; }
@@ -902,7 +975,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.0</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.1</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1027,7 +1100,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.0</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.1</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1156,6 +1229,19 @@ html, body {
 <!-- Toast (shared) -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<div id="today-modal" role="dialog" aria-modal="true" aria-label="Pour aujourd'hui" onclick="if(event.target===this)App.closeTodayModal()">
+  <div id="today-modal-box">
+    <div id="today-modal-header">
+      <div>
+        <div id="today-modal-title">✦ Pour aujourd'hui</div>
+        <div id="today-modal-day"></div>
+      </div>
+      <button id="today-modal-close" onclick="App.closeTodayModal()">✕ Fermer</button>
+    </div>
+    <div id="today-modal-body"></div>
+  </div>
+</div>
+
 <div id="debug-overlay" role="dialog" aria-modal="true" aria-label="Debug" onclick="if(event.target===this)App.hideDebug()">
   <div id="debug-box">
     <h3>⚙ Debug</h3>
@@ -1187,7 +1273,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1492,7 +1578,7 @@ const App = {
     const mobileWrap = document.getElementById('today-actions-wrap');
     if (mobileWrap) {
       mobileWrap.innerHTML = `
-        <div class="today-actions-card">
+        <div class="today-actions-card" onclick="App.openTodayModal()">
           <div class="tac-header">
             <span class="tac-label">✦ Pour aujourd'hui</span>
             <span class="tac-day">${this.esc(data.ordinal)}</span>
@@ -1513,6 +1599,7 @@ const App = {
     // Wide sidebar card pinned at bottom
     const wideCard = document.getElementById('ws-today-card');
     if (wideCard) {
+      wideCard.onclick = () => this.openTodayModal();
       wideCard.innerHTML = `
         <div class="ws-today-label">✦ Pour aujourd'hui — ${this.esc(data.ordinal)}</div>
         ${data.pratique ? `<div class="ws-today-pratique">${this.esc(data.pratique)}</div>` : ''}
@@ -1990,6 +2077,22 @@ const App = {
       btn.setAttribute('aria-label', labels[next]);
     });
     this.showToast(labels[next] + ' ✓');
+  },
+  openTodayModal() {
+    const dayToShow = State.activeDay || State.todayDayNum;
+    const data = this.getTodayData(dayToShow);
+    if (!data) return;
+    document.getElementById('today-modal-day').textContent = data.ordinal;
+    const body = document.getElementById('today-modal-body');
+    body.innerHTML = [
+      data.pratique ? `<div class="tmod-section"><div class="tmod-label">Petite pratique</div><div class="tmod-text">${this.esc(data.pratique)}</div></div>` : '',
+      data.oraison  ? `<div class="tmod-section"><div class="tmod-label">Oraison jaculatoire</div><div class="tmod-oraison">${this.esc(data.oraison)}</div></div>` : '',
+    ].join('');
+    body.scrollTop = 0;
+    document.getElementById('today-modal').classList.add('open');
+  },
+  closeTodayModal() {
+    document.getElementById('today-modal').classList.remove('open');
   },
   syncThemeIcon() {
     const saved = localStorage.getItem('mjv_theme');
