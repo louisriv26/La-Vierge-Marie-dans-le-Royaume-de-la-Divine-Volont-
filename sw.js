@@ -1,19 +1,22 @@
-// ── Version — must match APP_VERSION in index.html ─────────────────
-const CACHE = 'mjv-v2.1.1';
+﻿// â”€â”€ Version â€” must match APP_VERSION in index.html â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const CACHE = 'mjv-v2.3.2';
 
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './corpus/manifest.json',
-  './corpus/days.json',
-  'https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap'
+  './corpus/days.json'
 ];
+
+const FONT_URL = 'https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap';
 
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
       .then(c => c.addAll(ASSETS))
+      // Cache font non-fatally so a network failure does not block SW install
+      .then(() => caches.open(CACHE).then(c => c.add(FONT_URL).catch(() => {})))
       .then(() => self.skipWaiting())
   );
 });
@@ -21,7 +24,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('mjv-') && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
       // Notify all open tabs to reload so they get the new shell immediately
       .then(() => self.clients.matchAll({ type: 'window' }))
@@ -46,7 +49,7 @@ self.addEventListener('fetch', e => {
   }
 
   if (isCorpus) {
-    // Corpus: network-first — always get fresh text
+    // Corpus: network-first â€” always get fresh text
     e.respondWith(
       fetch(e.request)
         .then(res => {
@@ -79,3 +82,4 @@ self.addEventListener('fetch', e => {
     }
   }
 });
+

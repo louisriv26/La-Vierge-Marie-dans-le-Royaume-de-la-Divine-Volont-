@@ -39,9 +39,9 @@ window.APP_BASE = (function() {
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
 <style>
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DESIGN TOKENS
-════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 :root {
   --primary: #2C4A7C;
   --primary-light: #3D6399;
@@ -113,10 +113,10 @@ html, body {
   overscroll-behavior: none;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MOBILE LAYOUT  (< 768px)
    Classic single-column stacked screens
-════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 #app {
   display: flex;
   flex-direction: column;
@@ -132,11 +132,11 @@ html, body {
 /* Hide wide shell on mobile */
 #wide-shell { display: none; }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TABLET LAYOUT  (768px – 1199px)
    Left sidebar (list) + right reader panel
-════════════════════════════════════════════════ */
-@media (min-width: 768px) {
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (min-width: 768px) and (min-height: 600px) {
   :root { --sidebar-w: 340px; }
   body { background: var(--ivory-deep); }
 
@@ -396,10 +396,10 @@ html, body {
   .ww-text { font-family: var(--font-reader); font-size: 17px; font-style: italic; }
 }
 
-/* ════════════════════════════════════════════════
-   DESKTOP LAYOUT  (≥ 1200px)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DESKTOP LAYOUT  (â‰¥ 1200px)
    Wider sidebar, wider reading column
-════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (min-width: 1200px) {
   :root { --sidebar-w: 380px; --reader-size: 18px; }
 
@@ -412,9 +412,9 @@ html, body {
   #wide-espace { padding: 32px 60px; }
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    SHARED READER STYLES  (mobile + wide)
-════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 /* Mobile versions keep existing styles; wide uses .wr-body scoped versions */
 
 .section-label {
@@ -463,9 +463,9 @@ html, body {
 .para-note-del { color: var(--muted); font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
 .para-note-del:hover { color: var(--danger); }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MOBILE-ONLY STYLES  (kept intact)
-════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 /* Loading */
 #screen-loading {
   align-items: center; justify-content: center;
@@ -475,7 +475,7 @@ html, body {
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .loading-text { font-family: var(--font-reader); font-size: 14px; color: var(--muted); letter-spacing: 0.05em; }
 
-.topbar { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--safe-top) + 14px) 18px 10px; background: var(--ivory); flex-shrink: 0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: max(8px, env(safe-area-inset-top, 0px)) 18px 10px; background: var(--ivory); flex-shrink: 0; }
 .topbar-title { font-family: var(--font-reader); font-size: 17px; color: var(--ink); font-style: italic; }
 .topbar-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
 .topbar-actions { display: flex; gap: 6px; }
@@ -496,7 +496,7 @@ html, body {
 .progress-wrap { padding: 6px 16px 10px; flex-shrink: 0; }
 .progress-row { display: flex; align-items: center; gap: 10px; }
 
-/* ── Appendix circles row ──────────────────────────────────────── */
+/* â”€â”€ Appendix circles row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .appendix-row { display: flex; gap: 5px; padding: 6px 0 2px; align-items: center; }
 .appendix-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; flex-shrink: 0; }
 .app-circle { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
@@ -548,7 +548,7 @@ html, body {
 .list-chevron { color: var(--border); font-size: 14px; flex-shrink: 0; }
 
 #screen-reader { background: var(--ivory); }
-.reader-topbar { display: flex; align-items: center; gap: 10px; padding: calc(var(--safe-top) + 12px) 16px 8px; background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+.reader-topbar { display: flex; align-items: center; gap: 10px; padding: max(8px, env(safe-area-inset-top, 0px)) 16px 8px; background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
 .reader-back { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0; }
 .reader-back:hover { color: var(--primary); border-color: var(--primary); }
 .reader-topbar-info { flex: 1; min-width: 0; }
@@ -636,9 +636,9 @@ html, body {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    POUR AUJOURD'HUI — Pratique + Oraison card
-════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .today-actions-card {
   background: var(--white);
   border: 0.5px solid var(--accent);
@@ -696,8 +696,8 @@ html, body {
   line-height: 1.65;
 }
 
-/* ── Help section ──────────────────────────────────────────── */
-/* ── Reset section ───────────────────────────────────────────── */
+/* â”€â”€ Help section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ Reset section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cycle-section { padding: 0 16px; }
 .cycle-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.3s, background 0.3s; }
 .cycle-card.ready { border-color: var(--accent); background: var(--practice-bg); }
@@ -912,8 +912,10 @@ html, body {
 /* Mobile version — in topbar */
 .mobile-version {
   font-size: 10px;
-  color: var(--muted);
+  color: transparent;
   letter-spacing: 0.04em;
+  user-select: none;
+  cursor: default;
 }
 
 ::-webkit-scrollbar { width: 3px; }
@@ -961,9 +963,9 @@ html, body {
 
 <body>
 
-<!-- ══════════════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      MOBILE LAYOUT  (< 768px)
-══════════════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="app">
   <div id="screen-loading" class="screen active">
     <div class="loading-crown">✦</div>
@@ -975,11 +977,11 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.1.1</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.3.2</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
-        <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">☰</button>
+        <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">â˜°</button>
       </div>
     </div>
     <div class="calendar-wrap">
@@ -1004,11 +1006,11 @@ html, body {
   <div id="screen-list" class="screen">
     <div class="topbar">
       <div><div class="topbar-title">Les 31 Jours</div><div class="topbar-sub">Vierge Marie — Luisa Piccarreta</div></div>
-      <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
+      <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">âŒ‚</button>
     </div>
     <div class="search-wrap">
       <div class="search-row">
-        <span class="search-icon">⌕</span>
+        <span class="search-icon">âŒ•</span>
         <input class="search-input" id="search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" oninput="App.onSearch(this.value,'list-scroll','search-clear')">
         <button class="search-clear" id="search-clear" aria-label="Effacer" onclick="App.clearSearch('search-input','list-scroll','search-clear')">✕</button>
       </div>
@@ -1024,7 +1026,7 @@ html, body {
         <div class="reader-topbar-title" id="reader-topbar-title"></div>
       </div>
       <div class="reader-topbar-actions">
-        <button class="reader-icon-btn" id="btn-textsize" onclick="App.toggleTextsizePanel()" aria-label="Taille du texte">Aᵃ</button>
+        <button class="reader-icon-btn" id="btn-textsize" onclick="App.toggleTextsizePanel()" aria-label="Taille du texte">Aáµƒ</button>
       </div>
     </div>
     <div class="reader-scroll" id="reader-scroll">
@@ -1044,14 +1046,14 @@ html, body {
         <span class="action-icon" id="complete-icon">○</span><span id="complete-label">Terminé</span>
       </button>
       <button class="action-btn" id="btn-fav" onclick="App.toggleFavorite()">
-        <span class="action-icon" id="fav-icon">♡</span><span>Favori</span>
+        <span class="action-icon" id="fav-icon">â™¡</span><span>Favori</span>
       </button>
       <button class="action-btn" id="btn-activate" onclick="App.activateDay()">
         <span class="action-icon" id="activate-icon">✦</span>
         <span id="activate-label">Activer</span>
       </button>
       <button class="action-btn" onclick="App.shareDay()">
-        <span class="action-icon">↑</span><span>Partager</span>
+        <span class="action-icon">â†‘</span><span>Partager</span>
       </button>
     </div>
     <div class="textsize-panel" id="textsize-panel">
@@ -1077,39 +1079,39 @@ html, body {
     <div class="topbar">
       <div><div class="topbar-title">Aide</div><div class="topbar-sub">Comment utiliser l'application</div></div>
       <div class="topbar-actions">
-        <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
+        <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">âŒ‚</button>
       </div>
     </div>
     <div class="espace-scroll" id="aide-scroll" style="padding:16px"></div>
   </div>
 
   <nav class="bottom-nav" id="bottom-nav" aria-label="Navigation principale">
-    <button class="nav-btn active" id="nav-home" onclick="App.showScreen('home')" aria-label="Accueil"><span class="nav-icon">⌂</span>Accueil</button>
-    <button class="nav-btn" id="nav-list" onclick="App.showScreen('list')" aria-label="Jours"><span class="nav-icon">◎</span>Jours</button>
-    <button class="nav-btn" id="nav-espace" onclick="App.showScreen('espace')" aria-label="Mon Espace"><span class="nav-icon">♡</span>Mon Espace</button>
+    <button class="nav-btn active" id="nav-home" onclick="App.showScreen('home')" aria-label="Accueil"><span class="nav-icon">âŒ‚</span>Accueil</button>
+    <button class="nav-btn" id="nav-list" onclick="App.showScreen('list')" aria-label="Jours"><span class="nav-icon">â—Ž</span>Jours</button>
+    <button class="nav-btn" id="nav-espace" onclick="App.showScreen('espace')" aria-label="Mon Espace"><span class="nav-icon">â™¡</span>Mon Espace</button>
     <button class="nav-btn" id="nav-aide" onclick="App.showScreen('aide')" aria-label="Aide"><span class="nav-icon">?</span>Aide</button>
   </nav>
 </div>
 
-<!-- ══════════════════════════════════════════════
-     WIDE LAYOUT  (≥ 768px — iPad, desktop)
-══════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     WIDE LAYOUT  (â‰¥ 768px — iPad, desktop)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="wide-shell">
 
   <!-- Top bar -->
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.1.1</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.3.2</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
-        <span class="wt-nav-icon">◎</span> Jours
+        <span class="wt-nav-icon">â—Ž</span> Jours
       </button>
       <button class="wt-nav-btn" id="wnav-espace" onclick="App.wideNav('espace')" aria-label="Mon Espace" aria-pressed="false">
-        <span class="wt-nav-icon">♡</span> Mon Espace
+        <span class="wt-nav-icon">â™¡</span> Mon Espace
       </button>
       <button class="wt-nav-btn" id="wnav-textsize" onclick="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">
-        Aᵃ
+        Aáµƒ
       </button>
       <button class="wt-nav-btn" id="wnav-aide" onclick="App.wideNav('aide')" aria-label="Aide" aria-pressed="false">
         <span class="wt-nav-icon">?</span> Aide
@@ -1158,7 +1160,7 @@ html, body {
       <!-- Search + List -->
       <div class="search-wrap" style="padding:6px 12px 2px;">
         <div class="search-row">
-          <span class="search-icon">⌕</span>
+          <span class="search-icon">âŒ•</span>
           <input class="search-input" id="wide-search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" oninput="App.onSearch(this.value,'wide-list-scroll','wide-search-clear')">
           <button class="search-clear" id="wide-search-clear" aria-label="Effacer" onclick="App.clearSearch('wide-search-input','wide-list-scroll','wide-search-clear')">✕</button>
         </div>
@@ -1187,12 +1189,12 @@ html, body {
               <span id="wide-complete-icon">○</span> <span id="wide-complete-label">Terminé</span>
             </button>
             <button class="wrt-btn" id="wide-btn-fav" onclick="App.toggleFavorite()">
-              <span id="wide-fav-icon">♡</span> Favori
+              <span id="wide-fav-icon">â™¡</span> Favori
             </button>
             <button class="wrt-btn" id="wide-btn-activate" onclick="App.activateDay()">
               <span id="wide-activate-icon">✦</span> <span id="wide-activate-label">Activer</span>
             </button>
-            <button class="wrt-btn" onclick="App.shareDay()">↑ Partager</button>
+            <button class="wrt-btn" onclick="App.shareDay()">â†‘ Partager</button>
           </div>
         </div>
 
@@ -1244,7 +1246,7 @@ html, body {
 
 <div id="debug-overlay" role="dialog" aria-modal="true" aria-label="Debug" onclick="if(event.target===this)App.hideDebug()">
   <div id="debug-box">
-    <h3>⚙ Debug</h3>
+    <h3>âš™ Debug</h3>
     <table id="debug-table"></table>
     <button id="debug-close" onclick="App.hideDebug()">Fermer</button>
   </div>
@@ -1273,7 +1275,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
 
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.3.2';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1283,16 +1285,18 @@ const State = {
   activeDay: null,  // devotional day — may differ from calendar day
 };
 
-// ── Helpers ──────────────────────────────────────────────────
-const isWide = () => window.innerWidth >= 768;
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const isWide = () => window.innerWidth >= 768 && window.innerHeight >= 600;
 
 function loadStorage() {
   try {
     State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]'));
     State.favorites = new Set(JSON.parse(localStorage.getItem(SK.FAVORITES) || '[]'));
     State.notes = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
-    State.textSize = parseInt(localStorage.getItem(SK.TEXT_SIZE) || '17');
-    State.activeDay = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0') || null;
+    const ts = parseInt(localStorage.getItem(SK.TEXT_SIZE) || '17');
+    State.textSize = (isNaN(ts) || ts < 14 || ts > 22) ? 17 : ts;
+    const ad = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0');
+    State.activeDay = (ad >= 1 && ad <= 31) ? ad : null;
   } catch(e) { State.read=new Set(); State.favorites=new Set(); State.notes={}; State.textSize=17; State.activeDay=null; }
 }
 const saveRead      = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); } catch(e){} };
@@ -1309,7 +1313,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ── App ──────────────────────────────────────────────────────
+// â”€â”€ App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const App = {
 
   async init() {
@@ -1326,16 +1330,22 @@ const App = {
       State.corpus = await res.json();
       State.corpus.forEach(u => { if (u.day_number) State.dayMap[u.day_number] = u; });
     } catch(e) {
-      const msg = '<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)">Erreur de chargement.<br>Vérifiez votre connexion.</div>';
-      document.getElementById('screen-loading').innerHTML = msg;
-      document.getElementById('wide-welcome').querySelector('.ww-text').textContent = 'Erreur de chargement.';
+      // Show error with Retry — keep loading screen visible, don't hide it
+      document.getElementById('screen-loading').innerHTML = `
+        <div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)">
+          <div style="font-size:32px;margin-bottom:16px">✦</div>
+          <div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Erreur de chargement</div>
+          <div style="font-size:14px;margin-bottom:24px">Vérifiez votre connexion et réessayez.</div>
+          <button onclick="window.location.reload()" style="padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button>
+        </div>`;
+      document.getElementById('screen-loading').classList.add('active');
+      document.getElementById('wide-welcome').querySelector('.ww-text').textContent = 'Erreur de chargement. Actualisez la page.';
       return;
-    } finally {
-      // Always hide spinner — even if corpus load fails
-      document.getElementById('screen-loading')?.classList.remove('active');
-      const wl = document.getElementById('wide-loading');
-      if (wl) wl.style.display = 'none';
-    }
+    } finally {}
+    // Reached only on success (catch returns early)
+    document.getElementById('screen-loading')?.classList.remove('active');
+    const wlf = document.getElementById('wide-loading');
+    if (wlf) wlf.style.display = 'none';
 
     // Mobile init
     this.buildCalendar();
@@ -1351,11 +1361,15 @@ const App = {
     const dateStr = new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long'}).format(new Date());
     document.getElementById('wide-date-label').textContent = dateStr;
     this.renderTodayCard();
-    // Auto-open today's day on wide layout
+    // Auto-open today's unit on wide layout only — mobile stays on Home
     const todayUnit = State.dayMap[State.todayDayNum] || State.corpus[0];
-    if (todayUnit) this.openUnit(todayUnit.unit_id);
+    if (isWide() && todayUnit) this.openUnit(todayUnit.unit_id);
 
     this.registerSW();
+
+    // Reconcile layout when viewport crosses the wide/mobile threshold
+    const mql = window.matchMedia('(min-width: 768px) and (min-height: 600px)');
+    mql.addEventListener('change', () => this.reconcileLayout());
 
     document.addEventListener('click', e => {
       if (!e.target.closest('#textsize-panel') && !e.target.closest('#btn-textsize')) {
@@ -1371,7 +1385,25 @@ const App = {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.APP_BASE + 'sw.js', { scope: window.APP_BASE }).catch(() => {});
   },
 
-  // ── Mobile navigation ────────────────────────────────────────
+  reconcileLayout() {
+    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    if (isWide()) {
+      if (unit) {
+        const badge = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
+        document.getElementById('wide-hero-badge').textContent = badge;
+        document.getElementById('wide-hero-title').textContent = unit.title;
+        document.getElementById('wide-reader-day-badge').textContent = badge;
+        document.getElementById('wide-reader-topbar-title').textContent = unit.title;
+        this.renderReaderBody(unit, 'wide-reader-body');
+        this.updateWideNav(unit);
+        this.updateWideActionBar(unit);
+      }
+      this.updateWideProgress();
+      this.updateAppendixRows();
+    }
+  },
+
+  // â”€â”€ Mobile navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showScreen(name, initial = false) {
     ['loading','home','list','reader','espace','aide'].forEach(s => {
       document.getElementById('screen-' + s)?.classList.toggle('active', s === name);
@@ -1387,7 +1419,7 @@ const App = {
     if (name !== 'reader') document.getElementById('textsize-panel').classList.remove('open');
   },
 
-  // ── Wide navigation ──────────────────────────────────────────
+  // â”€â”€ Wide navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   wideNav(panel) {
     State.widePanel = panel;
     document.querySelectorAll('.wt-nav-btn[aria-pressed]').forEach(b => b.setAttribute('aria-pressed', 'false'));
@@ -1422,7 +1454,7 @@ const App = {
     }
   },
 
-  // ── Calendar (mobile) ────────────────────────────────────────
+  // â”€â”€ Calendar (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   buildCalendar() {
     const grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
@@ -1476,7 +1508,7 @@ const App = {
     this.updateAppendixRows();
   },
 
-  // ── Calendar (wide) ──────────────────────────────────────────
+  // â”€â”€ Calendar (wide) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   buildWideCalendar() {
     const grid = document.getElementById('wide-cal-grid');
     grid.innerHTML = '';
@@ -1514,7 +1546,7 @@ const App = {
     document.getElementById('wide-progress-label').textContent = count + ' / ' + total;
   },
 
-  // ── Sidebar list (wide) ──────────────────────────────────────
+  // â”€â”€ Sidebar list (wide) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   buildWideList() {
     const scroll = document.getElementById('wide-list-scroll');
     const main = State.corpus.filter(u => u.unit_type === 'main_day');
@@ -1554,7 +1586,7 @@ const App = {
   },
 
 
-  // ── Today card: Pratique + Oraison ───────────────────────────
+  // â”€â”€ Today card: Pratique + Oraison â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   getTodayData(dayNum) {
     // Use provided dayNum, which renderTodayCard passes as activeDay ?? todayDayNum
     const unit = State.dayMap[dayNum];
@@ -1607,7 +1639,7 @@ const App = {
     }
   },
 
-  // ── Home (mobile) ────────────────────────────────────────────
+  // â”€â”€ Home (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   renderHome() {
     const today = State.todayDayNum;
     const unit = State.dayMap[today] || State.corpus[0];
@@ -1688,7 +1720,7 @@ const App = {
       else this.buildWideList();
       return;
     }
-    const strip = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const strip = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const q = strip(query.trim());
     const matches = State.corpus.filter(u => {
       const title = strip(u.title);
@@ -1723,7 +1755,7 @@ const App = {
         <div class="list-title">${this.esc(u.title)}${badge}</div>
         <div class="list-meta">${meta}</div>
       </div>
-      <div class="list-chevron">›</div>
+      <div class="list-chevron">â€º</div>
     </div>`;
   },
 
@@ -1731,7 +1763,7 @@ const App = {
     return u.sections.reduce((a,s) => a + s.paragraphs.filter(p => State.notes[p.paragraph_id]).length, 0);
   },
 
-  // ── Open unit (works for both layouts) ───────────────────────
+  // â”€â”€ Open unit (works for both layouts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openDay(dayNum) {
     const unit = State.dayMap[dayNum];
     if (unit) this.openUnit(unit.unit_id);
@@ -1784,7 +1816,7 @@ const App = {
     }
   },
 
-  // ── Reader body (shared) ─────────────────────────────────────
+  // â”€â”€ Reader body (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   renderReaderBody(unit, bodyId) {
     const sectionLabels = {
       soul_intro:'✦ L\'âme', lesson:'✦ Leçon de la Reine du Ciel',
@@ -1806,7 +1838,7 @@ const App = {
         const note = State.notes[p.paragraph_id];
         html += `<p class="${cls}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">✎</button></p>`;
         if (note) {
-          html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
+          html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">Ã—</button></div>`;
         }
       });
     });
@@ -1829,7 +1861,7 @@ const App = {
     document.getElementById(bodyId).innerHTML = html;
   },
 
-  // ── Mobile reader nav + actions ──────────────────────────────
+  // â”€â”€ Mobile reader nav + actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   updateReaderNav(unit) {
     const seq = unit.sequence_meditative;
     const prevU = State.corpus.find(u => u.sequence_meditative === seq - 1);
@@ -1843,11 +1875,11 @@ const App = {
 
   updateActionBar(unit) {
     const isDone = State.read.has(unit.unit_id);
-    document.getElementById('complete-icon').textContent = isDone ? '✓' : '○';
+    document.getElementById('complete-icon').textContent = isDone ? 'âœ“' : '○';
     document.getElementById('complete-label').textContent = isDone ? 'Lu' : 'Terminé';
     document.getElementById('btn-complete').classList.toggle('done', !!isDone);
-    const hasFav = unit.sections.flatMap(s=>s.paragraphs.map(p=>p.paragraph_id)).some(pid=>State.favorites.has(pid));
-    document.getElementById('fav-icon').textContent = hasFav ? '♥' : '♡';
+    const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
+    document.getElementById('fav-icon').textContent = hasFav ? 'â™¥' : 'â™¡';
     document.getElementById('btn-fav').classList.toggle('active', hasFav);
     // Active day button
     const effectiveActive = State.activeDay || State.todayDayNum;
@@ -1860,7 +1892,7 @@ const App = {
     }
   },
 
-  // ── Wide reader nav + actions ─────────────────────────────────
+  // â”€â”€ Wide reader nav + actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   updateWideNav(unit) {
     const seq = unit.sequence_meditative;
     const prevU = State.corpus.find(u => u.sequence_meditative === seq-1);
@@ -1874,11 +1906,11 @@ const App = {
 
   updateWideActionBar(unit) {
     const isDone = State.read.has(unit.unit_id);
-    document.getElementById('wide-complete-icon').textContent = isDone ? '✓' : '○';
+    document.getElementById('wide-complete-icon').textContent = isDone ? 'âœ“' : '○';
     document.getElementById('wide-complete-label').textContent = isDone ? 'Lu' : 'Terminé';
     document.getElementById('wide-btn-complete').classList.toggle('done', !!isDone);
-    const hasFav = unit.sections.flatMap(s=>s.paragraphs.map(p=>p.paragraph_id)).some(pid=>State.favorites.has(pid));
-    document.getElementById('wide-fav-icon').textContent = hasFav ? '♥' : '♡';
+    const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
+    document.getElementById('wide-fav-icon').textContent = hasFav ? 'â™¥' : 'â™¡';
     document.getElementById('wide-btn-fav').classList.toggle('active', hasFav);
     // Active day button
     const effectiveActive = State.activeDay || State.todayDayNum;
@@ -1891,20 +1923,22 @@ const App = {
     }
   },
 
-  // ── Actions ──────────────────────────────────────────────────
+  // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   toggleComplete() {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (!unit) return;
     const key = unit.unit_id;
     const label = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
     if (State.read.has(key)) { State.read.delete(key); this.showToast('Marqué comme non lu'); }
-    else { State.read.add(key); this.showToast(label + ' terminé ✓'); }
+    else { State.read.add(key); this.showToast(label + ' terminé âœ“'); }
     saveRead();
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
     this.updateCalendar();
     this.updateWideCalendar();
     this.updateWideProgress();
+    this.buildList();
+    this.buildWideList();
   },
 
   toggleFavorite() {
@@ -1914,7 +1948,7 @@ const App = {
     if (!lesson?.paragraphs.length) return;
     const pid = lesson.paragraphs[0].paragraph_id;
     if (State.favorites.has(pid)) { State.favorites.delete(pid); this.showToast('Retiré des favoris'); }
-    else { State.favorites.add(pid); this.showToast('Ajouté aux favoris ♥'); }
+    else { State.favorites.add(pid); this.showToast('Ajouté aux favoris â™¥'); }
     saveFavorites();
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
@@ -1928,7 +1962,7 @@ const App = {
     else navigator.clipboard?.writeText(text).then(()=>this.showToast('Copié !')).catch(()=>{});
   },
 
-  // ── Active day ──────────────────────────────────────────────────
+  // â”€â”€ Active day â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   activateDay() {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (!unit?.day_number) return;
@@ -1951,7 +1985,7 @@ const App = {
     this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
   },
 
-  // ── Cycle reset ───────────────────────────────────────────────
+  // â”€â”€ Cycle reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   startNewCycle() {
     if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Notes et favoris seront conservés.')) return;
     State.read = new Set();
@@ -1961,6 +1995,8 @@ const App = {
     this.updateCalendar();
     this.updateWideCalendar();
     this.updateWideProgress();
+    this.buildList();
+    this.buildWideList();
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (unit) { this.updateActionBar(unit); this.updateWideActionBar(unit); }
     if (isWide()) this.renderEspace('wide-espace');
@@ -1968,7 +2004,7 @@ const App = {
     this.showToast('Nouveau cycle commencé ✦');
   },
 
-  // ── Text size ─────────────────────────────────────────────────
+  // â”€â”€ Text size â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   toggleTextsizePanel() {
     const panel = document.getElementById('textsize-panel');
     const isOpen = panel.classList.toggle('open');
@@ -1997,7 +2033,7 @@ const App = {
     if (save) saveTextSize();
   },
 
-  // ── Notes ─────────────────────────────────────────────────────
+  // â”€â”€ Notes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openNoteModal(pid) {
     State.noteTargetPid = pid;
     let para=null, unit=null;
@@ -2056,7 +2092,7 @@ const App = {
     }
   },
 
-  // ── Dark mode ───────────────────────────────────────────────
+  // â”€â”€ Dark mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   cycleTheme() {
     const html = document.documentElement;
     const current = localStorage.getItem('mjv_theme') || 'system';
@@ -2076,7 +2112,7 @@ const App = {
       btn.title = labels[next];
       btn.setAttribute('aria-label', labels[next]);
     });
-    this.showToast(labels[next] + ' ✓');
+    this.showToast(labels[next] + ' âœ“');
   },
   openTodayModal() {
     const dayToShow = State.activeDay || State.todayDayNum;
@@ -2108,7 +2144,7 @@ const App = {
   // keep old name as alias for any lingering references
   toggleDark() { this.cycleTheme(); },
 
-  // ── Help / Aide ─────────────────────────────────────────────
+  // â”€â”€ Help / Aide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   renderHelp(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -2134,7 +2170,7 @@ const App = {
         <div class="help-section-title">✶ Navigation principale</div>
 
         <div class="help-item">
-          <div class="help-icon">⌂</div>
+          <div class="help-icon">âŒ‚</div>
           <div class="help-text">
             <div class="help-label">Accueil</div>
             <div class="help-desc">Affiche le calendrier du mois, la barre de progression, la méditation du jour courant et la carte « Pour aujourd’hui ». Appuyez sur cette carte pour l’ouvrir en grand au centre de l’écran.</div>
@@ -2150,7 +2186,7 @@ const App = {
         </div>
 
         <div class="help-item">
-          <div class="help-icon">◎</div>
+          <div class="help-icon">â—Ž</div>
           <div class="help-text">
             <div class="help-label">Jours</div>
             <div class="help-desc">Liste complète des 31 méditations suivies des 6 appendices. Les jours lus apparaissent en or. Appuyez sur n’importe quelle ligne pour ouvrir la méditation.</div>
@@ -2158,7 +2194,7 @@ const App = {
         </div>
 
         <div class="help-item">
-          <div class="help-icon">♡</div>
+          <div class="help-icon">â™¡</div>
           <div class="help-text">
             <div class="help-label">Mon Espace</div>
             <div class="help-desc">Regroupe vos statistiques (jours lus, favoris, notes), vos passages favoris, vos notes personnelles et les options de réinitialisation.</div>
@@ -2227,10 +2263,10 @@ const App = {
         </div>
 
         <div class="help-item">
-          <div class="help-icon">Aᵃ</div>
+          <div class="help-icon">Aáµƒ</div>
           <div class="help-text">
             <div class="help-label">Taille du texte</div>
-            <div class="help-desc">Le bouton Aᵃ (en haut à droite) ouvre un curseur pour ajuster la taille de lecture de 14 à 22 px. Le réglage est mémorisé entre les sessions.</div>
+            <div class="help-desc">Le bouton Aáµƒ (en haut à droite) ouvre un curseur pour ajuster la taille de lecture de 14 à 22 px. Le réglage est mémorisé entre les sessions.</div>
           </div>
         </div>
 
@@ -2260,7 +2296,7 @@ const App = {
       <div class="help-section">
         <div class="help-section-title">✶ Recherche</div>
         <div class="help-item">
-          <div class="help-icon">⌕</div>
+          <div class="help-icon">âŒ•</div>
           <div class="help-text">
             <div class="help-label">Filtrer la liste</div>
             <div class="help-desc">La barre de recherche en haut de la liste « Jours » filtre les 37 unités (31 jours + 6 appendices) par titre en temps réel. Tapez quelques lettres — les accents ne sont pas obligatoires (« eterne » trouve « Éternel »). Appuyez sur ✕ pour effacer et retrouver la liste complète.</div>
@@ -2272,7 +2308,7 @@ const App = {
         <div class="help-section-title">✶ Marquer et progresser</div>
 
         <div class="help-item">
-          <div class="help-icon">✓</div>
+          <div class="help-icon">âœ“</div>
           <div class="help-text">
             <div class="help-label">Marquer comme terminé</div>
             <div class="help-desc">Le bouton « Terminé » (en haut du lecteur) marque le jour ou l’appendice comme lu. Le chiffre dans le calendrier devient or, la barre de progression avance. Appuyez à nouveau pour annuler.</div>
@@ -2292,7 +2328,7 @@ const App = {
         <div class="help-section-title">✶ Favoris et notes</div>
 
         <div class="help-item">
-          <div class="help-icon">♡</div>
+          <div class="help-icon">â™¡</div>
           <div class="help-text">
             <div class="help-label">Ajouter un favori</div>
             <div class="help-desc">Chaque paragraphe dispose d’une icône cœur (visible au survol ou au tap). Appuyez pour sauvegarder le passage. Retrouvez tous vos favoris dans Mon Espace.</div>
@@ -2318,7 +2354,7 @@ const App = {
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">♡</div>
+          <div class="help-icon">â™¡</div>
           <div class="help-text">
             <div class="help-label">Cas d’usage</div>
             <div class="help-desc">Utile si vous avancez plus lentement que le rythme calendaire, ou si vous souhaitez approfondir un jour particulier pendant plusieurs jours consécutifs sans perdre le lien avec sa pratique.</div>
@@ -2352,7 +2388,7 @@ const App = {
       <div class="help-section">
         <div class="help-section-title">✶ Installation et mode hors-ligne</div>
         <div class="help-item">
-          <div class="help-icon">⤓</div>
+          <div class="help-icon">â¤“</div>
           <div class="help-text">
             <div class="help-label">Installer sur l’écran d’accueil</div>
             <div class="help-desc">Sur iPhone : appuyez sur « Partager » puis « Sur l’écran d’accueil ». Sur Android : le navigateur propose automatiquement « Installer ». Une fois installée, l’application fonctionne entièrement hors-ligne.</div>
@@ -2422,7 +2458,7 @@ const App = {
     el.innerHTML = html;
   },
 
-  // ── Utilities ─────────────────────────────────────────────────
+  // â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   debugTap() {
     const now = Date.now();
     if (!this._dbgTaps) this._dbgTaps = [];
@@ -2431,7 +2467,7 @@ const App = {
     if (this._dbgTaps.length >= 3) { this._dbgTaps = []; this.showDebug(); }
   },
   showDebug() {
-    const swVer = 'mjv-v' + APP_VERSION + '.0';
+    const swVer = 'mjv-v' + APP_VERSION;
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     const rows = [
       ['App', APP_VERSION],
@@ -2474,3 +2510,4 @@ document.addEventListener('DOMContentLoaded', () => App.init());
 </script>
 </body>
 </html>
+
