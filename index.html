@@ -445,6 +445,15 @@ html, body {
   background: var(--prayer-bg); border: 0.5px solid var(--border);
   border-radius: var(--radius-md); padding: 16px 20px; margin: 4px 0 12px; position: relative;
 }
+.para-hl-btn {
+  position: absolute; right: 30px; top: 6px;
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: 5px;
+  color: var(--border); font-size: 13px; cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.para-hl-btn:hover, .para-hl-btn:active { color: var(--accent); background: var(--practice-bg); }
+.para-hl-btn.active { color: var(--accent); }
 .para-note-btn {
   position: absolute; right: 6px; top: 6px;
   width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
@@ -453,6 +462,7 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 .para-note-btn:hover, .para-note-btn:active { color: var(--accent); background: var(--practice-bg); }
+.para-hl { background: rgba(201,168,76,0.10); border-radius: 4px; }
 .para-note {
   background: var(--note-bg); border: 0.5px solid var(--note-border);
   border-radius: var(--radius-sm); padding: 10px 13px; margin-top: -8px; margin-bottom: 1.1em;
@@ -977,7 +987,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.3.4</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.3.5</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1102,7 +1112,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.3.4</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.3.5</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1273,14 +1283,14 @@ html, body {
 </div>
 
 <script>
-const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day' };
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights' };
 
-const APP_VERSION = '2.3.4';
+const APP_VERSION = '2.3.5';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
-  read: new Set(), favorites: new Set(), notes: {}, textSize: 17,
+  read: new Set(), favorites: new Set(), notes: {}, highlights: new Set(), textSize: 17,
   noteTargetPid: null, widePanel: 'jours',
   activeDay: null,  // devotional day — may differ from calendar day
 };
@@ -1292,15 +1302,17 @@ function loadStorage() {
   try {
     State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]'));
     State.favorites = new Set(JSON.parse(localStorage.getItem(SK.FAVORITES) || '[]'));
+    State.highlights = new Set(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '[]'));
     State.notes = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
     const ts = parseInt(localStorage.getItem(SK.TEXT_SIZE) || '17');
     State.textSize = (isNaN(ts) || ts < 14 || ts > 22) ? 17 : ts;
     const ad = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0');
     State.activeDay = (ad >= 1 && ad <= 31) ? ad : null;
-  } catch(e) { State.read=new Set(); State.favorites=new Set(); State.notes={}; State.textSize=17; State.activeDay=null; }
+  } catch(e) { State.read=new Set(); State.favorites=new Set(); State.highlights=new Set(); State.notes={}; State.textSize=17; State.activeDay=null; }
 }
 const saveRead      = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); } catch(e){} };
-const saveFavorites = () => { try { localStorage.setItem(SK.FAVORITES, JSON.stringify([...State.favorites])); } catch(e){} };
+const saveFavorites  = () => { try { localStorage.setItem(SK.FAVORITES,  JSON.stringify([...State.favorites]));  } catch(e){} };
+const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify([...State.highlights])); } catch(e){} };
 const saveNotes     = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); } catch(e){} };
 const saveTextSize  = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); } catch(e){} };
 const saveActiveDay = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); } catch(e){} };
@@ -1836,7 +1848,8 @@ const App = {
       html += `<div class="section-label">${this.esc(label)}</div>`;
       sec.paragraphs.forEach(p => {
         const note = State.notes[p.paragraph_id];
-        html += `<p class="${cls}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">✎</button></p>`;
+        const isHl = State.highlights.has(p.paragraph_id);
+        html += `<p class="${cls}${isHl?' para-hl':''}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-hl-btn${isHl?' active':''}" onclick="App.toggleHighlight('${p.paragraph_id}')" title="Surligner" aria-label="Surligner">${isHl?'◆':'◇'}</button><button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
         if (note) {
           html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">Ã—</button></div>`;
         }
@@ -2090,6 +2103,15 @@ const App = {
         document.querySelectorAll('.ws-list-item').forEach(el => el.classList.toggle('active', el.dataset.uid === activeUid));
       }
     }
+  },
+
+  // â”€â”€ Highlights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  toggleHighlight(pid) {
+    if (State.highlights.has(pid)) { State.highlights.delete(pid); this.showToast('Surligné retiré'); }
+    else { State.highlights.add(pid); this.showToast('Passage surligné ◆'); }
+    saveHighlights();
+    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    if (unit) this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
   },
 
   // â”€â”€ Dark mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2410,10 +2432,11 @@ const App = {
   renderEspace(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const readCount = State.read.size, favCount = State.favorites.size, noteCount = Object.keys(State.notes).length;
-    let html = `<div class="stat-grid">
+    const readCount = State.read.size, favCount = State.favorites.size, noteCount = Object.keys(State.notes).length, hlCount = State.highlights.size;
+    let html = `<div class="stat-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">
       <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
       <div class="stat-card"><div class="stat-num gold">${favCount}</div><div class="stat-label">Favoris</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:#8B7BD4">${hlCount}</div><div class="stat-label">Surlignés</div></div>
       <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
     </div>`;
     if (State.favorites.size > 0) {
@@ -2426,9 +2449,19 @@ const App = {
         html += `<div class="fav-card" onclick="App.openUnit('${unit.unit_id}')"><div class="fav-card-day">${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></div>`;
       });
     }
+    if (State.highlights.size > 0) {
+      html += `<div class="espace-section-title" style="margin-top:${favCount>0?'16px':'0'}">Passages surlignés</div>`;
+      State.highlights.forEach(pid => {
+        let para=null, unit=null;
+        for (const u of State.corpus) { for (const s of u.sections) { for (const p of s.paragraphs) { if(p.paragraph_id===pid){para=p;unit=u;} } } }
+        if (!para||!unit) return;
+        const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
+        html += `<div class="fav-card" style="border-left:3px solid #8B7BD4" onclick="App.openUnit('${unit.unit_id}')"><div class="fav-card-day" style="color:#8B7BD4">◆ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></div>`;
+      });
+    }
     const noteEntries = Object.entries(State.notes).sort((a,b)=>b[1].ts-a[1].ts);
     if (noteEntries.length > 0) {
-      html += `<div class="espace-section-title" style="margin-top:${favCount>0?'16px':'0'}">Mes notes</div>`;
+      html += `<div class="espace-section-title" style="margin-top:${(favCount>0||hlCount>0)?'16px':'0'}">Mes notes</div>`;
       noteEntries.forEach(([pid,note]) => {
         const unit = State.corpus.find(u=>u.unit_id===note.unit_id); if (!unit) return;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
@@ -2436,7 +2469,7 @@ const App = {
         html += `<div class="note-espace-card" onclick="App.openUnit('${unit.unit_id}')"><div class="note-espace-meta">${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></div>`;
       });
     }
-    if (!readCount && !favCount && !noteCount) {
+    if (!readCount && !favCount && !hlCount && !noteCount) {
       html += '<div class="espace-empty"><div class="espace-empty-icon">✦</div><div class="espace-empty-text">Votre progression, vos favoris<br>et vos notes apparaîtront ici.</div></div>';
     }
     html += `
@@ -2479,6 +2512,7 @@ const App = {
       ['currentSeq', State.currentSeq ?? '—'],
       ['unit ouvert', unit ? unit.unit_id : '—'],
       ['Favoris', State.favorites.size],
+      ['Surlignés', State.highlights.size],
       ['Notes', Object.keys(State.notes).length],
       ['Thème', document.documentElement.dataset.theme ?? 'system'],
       ['Layout', window.innerWidth + 'px'],
