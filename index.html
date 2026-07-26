@@ -546,6 +546,18 @@ html, body {
 .search-clear.visible { display: block; }
 .search-empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; font-style: italic; }
 
+/* Full-text search results — passage snippets, distinct from unit cards */
+.search-group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 14px 4px 7px; }
+.snippet-card { background: var(--white); border: 0.5px solid var(--border); border-left: 3px solid var(--primary); border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 7px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.snippet-card:hover { background: var(--ivory-deep); border-left-color: var(--accent); }
+.snippet-meta { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+.snippet-text { font-family: var(--font-reader); font-size: 13.5px; color: var(--ink); line-height: 1.55; }
+.snippet-text mark { background: rgba(201,168,76,0.32); color: inherit; border-radius: 2px; padding: 0 1px; font-weight: 600; }
+
+/* Brief pulse on the paragraph a search result jumped to */
+@keyframes paraFlash { 0%,100% { background: transparent; } 25%,60% { background: rgba(44,74,124,0.13); } }
+.para-flash { animation: paraFlash 1.6s ease-in-out 1; border-radius: 4px; }
+
 .list-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 16px 0; }
 .list-card { display: flex; align-items: center; gap: 12px; background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; -webkit-tap-highlight-color: transparent; }
 .list-card:hover { border-color: var(--primary); background: var(--ivory-deep); }
@@ -644,6 +656,10 @@ html, body {
 /* Toast */
 .toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--ivory); padding: 9px 18px; border-radius: 20px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 100; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* Undo variant — must accept clicks, so it opts out of the base pointer-events:none */
+.toast.with-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding-right: 8px; }
+.toast-undo-btn { background: rgba(255,255,255,0.2); color: var(--ivory); border: none; border-radius: 14px; padding: 5px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; min-height: 30px; }
+.toast-undo-btn:hover { background: rgba(255,255,255,0.32); }
 
 /* Deferred SW-update banner — shown instead of a forced reload when the
    note modal is open with unsaved text, so a draft is never silently lost. */
@@ -758,6 +774,57 @@ html, body {
 .ws-today-card:hover { opacity: 0.85; }
 
 /* Today modal */
+/* â•â•â• First-run onboarding â•â•â•
+   Shown once (gated by mjv_onboarded) so the 31-day structure, the appendices,
+   the practice-day pin and the per-paragraph tools don't have to be inferred. */
+#onboard-modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+#onboard-modal.open { display: flex; }
+#onboard-box {
+  background: var(--ivory);
+  border: 0.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  width: 100%; max-width: 520px; max-height: 88vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#onboard-head {
+  background: var(--primary); color: var(--white);
+  padding: 22px 24px 20px; flex-shrink: 0; text-align: center;
+}
+#onboard-crown { font-size: 26px; color: var(--accent-light); margin-bottom: 8px; }
+#onboard-title { font-family: var(--font-reader); font-size: 19px; line-height: 1.4; }
+#onboard-sub { font-size: 12.5px; color: rgba(255,255,255,0.75); margin-top: 7px; font-family: var(--font-ui); }
+#onboard-body { overflow-y: auto; padding: 18px 22px 8px; -webkit-overflow-scrolling: touch; }
+.onb-item { display: flex; gap: 13px; align-items: flex-start; margin-bottom: 16px; }
+.onb-icon {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--practice-bg); border: 0.5px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: var(--primary);
+}
+.onb-label { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 3px; font-family: var(--font-ui); }
+.onb-desc { font-size: 12.5px; color: var(--muted); line-height: 1.55; font-family: var(--font-ui); }
+#onboard-foot {
+  flex-shrink: 0; padding: 12px 22px calc(16px + var(--safe-bottom));
+  border-top: 0.5px solid var(--border); display: flex; gap: 10px; align-items: center;
+}
+#onboard-aide-btn {
+  background: transparent; border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 14px; color: var(--muted); font-size: 13px; font-family: var(--font-ui);
+  cursor: pointer; min-height: 44px;
+}
+#onboard-start-btn {
+  flex: 1; background: var(--primary); color: #fff; border: none;
+  border-radius: var(--radius-sm); padding: 11px 16px; font-size: 14px;
+  font-family: var(--font-ui); cursor: pointer; min-height: 44px;
+}
+#onboard-start-btn:hover { filter: brightness(1.08); }
+
 #today-modal {
   display: none;
   position: fixed; inset: 0; z-index: 9998;
@@ -993,7 +1060,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.3.8</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.4.0</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1118,7 +1185,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.3.8</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.4.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1247,6 +1314,51 @@ html, body {
 <!-- Toast (shared) -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- First-run onboarding (shown once) -->
+<div id="onboard-modal" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
+  <div id="onboard-box">
+    <div id="onboard-head">
+      <div id="onboard-crown">✦</div>
+      <div id="onboard-title">La Vierge Marie dans le Royaume de la Divine Volonté</div>
+      <div id="onboard-sub">Un parcours de 31 jours — voici l'essentiel</div>
+    </div>
+    <div id="onboard-body">
+      <div class="onb-item">
+        <div class="onb-icon">◎</div>
+        <div>
+          <div class="onb-label">31 jours + 6 appendices</div>
+          <div class="onb-desc">Un jour par date du mois. Sous le calendrier, six lectures complémentaires (A1–A6) prolongent le parcours.</div>
+        </div>
+      </div>
+      <div class="onb-item">
+        <div class="onb-icon">✦</div>
+        <div>
+          <div class="onb-label">Pour aujourd'hui</div>
+          <div class="onb-desc">L'application s'ouvre sur le jour correspondant à la date. Appuyez sur la carte pour voir la petite pratique et l'oraison du jour.</div>
+        </div>
+      </div>
+      <div class="onb-item">
+        <div class="onb-icon">◇</div>
+        <div>
+          <div class="onb-label">Choisir son jour de pratique</div>
+          <div class="onb-desc">Vous commencez à une autre date ? Ouvrez un jour et appuyez sur <strong>Activer</strong> : il devient votre jour de pratique, quel que soit le calendrier.</div>
+        </div>
+      </div>
+      <div class="onb-item">
+        <div class="onb-icon">✎</div>
+        <div>
+          <div class="onb-label">Surligner et annoter</div>
+          <div class="onb-desc">Chaque paragraphe porte deux petites icônes à droite : ◇ pour surligner, ✎ pour écrire une note. Tout est conservé dans <strong>Mon Espace</strong>.</div>
+        </div>
+      </div>
+    </div>
+    <div id="onboard-foot">
+      <button id="onboard-aide-btn" type="button" onclick="App.finishOnboarding(true)">Voir l'aide</button>
+      <button id="onboard-start-btn" type="button" onclick="App.finishOnboarding(false)">Commencer</button>
+    </div>
+  </div>
+</div>
+
 <div id="today-modal" role="dialog" aria-modal="true" aria-label="Pour aujourd'hui" onclick="if(event.target===this)App.closeTodayModal()">
   <div id="today-modal-box">
     <div id="today-modal-header">
@@ -1289,9 +1401,9 @@ html, body {
 </div>
 
 <script>
-const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights' };
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded' };
 
-const APP_VERSION = '2.3.8';
+const APP_VERSION = '2.4.0';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1299,10 +1411,27 @@ const State = {
   read: new Set(), favorites: new Set(), notes: {}, highlights: new Set(), textSize: 17,
   noteTargetPid: null, widePanel: 'jours',
   activeDay: null,  // devotional day — may differ from calendar day
+  scrollPos: {},    // { [unit_id]: scrollTop px } — resume where the reader left off
+  pendingUndo: null,// { label, restore } — last destructive action, restorable via toast
+  readerOpen: false,// is a unit currently displayed in the reader? drives reconcileLayout
+  lastWide: null,   // last observed layout bucket — reconcile only on a real flip
 };
 
 // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const isWide = () => window.innerWidth >= 768 && window.innerHeight >= 600;
+
+// Shared by the reader and by full-text search results
+const SECTION_LABELS = {
+  soul_intro:'✦ L\'âme', lesson:'✦ Leçon de la Reine du Ciel',
+  soul_response:'✦ Réponse de l\'âme', queen_response:'✦ La Reine d\'amour',
+  practice:'✦ Petite pratique', jaculatory_prayer:'✦ Oraison jaculatoire',
+  unit_intro_note:'✦ Introduction',
+};
+
+// Diacritic-insensitive, case-insensitive comparison key. Escapes are used for
+// the combining-marks range because this file is served without a charset
+// header by the dev server (see the JS encoding rule in the constants doc).
+const stripAccents = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 // Each key is parsed independently so a single corrupt entry (bad sync, quota
 // truncation, manual edit) resets only that key, not the user's entire saved state.
@@ -1339,6 +1468,16 @@ function loadStorage() {
     const ad = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0');
     State.activeDay = (ad >= 1 && ad <= 31) ? ad : null;
   } catch(e) { State.activeDay = null; }
+
+  try {
+    const sp = JSON.parse(localStorage.getItem(SK.SCROLL) || '{}');
+    State.scrollPos = {};
+    if (sp && typeof sp === 'object') {
+      for (const [uid, off] of Object.entries(sp)) {
+        if (typeof off === 'number' && off > 0) State.scrollPos[uid] = off;
+      }
+    }
+  } catch(e) { State.scrollPos = {}; }
 }
 // Each save* helper returns true on success, false on failure (quota exceeded,
 // private-mode restrictions, storage disabled) so callers can tell the user
@@ -1349,6 +1488,15 @@ const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.st
 const saveNotes      = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); return true; } catch(e){ return false; } };
 const saveTextSize   = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); return true; } catch(e){ return false; } };
 const saveActiveDay  = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
+const saveScrollPos  = () => { try { localStorage.setItem(SK.SCROLL, JSON.stringify(State.scrollPos)); return true; } catch(e){ return false; } };
+
+// Scroll fires rapidly — record into State immediately (cheap) but debounce the
+// localStorage write so reading never causes a write storm.
+let _scrollSaveTimer = null;
+function queueScrollSave() {
+  clearTimeout(_scrollSaveTimer);
+  _scrollSaveTimer = setTimeout(saveScrollPos, 400);
+}
 
 // One-time probe: is localStorage actually usable (not full, not blocked by
 // private-mode/settings)? Used at init to warn up front rather than failing
@@ -1443,6 +1591,13 @@ const App = {
       if (validParaIds.has(pid)) cleanNotes[pid] = note; else notesChanged = true;
     }
     if (notesChanged) { State.notes = cleanNotes; saveNotes(); }
+
+    const cleanScroll = {};
+    let scrollChanged = false;
+    for (const [uid, off] of Object.entries(State.scrollPos)) {
+      if (validUnitIds.has(uid)) cleanScroll[uid] = off; else scrollChanged = true;
+    }
+    if (scrollChanged) { State.scrollPos = cleanScroll; saveScrollPos(); }
   },
 
   async init() {
@@ -1486,6 +1641,11 @@ const App = {
     const wlf = document.getElementById('wide-loading');
     if (wlf) wlf.style.display = 'none';
 
+    // Baseline for layout-flip detection. Recorded here (post-await, document
+    // fully loaded) because viewport dimensions can still be transient earlier
+    // in init, which would bake in a wrong baseline.
+    State.lastWide = isWide();
+
     // Mobile init
     this.buildCalendar();
     this.buildList();
@@ -1506,9 +1666,27 @@ const App = {
 
     this.registerSW();
 
-    // Reconcile layout when viewport crosses the wide/mobile threshold
+    // Reconcile layout when the viewport crosses the wide/mobile threshold.
+    // matchMedia alone proved unreliable (it does not fire in every resize
+    // path), so resize/orientationchange are also watched — debounced, and
+    // gated on the layout bucket actually changing so it stays a no-op during
+    // ordinary resizing within the same bucket.
     const mql = window.matchMedia('(min-width: 768px) and (min-height: 600px)');
-    mql.addEventListener('change', () => this.reconcileLayout());
+    mql.addEventListener('change', () => this.checkLayoutBucket());
+    let _layoutTimer = null;
+    const onViewportChange = () => {
+      clearTimeout(_layoutTimer);
+      _layoutTimer = setTimeout(() => this.checkLayoutBucket(), 120);
+    };
+    window.addEventListener('resize', onViewportChange, { passive: true });
+    window.addEventListener('orientationchange', onViewportChange, { passive: true });
+
+    // Remember reading position in both layouts
+    document.getElementById('reader-scroll')?.addEventListener('scroll', () => this.recordScroll('reader-scroll'), { passive: true });
+    document.getElementById('wide-reader-scroll')?.addEventListener('scroll', () => this.recordScroll('wide-reader-scroll'), { passive: true });
+    // Flush any pending offset if the app is backgrounded or closed mid-read
+    window.addEventListener('pagehide', saveScrollPos);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveScrollPos(); });
 
     document.addEventListener('click', e => {
       if (!e.target.closest('#textsize-panel') && !e.target.closest('#btn-textsize')) {
@@ -1518,27 +1696,48 @@ const App = {
         document.getElementById('wide-textsize-panel').classList.remove('open');
       }
     });
+
+    // Last, so the welcome overlay sits above a fully-rendered app
+    this.maybeShowOnboarding();
   },
 
   registerSW() {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.APP_BASE + 'sw.js', { scope: window.APP_BASE }).catch(() => {});
   },
 
+  // Only reconcile when the layout bucket genuinely flips, so ordinary resizing
+  // inside one bucket costs nothing.
+  checkLayoutBucket() {
+    const nowWide = isWide();
+    if (nowWide === State.lastWide) return;
+    State.lastWide = nowWide;
+    this.reconcileLayout();
+  },
+
+  // Called when the viewport crosses the wide/mobile threshold (rotation, iPad
+  // Split View, window resize). Must be symmetric: the previous version did all
+  // its work inside `if (isWide())`, so going wide→mobile did nothing at all and
+  // left the reader on whatever stale screen the mobile stack last had (Home),
+  // losing the user's place mid-meditation.
   reconcileLayout() {
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    State.lastWide = isWide();
+    const unit = State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
+
+    // Re-open the current unit into whichever layout is now active. openUnit
+    // reveals the correct containers (#wide-reader-content vs #screen-reader),
+    // writes the badges/nav/action bar, and restores the saved reading position
+    // — so both directions are handled without duplicating that logic here.
+    if (unit && State.readerOpen) this.openUnit(unit.unit_id);
+
     if (isWide()) {
-      if (unit) {
-        const badge = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
-        document.getElementById('wide-hero-badge').textContent = badge;
-        document.getElementById('wide-hero-title').textContent = unit.title;
-        document.getElementById('wide-reader-day-badge').textContent = badge;
-        document.getElementById('wide-reader-topbar-title').textContent = unit.title;
-        this.renderReaderBody(unit, 'wide-reader-body');
-        this.updateWideNav(unit);
-        this.updateWideActionBar(unit);
-      }
+      this.buildWideList();
+      this.updateWideCalendar();
       this.updateWideProgress();
       this.updateAppendixRows();
+      this.renderTodayCard();
+    } else {
+      this.buildList();
+      this.updateCalendar();
     }
   },
 
@@ -1552,6 +1751,8 @@ const App = {
     const map = { home:'nav-home', list:'nav-list', espace:'nav-espace', aide:'nav-aide' };
     if (map[name]) document.getElementById(map[name])?.classList.add('active');
     if (!initial && name !== 'reader') State.prevScreen = name;
+    // Leaving the reader means a rotation should no longer force it back open
+    if (name !== 'reader') State.readerOpen = false;
     if (name === 'espace') this.renderEspace('espace-scroll');
     if (name === 'aide') this.renderHelp('aide-scroll');
     if (name === 'home') this.updateCalendar();
@@ -1839,7 +2040,49 @@ const App = {
 
   onSearch(query, scrollId, clearId) {
     document.getElementById(clearId)?.classList.toggle('visible', query.length > 0);
-    this.renderSearchResults(query, scrollId, clearId);
+    // Full-text search scans 753 paragraphs, so debounce keystrokes.
+    clearTimeout(this._searchTimer);
+    this._searchTimer = setTimeout(() => this.renderSearchResults(query, scrollId, clearId), 140);
+  },
+
+  // â”€â”€ Full-text search index â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Built once on first search: pre-stripping every paragraph avoids redoing
+  // NFD normalisation for the whole corpus on each keystroke.
+  buildSearchIndex() {
+    if (this._searchIndex) return this._searchIndex;
+    const idx = [];
+    (State.corpus || []).forEach(u => {
+      u.sections.forEach(sec => {
+        sec.paragraphs.forEach(p => {
+          idx.push({
+            pid: p.paragraph_id,
+            unitId: u.unit_id,
+            unitLabel: u.day_number ? 'Jour ' + u.day_number : 'Appendice ' + u.appendix_number,
+            sectionLabel: (SECTION_LABELS[sec.section_type] || '').replace(/^✦\s*/, ''),
+            text: p.text || '',
+            stripped: stripAccents(p.text || ''),
+          });
+        });
+      });
+    });
+    this._searchIndex = idx;
+    return idx;
+  },
+
+  // Extract a readable window of text around the match, with the hit marked.
+  buildSnippet(entry, q) {
+    const at = entry.stripped.indexOf(q);
+    if (at === -1) return this.esc(entry.text.slice(0, 150)) + '…';
+    const PAD_BEFORE = 60, PAD_AFTER = 110;
+    let start = Math.max(0, at - PAD_BEFORE);
+    let end = Math.min(entry.text.length, at + q.length + PAD_AFTER);
+    // Avoid cutting mid-word
+    if (start > 0) { const sp = entry.text.indexOf(' ', start); if (sp !== -1 && sp < at) start = sp + 1; }
+    if (end < entry.text.length) { const sp = entry.text.lastIndexOf(' ', end); if (sp > at + q.length) end = sp; }
+    const before = entry.text.slice(start, at);
+    const hit    = entry.text.slice(at, at + q.length);
+    const after  = entry.text.slice(at + q.length, end);
+    return (start > 0 ? '…' : '') + this.esc(before) + '<mark>' + this.esc(hit) + '</mark>' + this.esc(after) + (end < entry.text.length ? '…' : '');
   },
 
   clearSearch(inputId, scrollId, clearId) {
@@ -1851,6 +2094,9 @@ const App = {
     else this.buildWideList();
   },
 
+  // Searches unit titles AND the full text of all 753 paragraphs. Title hits
+  // are listed first as unit cards; passage hits follow as snippet cards that
+  // deep-link to the matched paragraph.
   renderSearchResults(query, scrollId, clearId) {
     const el = document.getElementById(scrollId);
     if (!el) return;
@@ -1859,21 +2105,49 @@ const App = {
       else this.buildWideList();
       return;
     }
-    const strip = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const q = strip(query.trim());
-    const matches = State.corpus.filter(u => {
-      const title = strip(u.title);
-      return title.includes(q);
-    });
-    if (matches.length === 0) {
-      el.innerHTML = `<div class="search-empty">Aucun résultat pour « ${this.esc(query)} »</div>`;
+    const q = stripAccents(query.trim());
+    // A single character matches nearly everything — wait for a usable term.
+    if (q.length < 2) {
+      el.innerHTML = '<div class="search-empty">Saisissez au moins deux lettres…</div>';
       return;
     }
-    // Use list cards for mobile, wide list items for sidebar
-    if (scrollId === 'list-scroll') {
-      el.innerHTML = matches.map(u => this.renderListCard(u)).join('') + '<div style="height:16px"></div>';
-    } else {
-      el.innerHTML = matches.map(u => this.wideListItem(u)).join('');
+
+    const titleHits = State.corpus.filter(u => stripAccents(u.title).includes(q));
+    // Cap passage results: the goal is finding a remembered phrase, not paging
+    // through hundreds of loose hits. When capped, the UI says so explicitly.
+    const PASSAGE_CAP = 40;
+    const allPassageHits = this.buildSearchIndex().filter(e => e.stripped.includes(q));
+    const passageHits = allPassageHits.slice(0, PASSAGE_CAP);
+
+    if (!titleHits.length && !passageHits.length) {
+      el.innerHTML = '<div class="search-empty">Aucun r\u00e9sultat pour \u00ab ' + this.esc(query) + ' \u00bb</div>';
+      return;
+    }
+
+    const isMobile = scrollId === 'list-scroll';
+    let html = '';
+
+    if (titleHits.length) {
+      html += '<div class="search-group-label">' + titleHits.length + ' titre' + (titleHits.length > 1 ? 's' : '') + '</div>';
+      html += titleHits.map(u => isMobile ? this.renderListCard(u) : this.wideListItem(u)).join('');
+    }
+
+    if (passageHits.length) {
+      const shown = passageHits.length, total = allPassageHits.length;
+      const countLabel = total > shown
+        ? shown + ' premiers passages sur ' + total
+        : total + ' passage' + (total > 1 ? 's' : '');
+      html += '<div class="search-group-label">' + countLabel + '</div>';
+      html += passageHits.map(e => '<div class="snippet-card" onclick="App.openUnit(\'' + e.unitId + '\',\'' + e.pid + '\')">'
+        + '<div class="snippet-meta">' + this.esc(e.unitLabel) + (e.sectionLabel ? ' \u00b7 ' + this.esc(e.sectionLabel) : '') + '</div>'
+        + '<div class="snippet-text">' + this.buildSnippet(e, q) + '</div>'
+        + '</div>').join('');
+    }
+
+    html += '<div style="height:16px"></div>';
+    el.innerHTML = html;
+
+    if (!isMobile) {
       const activeUid = State.corpus.find(u => u.sequence_meditative === State.currentSeq)?.unit_id;
       el.querySelectorAll('.ws-list-item').forEach(item => item.classList.toggle('active', item.dataset.uid === activeUid));
     }
@@ -1908,10 +2182,13 @@ const App = {
     if (unit) this.openUnit(unit.unit_id);
   },
 
-  openUnit(unitId) {
+  // targetPid: optional paragraph to jump to instead of the saved reading
+  // position — used by full-text search results to land on the matched passage.
+  openUnit(unitId, targetPid) {
     const unit = State.corpus.find(u => u.unit_id === unitId);
     if (!unit) return;
     State.currentSeq = unit.sequence_meditative;
+    State.readerOpen = true;
 
     const badge = unit.day_number
       ? `Jour ${unit.day_number} · 31 Jours avec Marie`
@@ -1937,7 +2214,8 @@ const App = {
       this.renderReaderBody(unit, 'wide-reader-body');
       this.updateWideNav(unit);
       this.updateWideActionBar(unit);
-      document.getElementById('wide-reader-scroll').scrollTop = 0;
+      if (targetPid) this.scrollToParagraph('wide-reader-scroll', targetPid);
+      else this.restoreScroll('wide-reader-scroll', unitId);
       document.getElementById('wide-textsize-panel').classList.remove('open');
     } else {
       // Mobile: populate mobile reader
@@ -1949,20 +2227,59 @@ const App = {
       this.renderReaderBody(unit, 'reader-body');
       this.updateReaderNav(unit);
       this.updateActionBar(unit);
-      document.getElementById('reader-scroll').scrollTop = 0;
       document.getElementById('textsize-panel').classList.remove('open');
       this.showScreen('reader');
+      // Must come after showScreen: while #screen-reader is display:none the
+      // container has no scrollable height and setting scrollTop is a no-op.
+      if (targetPid) this.scrollToParagraph('reader-scroll', targetPid);
+      else this.restoreScroll('reader-scroll', unitId);
     }
+  },
+
+  // Jump to a specific paragraph (used by full-text search results) and pulse
+  // it briefly so the eye lands on the passage that matched.
+  scrollToParagraph(scrollId, pid) {
+    const scroller = document.getElementById(scrollId);
+    const target = scroller?.querySelector(`[data-pid="${pid}"]`);
+    if (!scroller || !target) return;
+    // Offset by a little so the paragraph isn't flush against the top edge
+    scroller.scrollTop = Math.max(0, target.offsetTop - 60);
+    target.classList.remove('para-flash');
+    void target.offsetWidth; // restart the animation if the same target repeats
+    target.classList.add('para-flash');
+    setTimeout(() => target.classList.remove('para-flash'), 1800);
+  },
+
+  // â”€â”€ Reading position â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Resume where the reader left off. Offsets are stored per unit_id, so
+  // reopening a half-read meditation lands where you stopped instead of at the
+  // hero title. Unread units have no saved offset and open at the top.
+  restoreScroll(scrollId, unitId) {
+    const el = document.getElementById(scrollId);
+    if (!el) return;
+    const saved = State.scrollPos[unitId] || 0;
+    el.scrollTop = saved;
+    // Fonts/images can shift layout after the first paint — re-apply once the
+    // next frame has settled so the restore doesn't land short.
+    if (saved > 0) requestAnimationFrame(() => { if (el.scrollTop !== saved) el.scrollTop = saved; });
+  },
+
+  recordScroll(scrollId) {
+    const el = document.getElementById(scrollId);
+    if (!el) return;
+    const unit = State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
+    if (!unit) return;
+    const off = Math.round(el.scrollTop);
+    // Don't persist trivial offsets — keeps the stored map small and means
+    // "scrolled back to the top" clears the resume point rather than saving 0.
+    if (off > 40) State.scrollPos[unit.unit_id] = off;
+    else delete State.scrollPos[unit.unit_id];
+    queueScrollSave();
   },
 
   // â”€â”€ Reader body (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   renderReaderBody(unit, bodyId) {
-    const sectionLabels = {
-      soul_intro:'✦ L\'âme', lesson:'✦ Leçon de la Reine du Ciel',
-      soul_response:'✦ Réponse de l\'âme', queen_response:'✦ La Reine d\'amour',
-      practice:'✦ Petite pratique', jaculatory_prayer:'✦ Oraison jaculatoire',
-      unit_intro_note:'✦ Introduction',
-    };
+    const sectionLabels = SECTION_LABELS;
     const paraClass = {
       soul_intro:'para-soul', soul_response:'para-soul',
       lesson:'para-mary', queen_response:'para-mary', unit_intro_note:'para-mary',
@@ -2086,10 +2403,28 @@ const App = {
     const lesson = unit.sections.find(s => s.section_type === 'lesson');
     if (!lesson?.paragraphs.length) return;
     const pid = lesson.paragraphs[0].paragraph_id;
-    if (State.favorites.has(pid)) { State.favorites.delete(pid); this.showToast(saveFavorites() ? 'Retiré des favoris' : this.SAVE_ERROR_MSG); }
-    else { State.favorites.add(pid); this.showToast(saveFavorites() ? 'Ajouté aux favoris ♥' : this.SAVE_ERROR_MSG); }
+    const removing = State.favorites.has(pid);
+    if (removing) State.favorites.delete(pid); else State.favorites.add(pid);
+    const ok = saveFavorites();
+    this.refreshAfterFavoriteChange(unit);
+    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
+    if (removing) {
+      this.showUndoToast('Retiré des favoris', () => {
+        State.favorites.add(pid);
+        saveFavorites();
+        this.refreshAfterFavoriteChange(unit);
+        this.showToast('Favori rétabli ♥');
+      });
+    } else {
+      this.showToast('Ajouté aux favoris ♥');
+    }
+  },
+
+  refreshAfterFavoriteChange(unit) {
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
+    // Keep the Mon Espace favourites list and counts in step with the toggle
+    if (isWide() && State.widePanel === 'espace') this.renderEspace('wide-espace');
   },
 
   shareDay() {
@@ -2127,7 +2462,10 @@ const App = {
     if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Notes et favoris seront conservés.')) return;
     State.read = new Set();
     State.activeDay = null;
-    const ok = saveRead() && saveActiveDay();
+    // Resume points are reading progress, which this reset clears — notes,
+    // favourites and highlights are deliberately preserved.
+    State.scrollPos = {};
+    const ok = saveRead() && saveActiveDay() && saveScrollPos();
     this.updateCalendar();
     this.updateWideCalendar();
     this.updateWideProgress();
@@ -2208,42 +2546,107 @@ const App = {
     const text = document.getElementById('note-textarea').value.trim();
     let unit = null;
     for (const u of State.corpus) { if (u.sections.some(s=>s.paragraphs.some(p=>p.paragraph_id===pid))){unit=u;break;} }
-    if (text) { State.notes[pid] = { text, unit_id: unit?.unit_id, pid, ts: Date.now() }; this.showToast(saveNotes() ? 'Note enregistrée ✎' : this.SAVE_ERROR_MSG); }
-    else { delete State.notes[pid]; this.showToast(saveNotes() ? 'Note supprimée' : this.SAVE_ERROR_MSG); }
+
+    // Clearing the textarea deletes the note — treat that as destructive and
+    // offer the same undo as the explicit delete button.
+    const previous = State.notes[pid];
+    const isDeletion = !text;
+    if (text) State.notes[pid] = { text, unit_id: unit?.unit_id, pid, ts: Date.now() };
+    else delete State.notes[pid];
+    const ok = saveNotes();
+
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
-    const openUnit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
-    if (openUnit) {
-      this.renderReaderBody(openUnit, isWide() ? 'wide-reader-body' : 'reader-body');
-      this.buildList();
-      if (isWide()) {
-        this.buildWideList();
-        const activeUid = State.corpus.find(u => u.sequence_meditative === State.currentSeq)?.unit_id;
-        document.querySelectorAll('.ws-list-item').forEach(el => el.classList.toggle('active', el.dataset.uid === activeUid));
-      }
+    this.refreshAfterNoteChange();
+
+    if (!ok) this.showToast(this.SAVE_ERROR_MSG);
+    else if (isDeletion) {
+      this.showUndoToast('Note supprimée', () => {
+        if (previous) State.notes[pid] = previous;
+        saveNotes();
+        this.refreshAfterNoteChange();
+        this.showToast('Note rétablie ✎');
+      });
+    } else {
+      this.showToast('Note enregistrée ✎');
     }
     this.checkPendingReload();
   },
   deleteNote(pid) {
-    delete State.notes[pid]; this.showToast(saveNotes() ? 'Note supprimée' : this.SAVE_ERROR_MSG);
+    // Keep the note in memory so Annuler can put it back verbatim.
+    const removed = State.notes[pid];
+    delete State.notes[pid];
+    const ok = saveNotes();
+    this.refreshAfterNoteChange();
+    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
+    this.showUndoToast('Note supprimée', () => {
+      if (removed) State.notes[pid] = removed;
+      saveNotes();
+      this.refreshAfterNoteChange();
+      this.showToast('Note rétablie ✎');
+    });
+  },
+
+  // Notes appear in the reader, the list note-count badges and Mon Espace —
+  // all three need refreshing whenever a note is added, edited or removed.
+  refreshAfterNoteChange() {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (unit) {
       this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
       this.buildList();
       if (isWide()) {
         this.buildWideList();
-        const activeUid = State.corpus.find(u => u.sequence_meditative === State.currentSeq)?.unit_id;
+        const activeUid = unit.unit_id;
         document.querySelectorAll('.ws-list-item').forEach(el => el.classList.toggle('active', el.dataset.uid === activeUid));
       }
+    }
+    if (isWide() && State.widePanel === 'espace') this.renderEspace('wide-espace');
+  },
+
+  // â”€â”€ First-run onboarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  maybeShowOnboarding() {
+    let seen = false;
+    try { seen = localStorage.getItem(SK.ONBOARDED) === '1'; } catch(e) { seen = true; }
+    if (seen) return;
+    document.getElementById('onboard-modal')?.classList.add('open');
+    // Focus the primary action so keyboard users land inside the dialog
+    setTimeout(() => document.getElementById('onboard-start-btn')?.focus(), 120);
+  },
+
+  finishOnboarding(openAide) {
+    document.getElementById('onboard-modal')?.classList.remove('open');
+    // If storage is unavailable the overlay simply shows again next launch —
+    // preferable to failing loudly on a first-run welcome screen.
+    try { localStorage.setItem(SK.ONBOARDED, '1'); } catch(e) {}
+    if (openAide) {
+      if (isWide()) this.wideNav('aide');
+      else this.showScreen('aide');
     }
   },
 
   // â”€â”€ Highlights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   toggleHighlight(pid) {
-    if (State.highlights.has(pid)) { State.highlights.delete(pid); this.showToast(saveHighlights() ? 'Surligné retiré' : this.SAVE_ERROR_MSG); }
-    else { State.highlights.add(pid); this.showToast(saveHighlights() ? 'Passage surligné ◆' : this.SAVE_ERROR_MSG); }
+    const removing = State.highlights.has(pid);
+    if (removing) State.highlights.delete(pid); else State.highlights.add(pid);
+    const ok = saveHighlights();
+    this.refreshAfterHighlightChange();
+    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
+    if (removing) {
+      this.showUndoToast('Surligné retiré', () => {
+        State.highlights.add(pid);
+        saveHighlights();
+        this.refreshAfterHighlightChange();
+        this.showToast('Surlignage rétabli ◆');
+      });
+    } else {
+      this.showToast('Passage surligné ◆');
+    }
+  },
+
+  refreshAfterHighlightChange() {
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (unit) this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
+    if (State.widePanel === 'espace' && isWide()) this.renderEspace('wide-espace');
   },
 
   // â”€â”€ Dark mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2658,9 +3061,37 @@ const App = {
   },
   showToast(msg) {
     const t = document.getElementById('toast');
+    t.classList.remove('with-action');
     t.textContent = msg; t.classList.add('show');
     clearTimeout(t._timer);
     t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+  },
+
+  // Destructive actions (deleting a note, removing a highlight or favourite)
+  // are otherwise irreversible — the user's own reflections are the hardest
+  // data in the app to recreate. This shows the outcome with an Annuler action
+  // and holds it longer than a normal toast so there's time to react.
+  showUndoToast(msg, restore) {
+    const t = document.getElementById('toast');
+    clearTimeout(t._timer);
+    t.textContent = '';
+    t.classList.add('with-action', 'show');
+
+    const label = document.createElement('span');
+    label.textContent = msg;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toast-undo-btn';
+    btn.textContent = 'Annuler';
+    btn.onclick = () => {
+      clearTimeout(t._timer);
+      t.classList.remove('show', 'with-action');
+      try { restore(); } catch(e) {}
+    };
+    t.appendChild(label);
+    t.appendChild(btn);
+
+    t._timer = setTimeout(() => t.classList.remove('show', 'with-action'), 6000);
   },
   esc(str) {
     if (!str) return '';
