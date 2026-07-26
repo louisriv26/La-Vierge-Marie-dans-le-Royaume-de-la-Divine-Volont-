@@ -36,7 +36,12 @@ window.APP_BASE = (function() {
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<!-- Load the font stylesheet without blocking first paint: it is fetched as a
+     preload (non-blocking) and promoted to a stylesheet once it arrives. The
+     reader has a Georgia/serif fallback in --font-reader, so text is readable
+     immediately and simply upgrades when the webfont lands. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap"></noscript>
 
 <style>
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -47,6 +52,15 @@ window.APP_BASE = (function() {
   --primary-light: #3D6399;
   --accent: #C9A84C;
   --accent-light: #E8C96A;
+  /* Foreground-safe variants. --accent is a decorative gold that only reaches
+     ~2.3:1 on ivory, so it must not be used for text or meaningful icons.
+     Use --accent-fg for those; it clears 4.5:1 on --ivory/--white. */
+  --accent-fg: #806014;
+  --highlight-accent: #6B57C4;  /* highlighted-passage marker, >=4.5:1 on ivory */
+  /* Hero panels keep a deep blue in both themes. In dark mode --primary is a
+     LIGHT blue meant for text, and using it as a hero fill dropped the gold
+     badge on it to 2.56:1 (measured). */
+  --hero-bg: #2C4A7C;
   --ivory: #F8F6FC;
   --ivory-deep: #F0EDF8;
   --ink: #1C1830;
@@ -80,6 +94,10 @@ window.APP_BASE = (function() {
   :root:not([data-theme="light"]) {
     --primary: #4A7CB8; --primary-light: #5E92CC;
     --accent: #D4A843; --accent-light: #E8C45A;
+    /* On the dark ivory (#1A1720) the gold is already legible, so the
+       foreground variant is the lighter tone rather than a darker one. */
+    --accent-fg: #E8C45A; --highlight-accent: #B0A0F0;
+    --hero-bg: #22314A;
     --ivory: #1A1720; --ivory-deep: #201C2C;
     --ink: #E0DCF0; --muted: #8A8498;
     --border: #2E2840; --border-light: #261F38;
@@ -92,6 +110,10 @@ window.APP_BASE = (function() {
 [data-theme="dark"] {
     --primary: #4A7CB8; --primary-light: #5E92CC;
     --accent: #D4A843; --accent-light: #E8C45A;
+    /* On the dark ivory (#1A1720) the gold is already legible, so the
+       foreground variant is the lighter tone rather than a darker one. */
+    --accent-fg: #E8C45A; --highlight-accent: #B0A0F0;
+    --hero-bg: #22314A;
     --ivory: #1A1720; --ivory-deep: #201C2C;
     --ink: #E0DCF0; --muted: #8A8498;
     --border: #2E2840; --border-light: #261F38;
@@ -264,7 +286,7 @@ html, body {
   .ws-cal-cell.active-day { box-shadow: 0 0 0 2.5px var(--accent), 0 0 0 4.5px rgba(201,168,76,0.25); }
 
   /* Sidebar list */
-  .ws-list-scroll { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+  .ws-list-scroll { flex: 1; overflow-y: auto; padding-bottom: calc(8px + var(--safe-bottom)); }
   .ws-section-label {
     font-size: 9px; text-transform: uppercase; letter-spacing: 0.09em;
     color: var(--muted); padding: 12px 16px 6px;
@@ -316,7 +338,7 @@ html, body {
     background: var(--ivory);
     flex-shrink: 0;
   }
-  .wrt-day { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
+  .wrt-day { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent-fg); }
   .wrt-title { font-family: var(--font-reader); font-size: 15px; color: var(--ink); flex: 1; }
   .wrt-actions { display: flex; gap: 6px; }
   .wrt-btn {
@@ -333,7 +355,7 @@ html, body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .wr-hero { background: var(--primary); padding: 24px 48px 20px; }
+  .wr-hero { background: var(--hero-bg); padding: 24px 48px 20px; }
   .wr-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
   .wr-hero-title { font-family: var(--font-reader); font-size: 24px; color: var(--white); line-height: 1.45; max-width: 640px; }
   .wr-body { padding: 24px 48px 40px; max-width: 720px; }
@@ -341,7 +363,8 @@ html, body {
   /* Reader nav bar */
   #wide-reader-nav {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 28px; border-top: 0.5px solid var(--border);
+    padding: 10px 28px calc(10px + var(--safe-bottom));
+    border-top: 0.5px solid var(--border);
     background: var(--ivory); flex-shrink: 0;
   }
   .wrn-btn {
@@ -359,7 +382,7 @@ html, body {
   #wide-espace {
     flex: 1;
     overflow-y: auto;
-    padding: 28px 48px;
+    padding: 28px 48px calc(28px + var(--safe-bottom));
     background: var(--ivory);
     display: none;
   }
@@ -408,8 +431,8 @@ html, body {
   .wr-hero-title { font-size: 26px; }
   .wr-body { padding: 28px 60px 48px; }
   #wide-reader-topbar { padding: 14px 40px 12px; }
-  #wide-reader-nav { padding: 12px 40px; }
-  #wide-espace { padding: 32px 60px; }
+  #wide-reader-nav { padding: 12px 40px calc(12px + var(--safe-bottom)); }
+  #wide-espace { padding: 32px 60px calc(32px + var(--safe-bottom)); }
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -445,32 +468,39 @@ html, body {
   background: var(--prayer-bg); border: 0.5px solid var(--border);
   border-radius: var(--radius-md); padding: 16px 20px; margin: 4px 0 12px; position: relative;
 }
-.para-hl-btn {
-  position: absolute; right: 30px; top: 6px;
-  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-  background: transparent; border: none; border-radius: 5px;
-  color: var(--border); font-size: 13px; cursor: pointer; transition: all 0.15s;
+/* Per-paragraph controls.
+   They were 22x22 (under the 24px WCAG 2.2 AA minimum), only 24px apart, and
+   pinned at top:6px where they sat directly over the first line of text —
+   which made long-press text selection near the top-right unreliable.
+   Now 34x34 with 12px of clear space, lifted into the gutter above the
+   paragraph so they no longer overlap the text. The reading column keeps its
+   full width (reserving horizontal space instead would have narrowed it by
+   ~20% on a phone). */
+.para-hl-btn, .para-note-btn {
+  position: absolute; top: -14px;
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: 50%;
+  color: var(--muted); font-size: 13px; cursor: pointer; transition: color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.para-hl-btn:hover, .para-hl-btn:active { color: var(--accent); background: var(--practice-bg); }
-.para-hl-btn.active { color: var(--accent); }
-.para-note-btn {
-  position: absolute; right: 6px; top: 6px;
-  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-  background: transparent; border: none; border-radius: 5px;
-  color: var(--border); font-size: 13px; cursor: pointer; transition: all 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.para-note-btn:hover, .para-note-btn:active { color: var(--accent); background: var(--practice-bg); }
+.para-hl-btn { right: 46px; }
+.para-note-btn { right: 0; }
+.para-hl-btn:hover, .para-hl-btn:active,
+.para-note-btn:hover, .para-note-btn:active { color: var(--accent-fg); background: var(--practice-bg); }
+.para-hl-btn.active { color: var(--accent-fg); }
+/* The boxed section types already have inner padding, so their controls sit
+   inside the box rather than above it. */
+.para-practice .para-hl-btn, .para-practice .para-note-btn,
+.para-prayer .para-hl-btn, .para-prayer .para-note-btn { top: 4px; }
 .para-hl { background: rgba(201,168,76,0.10); border-radius: 4px; }
 .para-note {
   background: var(--note-bg); border: 0.5px solid var(--note-border);
   border-radius: var(--radius-sm); padding: 10px 13px; margin-top: -8px; margin-bottom: 1.1em;
   display: flex; align-items: flex-start; gap: 8px;
 }
-.para-note-icon { color: var(--accent); font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+.para-note-icon { color: var(--accent-fg); font-size: 13px; flex-shrink: 0; margin-top: 1px; }
 .para-note-text { font-family: var(--font-ui); font-size: 13px; color: var(--ink); line-height: 1.55; flex: 1; white-space: pre-wrap; word-break: break-word; }
-.para-note-del { color: var(--muted); font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
+.para-note-del { color: var(--muted); font-size: 14px; cursor: pointer; padding: 8px 10px; margin: -8px -8px -8px 0; background: transparent; border: none; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
 .para-note-del:hover { color: var(--danger); }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -489,7 +519,7 @@ html, body {
 .topbar-title { font-family: var(--font-reader); font-size: 17px; color: var(--ink); font-style: italic; }
 .topbar-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
 .topbar-actions { display: flex; gap: 6px; }
-.topbar-action { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 17px; transition: color 0.15s, background 0.15s; }
+.topbar-action { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 17px; transition: color 0.15s, background 0.15s; }
 .topbar-action:hover { background: var(--ivory-deep); color: var(--primary); }
 
 .calendar-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
@@ -509,7 +539,7 @@ html, body {
 /* â”€â”€ Appendix circles row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .appendix-row { display: flex; gap: 5px; padding: 6px 0 2px; align-items: center; }
 .appendix-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; flex-shrink: 0; }
-.app-circle { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
+.app-circle { width: 26px; height: 26px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
 .app-circle.read { background: var(--accent); border-color: var(--accent); color: #fff; }
 .app-circle:hover { border-color: var(--primary); color: var(--primary); }
 .progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
@@ -520,7 +550,7 @@ html, body {
 .hero-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 0; }
 .hero-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; }
 .hero-card:active { transform: scale(0.99); }
-.hero-card-header { background: var(--primary); padding: 16px 18px 14px; }
+.hero-card-header { background: var(--hero-bg); padding: 16px 18px 14px; }
 .hero-day-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
 .hero-day-num { font-family: var(--font-reader); font-size: 34px; color: var(--white); line-height: 1; margin-bottom: 6px; }
 .hero-ordinal { font-family: var(--font-reader); font-size: 13px; color: rgba(255,255,255,0.7); font-style: italic; }
@@ -531,7 +561,7 @@ html, body {
 .hero-read-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-ui); transition: background 0.15s; }
 .hero-read-btn:hover { background: var(--primary-light); }
 .hero-nav-btns { display: flex; gap: 6px; }
-.hero-nav-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
+.hero-nav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
 .hero-nav-btn:hover { color: var(--primary); border-color: var(--primary); }
 .hero-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .list-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 14px 0 8px; }
@@ -542,9 +572,60 @@ html, body {
 .search-icon { color: var(--muted); font-size: 13px; flex-shrink: 0; }
 .search-input { flex: 1; border: none; background: transparent; color: var(--ink); font-size: 13px; font-family: var(--font-ui); outline: none; }
 .search-input::placeholder { color: var(--muted); }
-.search-clear { color: var(--muted); font-size: 14px; cursor: pointer; padding: 0 2px; display: none; background: transparent; border: none; line-height: 1; }
+.search-clear { color: var(--muted); font-size: 14px; cursor: pointer; padding: 9px 11px; margin: -9px -6px -9px 0; display: none; background: transparent; border: none; line-height: 1; }
 .search-clear.visible { display: block; }
 .search-empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; font-style: italic; }
+
+/* â•â•â• Keyboard accessibility â•â•â•
+   Content cards are real <button>s so keyboard and assistive-tech users can
+   open a meditation at all (they were previously <div onclick>, unreachable
+   without a mouse). This neutralises native button chrome so the existing
+   per-card rules below still describe the appearance. */
+.list-card, .ws-list-item, .fav-card, .note-espace-card, .snippet-card,
+.today-actions-card, .ws-today-card {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Screen titles and section labels are real headings now, so screen-reader
+   users can navigate by heading. This strips UA heading defaults using
+   ELEMENT-ONLY selectors: specificity (0,0,1) stays below every class rule, so
+   the existing .topbar-title / .section-label / .reader-hero-title styling
+   continues to win and nothing changes visually. */
+h1, h2, h3, h4 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+}
+
+/* Respect a reduced-motion preference. The loading crown otherwise pulses
+   indefinitely, which is continuously moving content. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .loading-crown { animation: none !important; }
+}
+
+/* A single visible focus indicator for every control. The app previously had
+   almost no focus styling, so keyboard position was invisible. */
+:focus-visible {
+  outline: 2.5px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :focus-visible { outline-color: var(--accent-light); }
+}
+[data-theme="dark"] :focus-visible { outline-color: var(--accent-light); }
 
 /* Full-text search results — passage snippets, distinct from unit cards */
 .search-group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 14px 4px 7px; }
@@ -571,16 +652,16 @@ html, body {
 
 #screen-reader { background: var(--ivory); }
 .reader-topbar { display: flex; align-items: center; gap: 10px; padding: max(8px, env(safe-area-inset-top, 0px)) 16px 8px; background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
-.reader-back { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0; }
+.reader-back { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0; }
 .reader-back:hover { color: var(--primary); border-color: var(--primary); }
 .reader-topbar-info { flex: 1; min-width: 0; }
-.reader-topbar-day { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; }
+.reader-topbar-day { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-fg); font-weight: 600; }
 .reader-topbar-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .reader-topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.reader-icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
+.reader-icon-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
 .reader-icon-btn:hover, .reader-icon-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
 .reader-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.reader-hero { background: var(--primary); padding: 20px 20px 18px; }
+.reader-hero { background: var(--hero-bg); padding: 20px 20px 18px; }
 .reader-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
 .reader-hero-title { font-family: var(--font-reader); font-size: 19px; color: var(--white); line-height: 1.45; }
 .reader-body { padding: 0 20px 20px; }
@@ -617,16 +698,16 @@ html, body {
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
 .stat-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
 .stat-num { font-size: 26px; font-weight: 500; line-height: 1; }
-.stat-num.blue { color: var(--primary); } .stat-num.gold { color: var(--accent); } .stat-num.green { color: #27AE60; }
+.stat-num.blue { color: var(--primary); } .stat-num.gold { color: var(--accent-fg); } .stat-num.green { color: #27AE60; }
 .stat-label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
 .espace-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 16px 0 10px; }
 .fav-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 13px 15px; margin-bottom: 7px; cursor: pointer; transition: border-color 0.15s; }
 .fav-card:hover { border-color: var(--primary); }
-.fav-card-day { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+.fav-card-day { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-fg); font-weight: 600; margin-bottom: 4px; }
 .fav-card-text { font-family: var(--font-reader); font-size: 14px; color: var(--ink); line-height: 1.55; font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .note-espace-card { background: var(--note-bg); border: 0.5px solid var(--note-border); border-radius: var(--radius-md); padding: 13px 15px; margin-bottom: 7px; cursor: pointer; }
 .note-espace-card:hover { border-color: var(--accent); }
-.note-espace-meta { font-size: 10px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.note-espace-meta { font-size: 10px; color: var(--accent-fg); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .note-espace-text { font-size: 13px; color: var(--ink); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .espace-empty { text-align: center; padding: 40px 20px; }
 .espace-empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.35; }
@@ -636,7 +717,19 @@ html, body {
 /* Note modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 80; align-items: flex-end; justify-content: center; }
 .modal-overlay.open { display: flex; }
-.modal-sheet { background: var(--ivory); border-radius: 20px 20px 0 0; padding: 0; width: 100%; max-width: 560px; max-height: 80vh; display: flex; flex-direction: column; animation: slideUp 0.22s ease; }
+/* --kb-inset is set from window.visualViewport while the note sheet is open.
+   iOS overlays the software keyboard on top of fixed-position content without
+   shrinking the layout viewport, so without this the Save/Cancel footer and the
+   lower half of the textarea sat underneath the keyboard. */
+.modal-overlay { --kb-inset: 0px; }
+.modal-sheet {
+  background: var(--ivory); border-radius: 20px 20px 0 0; padding: 0;
+  width: 100%; max-width: 560px;
+  max-height: calc(80vh - var(--kb-inset));
+  margin-bottom: var(--kb-inset);
+  display: flex; flex-direction: column; animation: slideUp 0.22s ease;
+  transition: margin-bottom 0.18s ease, max-height 0.18s ease;
+}
 @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
 .modal-header { padding: 14px 18px 10px; border-bottom: 0.5px solid var(--border); }
@@ -737,7 +830,7 @@ html, body {
 .cycle-card.ready .cycle-icon { opacity: 1; }
 .cycle-text { flex: 1; }
 .cycle-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 3px; transition: color 0.3s; }
-.cycle-card.ready .cycle-label { color: var(--accent); }
+.cycle-card.ready .cycle-label { color: var(--accent-fg); }
 .cycle-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
 .cycle-btn { flex-shrink: 0; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--border); color: var(--muted); font-size: 12px; font-weight: 700; cursor: not-allowed; white-space: nowrap; transition: all 0.3s; }
 .cycle-card.ready .cycle-btn { border-color: var(--accent); background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
@@ -1049,7 +1142,7 @@ html, body {
 <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      MOBILE LAYOUT  (< 768px)
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-<div id="app">
+<div id="app" role="main">
   <div id="screen-loading" class="screen active">
     <div class="loading-crown">✦</div>
     <div class="loading-text">Chargement…</div>
@@ -1058,9 +1151,9 @@ html, body {
   <div id="screen-home" class="screen">
     <div class="topbar">
       <div>
-        <div class="topbar-title">31 Jours avec Marie</div>
+        <h1 class="topbar-title">31 Jours avec Marie</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.4.0</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.5.0</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1069,7 +1162,7 @@ html, body {
     </div>
     <div class="calendar-wrap">
       <div class="calendar-label">Ce mois</div>
-      <div class="calendar-grid" id="cal-grid" role="grid"></div>
+      <div class="calendar-grid" id="cal-grid" role="group" aria-label="Calendrier des 31 jours"></div>
       <div class="appendix-row" id="app-row-mobile"></div>
     </div>
     <div class="progress-wrap">
@@ -1088,7 +1181,7 @@ html, body {
 
   <div id="screen-list" class="screen">
     <div class="topbar">
-      <div><div class="topbar-title">Les 31 Jours</div><div class="topbar-sub">Vierge Marie — Luisa Piccarreta</div></div>
+      <div><h1 class="topbar-title">Les 31 Jours</h1><div class="topbar-sub">Vierge Marie — Luisa Piccarreta</div></div>
       <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
     </div>
     <div class="search-wrap">
@@ -1115,7 +1208,7 @@ html, body {
     <div class="reader-scroll" id="reader-scroll">
       <div class="reader-hero">
         <div class="reader-hero-badge" id="reader-hero-badge"></div>
-        <div class="reader-hero-title" id="reader-hero-title"></div>
+        <h2 class="reader-hero-title" id="reader-hero-title"></h2>
       </div>
       <div class="reader-body" id="reader-body"></div>
     </div>
@@ -1153,14 +1246,14 @@ html, body {
 
   <div id="screen-espace" class="screen">
     <div class="topbar">
-      <div><div class="topbar-title">Mon Espace</div><div class="topbar-sub">Favoris · Notes · Progression</div></div>
+      <div><h1 class="topbar-title">Mon Espace</h1><div class="topbar-sub">Favoris · Notes · Progression</div></div>
     </div>
     <div class="espace-scroll" id="espace-scroll"></div>
   </div>
 
   <div id="screen-aide" class="screen">
     <div class="topbar">
-      <div><div class="topbar-title">Aide</div><div class="topbar-sub">Comment utiliser l'application</div></div>
+      <div><h1 class="topbar-title">Aide</h1><div class="topbar-sub">Comment utiliser l'application</div></div>
       <div class="topbar-actions">
         <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
       </div>
@@ -1185,7 +1278,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.4.0</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.5.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1227,14 +1320,14 @@ html, body {
     <aside id="wide-sidebar">
       <!-- Calendar -->
       <div class="ws-cal-wrap">
-        <div class="ws-cal-grid" id="wide-cal-grid" role="grid"></div>
+        <div class="ws-cal-grid" id="wide-cal-grid" role="group" aria-label="Calendrier des 31 jours"></div>
         <div class="appendix-row" id="app-row-wide"></div>
       </div>
       <!-- Progress -->
       <div class="ws-header">
         <div class="ws-title">Progression</div>
         <div class="ws-progress-row">
-          <div class="ws-progress-track">
+          <div class="ws-progress-track" id="wide-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="37" aria-label="Progression de lecture">
             <div class="ws-progress-fill" id="wide-progress-fill" style="width:0%"></div>
           </div>
           <div class="ws-progress-label" id="wide-progress-label">0 / 37</div>
@@ -1249,7 +1342,7 @@ html, body {
         </div>
       </div>
       <div class="ws-list-scroll" id="wide-list-scroll"></div>
-      <div class="ws-today-card" id="ws-today-card"></div>
+      <button type="button" class="ws-today-card" id="ws-today-card"></button>
     </aside>
 
     <!-- Reader panel -->
@@ -1381,11 +1474,11 @@ html, body {
 </div>
 
 <!-- Note modal (shared) -->
-<div class="modal-overlay" id="note-modal" onclick="App.closeNoteModal(event)">
+<div class="modal-overlay" id="note-modal" role="dialog" aria-modal="true" aria-labelledby="note-modal-title" onclick="App.closeNoteModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-header">
-      <div class="modal-title">Ajouter une note</div>
+      <div class="modal-title" id="note-modal-title">Ajouter une note</div>
       <div class="modal-subtitle" id="note-modal-subtitle"></div>
     </div>
     <div class="modal-body">
@@ -1403,7 +1496,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded' };
 
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.5.0';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1697,6 +1790,9 @@ const App = {
       }
     });
 
+    // Escape-to-close and Tab-trapping for every dialog
+    document.addEventListener('keydown', e => this.handleModalKeydown(e));
+
     // Last, so the welcome overlay sits above a fully-rendered app
     this.maybeShowOnboarding();
   },
@@ -1845,6 +1941,14 @@ const App = {
     const count = Math.min(State.read.size, total);
     document.getElementById('progress-fill').style.width = (count/total*100) + '%';
     document.getElementById('progress-label').textContent = count + ' / ' + total;
+    // The progressbar declared valuemin/valuemax but never a current value, so
+    // AT read it as having no value at all.
+    const pbar = document.querySelector('#screen-home [role="progressbar"]');
+    if (pbar) {
+      pbar.setAttribute('aria-valuemax', total);
+      pbar.setAttribute('aria-valuenow', count);
+      pbar.setAttribute('aria-valuetext', count + ' sur ' + total + ' unités lues');
+    }
     this.updateAppendixRows();
   },
 
@@ -1884,6 +1988,12 @@ const App = {
     const count = Math.min(State.read.size, total);
     document.getElementById('wide-progress-fill').style.width = (count/total*100) + '%';
     document.getElementById('wide-progress-label').textContent = count + ' / ' + total;
+    const pbar = document.getElementById('wide-progress-track');
+    if (pbar) {
+      pbar.setAttribute('aria-valuemax', total);
+      pbar.setAttribute('aria-valuenow', count);
+      pbar.setAttribute('aria-valuetext', count + ' sur ' + total + ' unités lues');
+    }
   },
 
   // â”€â”€ Sidebar list (wide) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1907,14 +2017,16 @@ const App = {
     const cirCls = isToday ? 'today-c' : (isRead ? 'read-c' : '');
     const meta = u.day_number ? (u.date_default||'') : 'Appendice ' + u.appendix_number;
     const nc = this.unitNoteCount(u);
-    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent);margin-left:3px">✎${nc}</span>` : '';
-    return `<div class="ws-list-item${isActive?' active':''}" data-uid="${u.unit_id}" onclick="App.openUnit('${u.unit_id}')">
-      <div class="ws-day-circle ${cirCls}">${label}</div>
+    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent-fg);margin-left:3px">✎${nc}</span>` : '';
+    const state = isToday ? "aujourd'hui" : (isRead ? 'lu' : 'non lu');
+    const aria = `${u.day_number ? 'Jour ' + u.day_number : 'Appendice ' + u.appendix_number} : ${u.title} — ${state}`;
+    return `<button type="button" class="ws-list-item${isActive?' active':''}" data-uid="${u.unit_id}" aria-label="${this.esc(aria)}"${isActive?' aria-current="true"':''} onclick="App.openUnit('${u.unit_id}')">
+      <div class="ws-day-circle ${cirCls}" aria-hidden="true">${label}</div>
       <div class="ws-item-info">
         <div class="ws-item-title">${this.esc(u.title)}${badge}</div>
         <div class="ws-item-meta">${meta}</div>
       </div>
-    </div>`;
+    </button>`;
   },
 
   refreshWideListItem(unitId) {
@@ -1950,7 +2062,7 @@ const App = {
     const mobileWrap = document.getElementById('today-actions-wrap');
     if (mobileWrap) {
       mobileWrap.innerHTML = `
-        <div class="today-actions-card" onclick="App.openTodayModal()">
+        <button type="button" class="today-actions-card" aria-label="Pour aujourd'hui — ${this.esc(data.ordinal)} : ouvrir la pratique et l'oraison du jour" onclick="App.openTodayModal()">
           <div class="tac-header">
             <span class="tac-label">✦ Pour aujourd'hui</span>
             <span class="tac-day">${this.esc(data.ordinal)}</span>
@@ -1965,13 +2077,14 @@ const App = {
             <div class="tac-section-label">Oraison jaculatoire</div>
             <div class="tac-oraison">${this.esc(data.oraison)}</div>
           </div>` : ''}
-        </div>`;
+        </button>`;
     }
 
     // Wide sidebar card pinned at bottom
     const wideCard = document.getElementById('ws-today-card');
     if (wideCard) {
       wideCard.onclick = () => this.openTodayModal();
+      wideCard.setAttribute('aria-label', `Pour aujourd'hui — ${data.ordinal} : ouvrir la pratique et l'oraison du jour`);
       wideCard.innerHTML = `
         <div class="ws-today-label">✦ Pour aujourd'hui — ${this.esc(data.ordinal)}</div>
         ${data.pratique ? `<div class="ws-today-pratique">${this.esc(data.pratique)}</div>` : ''}
@@ -2138,10 +2251,10 @@ const App = {
         ? shown + ' premiers passages sur ' + total
         : total + ' passage' + (total > 1 ? 's' : '');
       html += '<div class="search-group-label">' + countLabel + '</div>';
-      html += passageHits.map(e => '<div class="snippet-card" onclick="App.openUnit(\'' + e.unitId + '\',\'' + e.pid + '\')">'
+      html += passageHits.map(e => '<button type="button" class="snippet-card" onclick="App.openUnit(\'' + e.unitId + '\',\'' + e.pid + '\')">'
         + '<div class="snippet-meta">' + this.esc(e.unitLabel) + (e.sectionLabel ? ' \u00b7 ' + this.esc(e.sectionLabel) : '') + '</div>'
         + '<div class="snippet-text">' + this.buildSnippet(e, q) + '</div>'
-        + '</div>').join('');
+        + '</button>').join('');
     }
 
     html += '<div style="height:16px"></div>';
@@ -2161,15 +2274,19 @@ const App = {
     const cls   = isToday ? 'today-circle' : (isRead ? 'read-circle' : '');
     const meta  = u.day_number ? (u.date_default||'') : 'Appendice ' + u.appendix_number;
     const nc    = this.unitNoteCount(u);
-    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent);margin-left:4px">✎${nc}</span>` : '';
-    return `<div class="list-card" onclick="App.openUnit('${u.unit_id}')">
-      <div class="list-day-circle ${cls}">${label}</div>
+    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent-fg);margin-left:4px">✎${nc}</span>` : '';
+    // A real <button> so this is reachable and activatable by keyboard/AT.
+    // aria-label spells out the state that the coloured circle conveys visually.
+    const state = isToday ? "aujourd'hui" : (isRead ? 'lu' : 'non lu');
+    const aria = `${u.day_number ? 'Jour ' + u.day_number : 'Appendice ' + u.appendix_number} : ${u.title} — ${state}`;
+    return `<button type="button" class="list-card" aria-label="${this.esc(aria)}" onclick="App.openUnit('${u.unit_id}')">
+      <div class="list-day-circle ${cls}" aria-hidden="true">${label}</div>
       <div class="list-info">
         <div class="list-title">${this.esc(u.title)}${badge}</div>
         <div class="list-meta">${meta}</div>
       </div>
-      <div class="list-chevron">›</div>
-    </div>`;
+      <div class="list-chevron" aria-hidden="true">›</div>
+    </button>`;
   },
 
   unitNoteCount(u) {
@@ -2289,7 +2406,7 @@ const App = {
     unit.sections.forEach(sec => {
       const label = sectionLabels[sec.section_type] || sec.section_title_source || sec.section_type;
       const cls   = paraClass[sec.section_type] || 'para-mary';
-      html += `<div class="section-label">${this.esc(label)}</div>`;
+      html += `<h3 class="section-label">${this.esc(label)}</h3>`;
       sec.paragraphs.forEach(p => {
         const note = State.notes[p.paragraph_id];
         const isHl = State.highlights.has(p.paragraph_id);
@@ -2334,10 +2451,17 @@ const App = {
     const isDone = State.read.has(unit.unit_id);
     document.getElementById('complete-icon').textContent = isDone ? '✓' : '○';
     document.getElementById('complete-label').textContent = isDone ? 'Lu' : 'Terminé';
-    document.getElementById('btn-complete').classList.toggle('done', !!isDone);
+    const cb = document.getElementById('btn-complete');
+    cb.classList.toggle('done', !!isDone);
+    // State was conveyed only by glyph + colour; expose it to assistive tech.
+    cb.setAttribute('aria-pressed', isDone ? 'true' : 'false');
+    cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
     const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
     document.getElementById('fav-icon').textContent = hasFav ? '♥' : '♡';
-    document.getElementById('btn-fav').classList.toggle('active', hasFav);
+    const fb = document.getElementById('btn-fav');
+    fb.classList.toggle('active', hasFav);
+    fb.setAttribute('aria-pressed', hasFav ? 'true' : 'false');
+    fb.setAttribute('aria-label', hasFav ? 'Retirer des favoris' : 'Ajouter aux favoris');
     // Active day button
     const effectiveActive = State.activeDay || State.todayDayNum;
     const isActiveDay = unit.day_number && unit.day_number === effectiveActive;
@@ -2346,6 +2470,8 @@ const App = {
       document.getElementById('activate-icon').textContent = isActiveDay ? '✦' : '◇';
       document.getElementById('activate-label').textContent = isActiveDay ? 'Actif' : 'Activer';
       activBtn.classList.toggle('active-day-btn', isActiveDay);
+      activBtn.setAttribute('aria-pressed', isActiveDay ? 'true' : 'false');
+      activBtn.setAttribute('aria-label', isActiveDay ? 'Jour de pratique actif — appuyez pour réinitialiser' : 'Définir comme jour de pratique');
     }
   },
 
@@ -2365,10 +2491,16 @@ const App = {
     const isDone = State.read.has(unit.unit_id);
     document.getElementById('wide-complete-icon').textContent = isDone ? '✓' : '○';
     document.getElementById('wide-complete-label').textContent = isDone ? 'Lu' : 'Terminé';
-    document.getElementById('wide-btn-complete').classList.toggle('done', !!isDone);
+    const cb = document.getElementById('wide-btn-complete');
+    cb.classList.toggle('done', !!isDone);
+    cb.setAttribute('aria-pressed', isDone ? 'true' : 'false');
+    cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
     const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
     document.getElementById('wide-fav-icon').textContent = hasFav ? '♥' : '♡';
-    document.getElementById('wide-btn-fav').classList.toggle('active', hasFav);
+    const fb = document.getElementById('wide-btn-fav');
+    fb.classList.toggle('active', hasFav);
+    fb.setAttribute('aria-pressed', hasFav ? 'true' : 'false');
+    fb.setAttribute('aria-label', hasFav ? 'Retirer des favoris' : 'Ajouter aux favoris');
     // Active day button
     const effectiveActive = State.activeDay || State.todayDayNum;
     const isActiveDay = unit.day_number && unit.day_number === effectiveActive;
@@ -2376,7 +2508,12 @@ const App = {
     if (wideActivBtn) {
       document.getElementById('wide-activate-icon').textContent = isActiveDay ? '✦' : '◇';
       document.getElementById('wide-activate-label').textContent = isActiveDay ? 'Actif' : 'Activer';
+      // Mobile toggles 'active-day-btn' here while wide toggled only 'active' —
+      // the two layouts disagreed on the styling contract for the same control.
+      // Both classes are applied so either stylesheet rule works.
       wideActivBtn.classList.toggle('active', isActiveDay);
+      wideActivBtn.classList.toggle('active-day-btn', isActiveDay);
+      wideActivBtn.setAttribute('aria-pressed', isActiveDay ? 'true' : 'false');
     }
   },
 
@@ -2507,8 +2644,73 @@ const App = {
     if (save) saveTextSize();
   },
 
+  // â”€â”€ Modal accessibility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Previously no keydown handler existed anywhere in the app: dialogs could not
+  // be dismissed with Escape, Tab walked out into the hidden page behind the
+  // overlay, and focus was never returned to whatever opened the dialog.
+  // Highest z-index first, so the topmost dialog is the one Escape closes.
+  MODALS: [
+    { id: 'onboard-modal', close: function(){ App.finishOnboarding(false); } },
+    { id: 'note-modal',    close: function(){ App.closeNoteModal(); } },
+    { id: 'debug-overlay', close: function(){ App.hideDebug(); } },
+    { id: 'today-modal',   close: function(){ App.closeTodayModal(); } },
+  ],
+
+  topOpenModal() {
+    for (const m of this.MODALS) {
+      const el = document.getElementById(m.id);
+      if (el && el.classList.contains('open')) return { el, close: m.close };
+    }
+    return null;
+  },
+
+  focusablesIn(el) {
+    return Array.from(el.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(n => n.offsetParent !== null || n === document.activeElement);
+  },
+
+  // Call right after adding .open. focusTargetId lets a dialog choose where
+  // focus should land (the note textarea, the primary action, …).
+  onModalOpened(id, focusTargetId) {
+    this._modalOpener = document.activeElement;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const target = (focusTargetId && document.getElementById(focusTargetId)) || this.focusablesIn(el)[0] || el;
+    setTimeout(() => { try { target.focus(); } catch(e) {} }, 60);
+  },
+
+  // Call right after removing .open — returns focus where the user was.
+  onModalClosed() {
+    const opener = this._modalOpener;
+    this._modalOpener = null;
+    if (opener && document.contains(opener)) {
+      try { opener.focus(); } catch(e) {}
+    }
+  },
+
+  handleModalKeydown(e) {
+    const open = this.topOpenModal();
+    if (!open) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      open.close();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    // Trap Tab inside the dialog
+    const items = this.focusablesIn(open.el);
+    if (!items.length) { e.preventDefault(); return; }
+    const first = items[0], last = items[items.length - 1];
+    if (!open.el.contains(document.activeElement)) { e.preventDefault(); first.focus(); return; }
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  },
+
   // â”€â”€ Notes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openNoteModal(pid) {
+    // Capture the opener before focus moves, so closing can return the user there
+    this._modalOpener = document.activeElement;
     State.noteTargetPid = pid;
     let para=null, unit=null;
     for (const u of State.corpus) {
@@ -2524,12 +2726,44 @@ const App = {
     document.getElementById('note-char-count').textContent = ta.value.length;
     ta.oninput = () => { document.getElementById('note-char-count').textContent = ta.value.length; };
     document.getElementById('note-modal').classList.add('open');
-    setTimeout(() => ta.focus(), 300);
+    this.startKeyboardTracking();
+    // Focus synchronously — iOS only raises the software keyboard for a focus()
+    // that happens inside the user-gesture task, so the previous deferred
+    // setTimeout(…, 300) often focused the field with no keyboard at all.
+    try { ta.focus({ preventScroll: true }); } catch(e) { try { ta.focus(); } catch(_) {} }
+  },
+
+  // Keep the note sheet above the iOS keyboard.
+  startKeyboardTracking() {
+    const vv = window.visualViewport;
+    const overlay = document.getElementById('note-modal');
+    if (!vv || !overlay) return;
+    this._kbHandler = () => {
+      // How much of the layout viewport the keyboard is covering
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      overlay.style.setProperty('--kb-inset', inset + 'px');
+    };
+    vv.addEventListener('resize', this._kbHandler);
+    vv.addEventListener('scroll', this._kbHandler);
+    this._kbHandler();
+  },
+
+  stopKeyboardTracking() {
+    const vv = window.visualViewport;
+    const overlay = document.getElementById('note-modal');
+    if (overlay) overlay.style.setProperty('--kb-inset', '0px');
+    if (vv && this._kbHandler) {
+      vv.removeEventListener('resize', this._kbHandler);
+      vv.removeEventListener('scroll', this._kbHandler);
+      this._kbHandler = null;
+    }
   },
   closeNoteModal(e) {
     if (e && e.target !== document.getElementById('note-modal')) return;
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
+    this.stopKeyboardTracking();
+    this.onModalClosed();
     this.checkPendingReload();
   },
   // A SW update may have been deferred while the note modal held an unsaved
@@ -2557,6 +2791,8 @@ const App = {
 
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
+    this.stopKeyboardTracking();
+    this.onModalClosed();
     this.refreshAfterNoteChange();
 
     if (!ok) this.showToast(this.SAVE_ERROR_MSG);
@@ -2609,12 +2845,12 @@ const App = {
     try { seen = localStorage.getItem(SK.ONBOARDED) === '1'; } catch(e) { seen = true; }
     if (seen) return;
     document.getElementById('onboard-modal')?.classList.add('open');
-    // Focus the primary action so keyboard users land inside the dialog
-    setTimeout(() => document.getElementById('onboard-start-btn')?.focus(), 120);
+    this.onModalOpened('onboard-modal', 'onboard-start-btn');
   },
 
   finishOnboarding(openAide) {
     document.getElementById('onboard-modal')?.classList.remove('open');
+    this.onModalClosed();
     // If storage is unavailable the overlay simply shows again next launch —
     // preferable to failing loudly on a first-run welcome screen.
     try { localStorage.setItem(SK.ONBOARDED, '1'); } catch(e) {}
@@ -2683,9 +2919,11 @@ const App = {
     ].join('');
     body.scrollTop = 0;
     document.getElementById('today-modal').classList.add('open');
+    this.onModalOpened('today-modal', 'today-modal-close');
   },
   closeTodayModal() {
     document.getElementById('today-modal').classList.remove('open');
+    this.onModalClosed();
   },
   syncThemeIcon() {
     const saved = localStorage.getItem('mjv_theme');
@@ -2971,7 +3209,7 @@ const App = {
     let html = `<div class="stat-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">
       <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
       <div class="stat-card"><div class="stat-num gold">${favCount}</div><div class="stat-label">Favoris</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:#8B7BD4">${hlCount}</div><div class="stat-label">Surlignés</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--highlight-accent)">${hlCount}</div><div class="stat-label">Surlignés</div></div>
       <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
     </div>`;
     if (State.favorites.size > 0) {
@@ -2981,7 +3219,7 @@ const App = {
         for (const u of State.corpus) { for (const s of u.sections) { for (const p of s.paragraphs) { if(p.paragraph_id===pid){para=p;unit=u;} } } }
         if (!para||!unit) return;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
-        html += `<div class="fav-card" onclick="App.openUnit('${unit.unit_id}')"><div class="fav-card-day">${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></div>`;
+        html += `<button type="button" class="fav-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">♥ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
       });
     }
     if (State.highlights.size > 0) {
@@ -2991,7 +3229,7 @@ const App = {
         for (const u of State.corpus) { for (const s of u.sections) { for (const p of s.paragraphs) { if(p.paragraph_id===pid){para=p;unit=u;} } } }
         if (!para||!unit) return;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
-        html += `<div class="fav-card" style="border-left:3px solid #8B7BD4" onclick="App.openUnit('${unit.unit_id}')"><div class="fav-card-day" style="color:#8B7BD4">◆ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></div>`;
+        html += `<button type="button" class="fav-card" style="border-left:3px solid var(--highlight-accent)" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day" style="color:var(--highlight-accent)">◆ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
       });
     }
     const noteEntries = Object.entries(State.notes).sort((a,b)=>((b[1]&&b[1].ts)||0)-((a[1]&&a[1].ts)||0));
@@ -3001,7 +3239,7 @@ const App = {
         const unit = State.corpus.find(u=>u.unit_id===note.unit_id); if (!unit) return;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
         const date = new Date(note.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-        html += `<div class="note-espace-card" onclick="App.openUnit('${unit.unit_id}')"><div class="note-espace-meta">${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></div>`;
+        html += `<button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button>`;
       });
     }
     if (!readCount && !favCount && !hlCount && !noteCount) {
@@ -3035,7 +3273,8 @@ const App = {
     if (this._dbgTaps.length >= 3) { this._dbgTaps = []; this.showDebug(); }
   },
   showDebug() {
-    const swVer = 'mjv-v' + APP_VERSION;
+    // Must mirror the bucket names in sw.js (shell is the version-scoped one)
+    const swVer = 'mjv-shell-v' + APP_VERSION;
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     const rows = [
       ['App', APP_VERSION],
@@ -3055,9 +3294,11 @@ const App = {
     const tbody = rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
     document.getElementById('debug-table').innerHTML = tbody;
     document.getElementById('debug-overlay').classList.add('open');
+    this.onModalOpened('debug-overlay');
   },
   hideDebug() {
     document.getElementById('debug-overlay').classList.remove('open');
+    this.onModalClosed();
   },
   showToast(msg) {
     const t = document.getElementById('toast');
