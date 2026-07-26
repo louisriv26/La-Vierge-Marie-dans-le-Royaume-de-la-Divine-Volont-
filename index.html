@@ -645,6 +645,12 @@ html, body {
 .toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--ivory); padding: 9px 18px; border-radius: 20px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 100; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* Deferred SW-update banner — shown instead of a forced reload when the
+   note modal is open with unsaved text, so a draft is never silently lost. */
+.update-banner { position: fixed; left: 50%; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); transform: translateX(-50%); background: var(--primary); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-family: var(--font-ui); display: flex; align-items: center; gap: 10px; z-index: 200; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.update-banner button { background: rgba(255,255,255,0.18); color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; }
+.update-banner button:hover { background: rgba(255,255,255,0.28); }
+
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    POUR AUJOURD'HUI — Pratique + Oraison card
@@ -987,7 +993,7 @@ html, body {
       <div>
         <div class="topbar-title">31 Jours avec Marie</div>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.3.5</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.3.8</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1112,7 +1118,7 @@ html, body {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.3.5</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.3.8</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1285,7 +1291,7 @@ html, body {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights' };
 
-const APP_VERSION = '2.3.5';
+const APP_VERSION = '2.3.8';
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1298,40 +1304,154 @@ const State = {
 // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const isWide = () => window.innerWidth >= 768 && window.innerHeight >= 600;
 
+// Each key is parsed independently so a single corrupt entry (bad sync, quota
+// truncation, manual edit) resets only that key, not the user's entire saved state.
 function loadStorage() {
+  try { State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]')); }
+  catch(e) { State.read = new Set(); }
+
+  try { State.favorites = new Set(JSON.parse(localStorage.getItem(SK.FAVORITES) || '[]')); }
+  catch(e) { State.favorites = new Set(); }
+
+  try { State.highlights = new Set(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '[]')); }
+  catch(e) { State.highlights = new Set(); }
+
   try {
-    State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]'));
-    State.favorites = new Set(JSON.parse(localStorage.getItem(SK.FAVORITES) || '[]'));
-    State.highlights = new Set(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '[]'));
-    State.notes = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
+    const parsed = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
+    // Drop any entry that isn't a well-formed {text, ts} note — a malformed
+    // single entry must not crash renderEspace's sort-by-ts later.
+    State.notes = {};
+    if (parsed && typeof parsed === 'object') {
+      for (const [pid, note] of Object.entries(parsed)) {
+        if (note && typeof note === 'object' && typeof note.text === 'string' && typeof note.ts === 'number') {
+          State.notes[pid] = note;
+        }
+      }
+    }
+  } catch(e) { State.notes = {}; }
+
+  try {
     const ts = parseInt(localStorage.getItem(SK.TEXT_SIZE) || '17');
     State.textSize = (isNaN(ts) || ts < 14 || ts > 22) ? 17 : ts;
+  } catch(e) { State.textSize = 17; }
+
+  try {
     const ad = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0');
     State.activeDay = (ad >= 1 && ad <= 31) ? ad : null;
-  } catch(e) { State.read=new Set(); State.favorites=new Set(); State.highlights=new Set(); State.notes={}; State.textSize=17; State.activeDay=null; }
+  } catch(e) { State.activeDay = null; }
 }
-const saveRead      = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); } catch(e){} };
-const saveFavorites  = () => { try { localStorage.setItem(SK.FAVORITES,  JSON.stringify([...State.favorites]));  } catch(e){} };
-const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify([...State.highlights])); } catch(e){} };
-const saveNotes     = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); } catch(e){} };
-const saveTextSize  = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); } catch(e){} };
-const saveActiveDay = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); } catch(e){} };
+// Each save* helper returns true on success, false on failure (quota exceeded,
+// private-mode restrictions, storage disabled) so callers can tell the user
+// the truth instead of showing a success toast for a write that never happened.
+const saveRead       = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); return true; } catch(e){ return false; } };
+const saveFavorites  = () => { try { localStorage.setItem(SK.FAVORITES,  JSON.stringify([...State.favorites]));  return true; } catch(e){ return false; } };
+const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify([...State.highlights])); return true; } catch(e){ return false; } };
+const saveNotes      = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); return true; } catch(e){ return false; } };
+const saveTextSize   = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); return true; } catch(e){ return false; } };
+const saveActiveDay  = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
+
+// One-time probe: is localStorage actually usable (not full, not blocked by
+// private-mode/settings)? Used at init to warn up front rather than failing
+// silently on every subsequent save.
+function isStorageAvailable() {
+  try {
+    const k = '__mjv_probe__';
+    localStorage.setItem(k, '1');
+    localStorage.removeItem(k);
+    return true;
+  } catch(e) { return false; }
+}
 
 // Top-level SW update listener — must be outside DOMContentLoaded so it fires
 // even if the SW activates before the app finishes initialising.
 if ('serviceWorker' in navigator) {
+  // A null controller at page load means this is a fresh install with no
+  // prior version to update from — the very first activation fires
+  // SW_UPDATED too, but reloading then is just a pointless jolt right after
+  // first paint, so it's suppressed.
+  const hadController = !!navigator.serviceWorker.controller;
+  let refreshing = false;
+
+  const applyReload = () => {
+    if (refreshing) return; // guard against overlapping reloads across tabs
+    refreshing = true;
+    window.location.reload();
+  };
+
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data?.type === 'SW_UPDATED') window.location.reload();
+    if (e.data?.type !== 'SW_UPDATED' || !hadController || refreshing) return;
+
+    // Don't yank the page out from under an unsaved note draft — defer to a
+    // dismissible banner instead of forcing the reload.
+    const ta = document.getElementById('note-textarea');
+    const noteOpen = document.getElementById('note-modal')?.classList.contains('open') && ta && ta.value.trim().length > 0;
+    if (noteOpen) {
+      window.__mjvPendingReload = applyReload;
+      const banner = document.createElement('div');
+      banner.className = 'update-banner';
+      banner.id = 'update-banner';
+      banner.innerHTML = '<span>Nouvelle version disponible</span><button type="button">Actualiser</button>';
+      banner.querySelector('button').onclick = applyReload;
+      document.body.appendChild(banner);
+      return;
+    }
+    applyReload();
   });
 }
 
 // â”€â”€ App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const App = {
+  SAVE_ERROR_MSG: 'Enregistrement impossible — stockage plein ou navigation privée',
+
+  // Guards against a valid-JSON-but-wrong-shape corpus (empty array, schema
+  // drift, partial upload) reaching render code that assumes the full shape.
+  isValidCorpus(corpus) {
+    if (!Array.isArray(corpus) || corpus.length === 0) return false;
+    return corpus.every(u =>
+      u && typeof u.unit_id === 'string' &&
+      typeof u.sequence_meditative === 'number' &&
+      Array.isArray(u.sections) &&
+      u.sections.every(s => Array.isArray(s.paragraphs))
+    );
+  },
+
+  // Drops any saved read/favourite/highlight/note id that no longer resolves
+  // against the loaded corpus (stale after a content edit or re-pagination),
+  // and persists the cleaned sets. Without this, orphaned ids inflate the
+  // progress bar and stats tiles while rendering no card — permanently, since
+  // the card is the only UI that can remove them.
+  reconcileStoredIds() {
+    const validUnitIds = new Set();
+    const validParaIds = new Set();
+    State.corpus.forEach(u => {
+      validUnitIds.add(u.unit_id);
+      u.sections.forEach(s => s.paragraphs.forEach(p => validParaIds.add(p.paragraph_id)));
+    });
+
+    const cleanRead = new Set([...State.read].filter(id => validUnitIds.has(id)));
+    if (cleanRead.size !== State.read.size) { State.read = cleanRead; saveRead(); }
+
+    const cleanFav = new Set([...State.favorites].filter(id => validParaIds.has(id)));
+    if (cleanFav.size !== State.favorites.size) { State.favorites = cleanFav; saveFavorites(); }
+
+    const cleanHl = new Set([...State.highlights].filter(id => validParaIds.has(id)));
+    if (cleanHl.size !== State.highlights.size) { State.highlights = cleanHl; saveHighlights(); }
+
+    const cleanNotes = {};
+    let notesChanged = false;
+    for (const [pid, note] of Object.entries(State.notes)) {
+      if (validParaIds.has(pid)) cleanNotes[pid] = note; else notesChanged = true;
+    }
+    if (notesChanged) { State.notes = cleanNotes; saveNotes(); }
+  },
 
   async init() {
     loadStorage();
     this.applyTextSize(State.textSize, false);
     this.syncThemeIcon();
+    if (!isStorageAvailable()) {
+      this.showToast('Attention : votre navigateur ne permet pas d’enregistrer vos données ici');
+    }
 
     try {
       const controller = new AbortController();
@@ -1339,8 +1459,15 @@ const App = {
       const res = await fetch(window.APP_BASE + 'corpus/days.json', { signal: controller.signal });
       clearTimeout(timeout);
       if (!res.ok) throw new Error(res.status);
-      State.corpus = await res.json();
+      const parsed = await res.json();
+      // A valid-JSON-but-malformed corpus (empty array, units missing
+      // sections/paragraphs) must not pass silently — it has to route into
+      // the same catch block below so the Retry UI shows instead of a blank
+      // or crashed app deep inside renderHome/renderReaderBody.
+      if (!this.isValidCorpus(parsed)) throw new Error('invalid corpus shape');
+      State.corpus = parsed;
       State.corpus.forEach(u => { if (u.day_number) State.dayMap[u.day_number] = u; });
+      this.reconcileStoredIds();
     } catch(e) {
       // Show error with Retry — keep loading screen visible, don't hide it
       document.getElementById('screen-loading').innerHTML = `
@@ -1513,8 +1640,8 @@ const App = {
       cell.classList.toggle('read', State.read.has(unit.unit_id));
       cell.classList.toggle('active-day', State.activeDay === d);
     });
-    const count = State.read.size;
     const total = State.corpus ? State.corpus.length : 37;
+    const count = Math.min(State.read.size, total);
     document.getElementById('progress-fill').style.width = (count/total*100) + '%';
     document.getElementById('progress-label').textContent = count + ' / ' + total;
     this.updateAppendixRows();
@@ -1552,8 +1679,8 @@ const App = {
   },
 
   updateWideProgress() {
-    const count = State.read.size;
     const total = State.corpus ? State.corpus.length : 37;
+    const count = Math.min(State.read.size, total);
     document.getElementById('wide-progress-fill').style.width = (count/total*100) + '%';
     document.getElementById('wide-progress-label').textContent = count + ' / ' + total;
   },
@@ -1767,7 +1894,7 @@ const App = {
         <div class="list-title">${this.esc(u.title)}${badge}</div>
         <div class="list-meta">${meta}</div>
       </div>
-      <div class="list-chevron">â€º</div>
+      <div class="list-chevron">›</div>
     </div>`;
   },
 
@@ -1851,7 +1978,7 @@ const App = {
         const isHl = State.highlights.has(p.paragraph_id);
         html += `<p class="${cls}${isHl?' para-hl':''}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-hl-btn${isHl?' active':''}" onclick="App.toggleHighlight('${p.paragraph_id}')" title="Surligner" aria-label="Surligner">${isHl?'◆':'◇'}</button><button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
         if (note) {
-          html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">Ã—</button></div>`;
+          html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
         }
       });
     });
@@ -1888,7 +2015,7 @@ const App = {
 
   updateActionBar(unit) {
     const isDone = State.read.has(unit.unit_id);
-    document.getElementById('complete-icon').textContent = isDone ? 'âœ“' : '○';
+    document.getElementById('complete-icon').textContent = isDone ? '✓' : '○';
     document.getElementById('complete-label').textContent = isDone ? 'Lu' : 'Terminé';
     document.getElementById('btn-complete').classList.toggle('done', !!isDone);
     const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
@@ -1919,7 +2046,7 @@ const App = {
 
   updateWideActionBar(unit) {
     const isDone = State.read.has(unit.unit_id);
-    document.getElementById('wide-complete-icon').textContent = isDone ? 'âœ“' : '○';
+    document.getElementById('wide-complete-icon').textContent = isDone ? '✓' : '○';
     document.getElementById('wide-complete-label').textContent = isDone ? 'Lu' : 'Terminé';
     document.getElementById('wide-btn-complete').classList.toggle('done', !!isDone);
     const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
@@ -1942,9 +2069,8 @@ const App = {
     if (!unit) return;
     const key = unit.unit_id;
     const label = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
-    if (State.read.has(key)) { State.read.delete(key); this.showToast('Marqué comme non lu'); }
-    else { State.read.add(key); this.showToast(label + ' terminé âœ“'); }
-    saveRead();
+    if (State.read.has(key)) { State.read.delete(key); this.showToast(saveRead() ? 'Marqué comme non lu' : this.SAVE_ERROR_MSG); }
+    else { State.read.add(key); this.showToast(saveRead() ? label + ' terminé ✓' : this.SAVE_ERROR_MSG); }
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
     this.updateCalendar();
@@ -1960,9 +2086,8 @@ const App = {
     const lesson = unit.sections.find(s => s.section_type === 'lesson');
     if (!lesson?.paragraphs.length) return;
     const pid = lesson.paragraphs[0].paragraph_id;
-    if (State.favorites.has(pid)) { State.favorites.delete(pid); this.showToast('Retiré des favoris'); }
-    else { State.favorites.add(pid); this.showToast('Ajouté aux favoris ♥'); }
-    saveFavorites();
+    if (State.favorites.has(pid)) { State.favorites.delete(pid); this.showToast(saveFavorites() ? 'Retiré des favoris' : this.SAVE_ERROR_MSG); }
+    else { State.favorites.add(pid); this.showToast(saveFavorites() ? 'Ajouté aux favoris ♥' : this.SAVE_ERROR_MSG); }
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
   },
@@ -1983,12 +2108,11 @@ const App = {
     if (State.activeDay === d) {
       // Deactivate — revert to calendar day
       State.activeDay = null;
-      this.showToast('Jour de pratique réinitialisé');
+      this.showToast(saveActiveDay() ? 'Jour de pratique réinitialisé' : this.SAVE_ERROR_MSG);
     } else {
       State.activeDay = d;
-      this.showToast('Jour ' + d + ' activé comme jour de pratique ✦');
+      this.showToast(saveActiveDay() ? 'Jour ' + d + ' activé comme jour de pratique ✦' : this.SAVE_ERROR_MSG);
     }
-    saveActiveDay();
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
     this.updateCalendar();
@@ -2003,8 +2127,7 @@ const App = {
     if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Notes et favoris seront conservés.')) return;
     State.read = new Set();
     State.activeDay = null;
-    saveRead();
-    saveActiveDay();
+    const ok = saveRead() && saveActiveDay();
     this.updateCalendar();
     this.updateWideCalendar();
     this.updateWideProgress();
@@ -2014,7 +2137,7 @@ const App = {
     if (unit) { this.updateActionBar(unit); this.updateWideActionBar(unit); }
     if (isWide()) this.renderEspace('wide-espace');
     else this.renderEspace('espace-scroll');
-    this.showToast('Nouveau cycle commencé ✦');
+    this.showToast(ok ? 'Nouveau cycle commencé ✦' : this.SAVE_ERROR_MSG);
   },
 
   // â”€â”€ Text size â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2069,15 +2192,24 @@ const App = {
     if (e && e.target !== document.getElementById('note-modal')) return;
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
+    this.checkPendingReload();
+  },
+  // A SW update may have been deferred while the note modal held an unsaved
+  // draft (see the top-level SW_UPDATED listener). Once the modal closes —
+  // saved or cancelled — the draft is resolved, so apply it now.
+  checkPendingReload() {
+    if (window.__mjvPendingReload) {
+      document.getElementById('update-banner')?.remove();
+      window.__mjvPendingReload();
+    }
   },
   saveNote() {
     const pid = State.noteTargetPid; if (!pid) return;
     const text = document.getElementById('note-textarea').value.trim();
     let unit = null;
     for (const u of State.corpus) { if (u.sections.some(s=>s.paragraphs.some(p=>p.paragraph_id===pid))){unit=u;break;} }
-    if (text) { State.notes[pid] = { text, unit_id: unit?.unit_id, pid, ts: Date.now() }; this.showToast('Note enregistrée ✎'); }
-    else { delete State.notes[pid]; this.showToast('Note supprimée'); }
-    saveNotes();
+    if (text) { State.notes[pid] = { text, unit_id: unit?.unit_id, pid, ts: Date.now() }; this.showToast(saveNotes() ? 'Note enregistrée ✎' : this.SAVE_ERROR_MSG); }
+    else { delete State.notes[pid]; this.showToast(saveNotes() ? 'Note supprimée' : this.SAVE_ERROR_MSG); }
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
     const openUnit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
@@ -2090,9 +2222,10 @@ const App = {
         document.querySelectorAll('.ws-list-item').forEach(el => el.classList.toggle('active', el.dataset.uid === activeUid));
       }
     }
+    this.checkPendingReload();
   },
   deleteNote(pid) {
-    delete State.notes[pid]; saveNotes(); this.showToast('Note supprimée');
+    delete State.notes[pid]; this.showToast(saveNotes() ? 'Note supprimée' : this.SAVE_ERROR_MSG);
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (unit) {
       this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
@@ -2107,9 +2240,8 @@ const App = {
 
   // â”€â”€ Highlights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   toggleHighlight(pid) {
-    if (State.highlights.has(pid)) { State.highlights.delete(pid); this.showToast('Surligné retiré'); }
-    else { State.highlights.add(pid); this.showToast('Passage surligné ◆'); }
-    saveHighlights();
+    if (State.highlights.has(pid)) { State.highlights.delete(pid); this.showToast(saveHighlights() ? 'Surligné retiré' : this.SAVE_ERROR_MSG); }
+    else { State.highlights.add(pid); this.showToast(saveHighlights() ? 'Passage surligné ◆' : this.SAVE_ERROR_MSG); }
     const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
     if (unit) this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
   },
@@ -2134,7 +2266,7 @@ const App = {
       btn.title = labels[next];
       btn.setAttribute('aria-label', labels[next]);
     });
-    this.showToast(labels[next] + ' âœ“');
+    this.showToast(labels[next] + ' ✓');
   },
   openTodayModal() {
     const dayToShow = State.activeDay || State.todayDayNum;
@@ -2330,7 +2462,7 @@ const App = {
         <div class="help-section-title">✶ Marquer et progresser</div>
 
         <div class="help-item">
-          <div class="help-icon">âœ“</div>
+          <div class="help-icon">✓</div>
           <div class="help-text">
             <div class="help-label">Marquer comme terminé</div>
             <div class="help-desc">Le bouton « Terminé » (en haut du lecteur) marque le jour ou l’appendice comme lu. Le chiffre dans le calendrier devient or, la barre de progression avance. Appuyez à nouveau pour annuler.</div>
@@ -2459,7 +2591,7 @@ const App = {
         html += `<div class="fav-card" style="border-left:3px solid #8B7BD4" onclick="App.openUnit('${unit.unit_id}')"><div class="fav-card-day" style="color:#8B7BD4">◆ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></div>`;
       });
     }
-    const noteEntries = Object.entries(State.notes).sort((a,b)=>b[1].ts-a[1].ts);
+    const noteEntries = Object.entries(State.notes).sort((a,b)=>((b[1]&&b[1].ts)||0)-((a[1]&&a[1].ts)||0));
     if (noteEntries.length > 0) {
       html += `<div class="espace-section-title" style="margin-top:${(favCount>0||hlCount>0)?'16px':'0'}">Mes notes</div>`;
       noteEntries.forEach(([pid,note]) => {
