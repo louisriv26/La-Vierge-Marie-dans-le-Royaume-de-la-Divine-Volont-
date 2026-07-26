@@ -1153,7 +1153,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">31 Jours avec Marie</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.5.0</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.6.0</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1278,7 +1278,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.5.0</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.6.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1496,7 +1496,165 @@ h1, h2, h3, h4 {
 <script>
 const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded' };
 
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.6.0';
+
+// ── Config ────────────────────────────────────────────────────────────
+// These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
+// applyTextSize, both calendar loops, the progress fallbacks and the cycle gate,
+// so a content change meant hunting each one and missing one meant the calendar,
+// progress bar and cycle button silently disagreed.
+const CFG = {
+  DAYS: 31,             // calendar cells / main devotional days
+  TEXT_MIN: 14,
+  TEXT_MAX: 22,
+  TEXT_DEFAULT: 17,
+  UNITS_FALLBACK: 37,   // only used before the corpus has loaded
+  SCROLL_MIN_SAVE: 40,  // don't persist trivial reading offsets
+  NOTE_MAX: 1000,
+};
+
+const clampTextSize = n => Pure.clampTextSize(n, CFG.TEXT_MIN, CFG.TEXT_MAX, CFG.TEXT_DEFAULT);
+// Total units for progress: always the real corpus length once loaded.
+const totalUnits = () => (State.corpus ? State.corpus.length : CFG.UNITS_FALLBACK);
+// Main devotional days actually read — excludes the 6 appendices, which is what
+// the "31 jours" milestone is really about.
+const daysReadCount = () => !State.corpus ? 0 :
+  State.corpus.filter(u => u.unit_type === 'main_day' && State.read.has(u.unit_id)).length;
+const mainDayTotal = () => !State.corpus ? CFG.DAYS :
+  State.corpus.filter(u => u.unit_type === 'main_day').length;
+
+// Index-backed lookups. Declared at module level (not as App methods) so they
+// are safe to call from any callback without depending on `this`.
+const currentUnit = () => (State.seqIndex && State.seqIndex[State.currentSeq]) || null;
+const unitById    = id  => (State.unitIndex && State.unitIndex[id]) || null;
+const unitBySeq   = seq => (State.seqIndex && State.seqIndex[seq]) || null;
+const findPara    = pid => (State.paraIndex && State.paraIndex[pid]) || null;
+
+// Null-safe text setter. The nav/action-bar updaters used to chain dozens of
+// bare document.getElementById(...).textContent calls, so a single renamed or
+// not-yet-present element threw mid-update and left the reader half-populated.
+const setText = (id, value) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+};
+
+// ── Pure logic (test seam) ────────────────────────────────────────────
+// Everything here is a pure function of its arguments — no DOM, no State — so
+// it can be exercised without loading the app. All logic previously lived
+// inside the App object literal with no exports, so none of it could be checked
+// except by clicking through a browser. Run App.selfTest() in the console (or
+// require() this in Node once split out) to verify.
+const Pure = {
+  esc(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      // The apostrophe matters: this app's French corpus is full of them
+      // (l'âme, d'amour) and the markup convention is single-quoted JS args
+      // inside double-quoted attributes, so an unescaped ' was a latent
+      // injection route the moment an esc()'d value moved into an attribute.
+      .replace(/'/g, '&#39;');
+  },
+
+  formatText(text) {
+    if (!text) return '';
+    return Pure.esc(text).replace(/«\s?([\s\S]*?)\s?»/g, '<em>« $1 »</em>');
+  },
+
+  stripAccents(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  },
+
+  clampTextSize(n, min, max, dflt) {
+    const v = parseInt(n);
+    return (isNaN(v) || v < min || v > max) ? dflt : v;
+  },
+
+  // Given a corpus-like array and a Set of read unit_ids, how many main
+  // devotional days are complete? Appendices must not count.
+  daysRead(corpus, readSet) {
+    if (!Array.isArray(corpus)) return 0;
+    return corpus.filter(u => u && u.unit_type === 'main_day' && readSet.has(u.unit_id)).length;
+  },
+
+  // Window of text around a match, with the hit wrapped in <mark>.
+  snippet(text, strippedText, q, padBefore, padAfter) {
+    const at = strippedText.indexOf(q);
+    if (at === -1) return Pure.esc(text.slice(0, 150)) + '…';
+    let start = Math.max(0, at - padBefore);
+    let end = Math.min(text.length, at + q.length + padAfter);
+    if (start > 0) { const sp = text.indexOf(' ', start); if (sp !== -1 && sp < at) start = sp + 1; }
+    if (end < text.length) { const sp = text.lastIndexOf(' ', end); if (sp > at + q.length) end = sp; }
+    return (start > 0 ? '…' : '')
+      + Pure.esc(text.slice(start, at))
+      + '<mark>' + Pure.esc(text.slice(at, at + q.length)) + '</mark>'
+      + Pure.esc(text.slice(at + q.length, end))
+      + (end < text.length ? '…' : '');
+  },
+
+  tests() {
+    const t = [];
+    const eq = (name, actual, expected) => t.push({ name, pass: actual === expected, actual, expected });
+
+    eq('esc: empty', Pure.esc(''), '');
+    eq('esc: null-safe', Pure.esc(null), '');
+    eq('esc: ampersand first', Pure.esc('a & <b>'), 'a &amp; &lt;b&gt;');
+    eq('esc: double quote', Pure.esc('say "hi"'), 'say &quot;hi&quot;');
+    eq('esc: apostrophe', Pure.esc("l'âme"), 'l&#39;âme');
+    eq('esc: no double-encoding of entity text', Pure.esc('&amp;'), '&amp;amp;');
+
+    eq('formatText: guillemets to em', Pure.formatText('Il dit « Fiat » ainsi'), 'Il dit <em>« Fiat »</em> ainsi');
+    eq('formatText: escapes then formats', Pure.formatText('<b>« x »</b>'), '&lt;b&gt;<em>« x »</em>&lt;/b&gt;');
+    eq('formatText: empty', Pure.formatText(''), '');
+
+    eq('stripAccents: accents', Pure.stripAccents('Prosternée'), 'prosternee');
+    eq('stripAccents: mixed', Pure.stripAccents('ÀÉÎÔÙ ç'), 'aeiou c');
+    eq('stripAccents: null-safe', Pure.stripAccents(null), '');
+
+    eq('clampTextSize: in range', Pure.clampTextSize(18, 14, 22, 17), 18);
+    eq('clampTextSize: below', Pure.clampTextSize(2, 14, 22, 17), 17);
+    eq('clampTextSize: above', Pure.clampTextSize(99, 14, 22, 17), 17);
+    eq('clampTextSize: garbage', Pure.clampTextSize('abc', 14, 22, 17), 17);
+    eq('clampTextSize: null', Pure.clampTextSize(null, 14, 22, 17), 17);
+    eq('clampTextSize: boundary low', Pure.clampTextSize(14, 14, 22, 17), 14);
+    eq('clampTextSize: boundary high', Pure.clampTextSize(22, 14, 22, 17), 22);
+
+    const corpus = [
+      { unit_id:'D1', unit_type:'main_day' }, { unit_id:'D2', unit_type:'main_day' },
+      { unit_id:'A1', unit_type:'appendix' }, { unit_id:'A2', unit_type:'appendix' },
+    ];
+    eq('daysRead: appendices excluded', Pure.daysRead(corpus, new Set(['D1','A1','A2'])), 1);
+    eq('daysRead: all days', Pure.daysRead(corpus, new Set(['D1','D2'])), 2);
+    eq('daysRead: empty', Pure.daysRead(corpus, new Set()), 0);
+    eq('daysRead: non-array', Pure.daysRead(null, new Set(['D1'])), 0);
+
+    const txt = 'Ô très douce Maman, me voici prosternée devant toi ce matin.';
+    const snip = Pure.snippet(txt, Pure.stripAccents(txt), 'prosternee', 20, 20);
+    t.push({ name: 'snippet: marks the hit', pass: snip.indexOf('<mark>prosternée</mark>') !== -1, actual: snip, expected: 'contains <mark>prosternée</mark>' });
+    t.push({ name: 'snippet: no match falls back', pass: Pure.snippet(txt, Pure.stripAccents(txt), 'zzz', 20, 20).indexOf('<mark>') === -1, actual: '', expected: 'no mark' });
+
+    return t;
+  },
+
+  selfTest() {
+    const results = Pure.tests();
+    const failed = results.filter(r => !r.pass);
+    if (failed.length) {
+      console.error(`Pure self-test: ${failed.length} of ${results.length} FAILED`);
+      failed.forEach(f => console.error(`  ✗ ${f.name}: got ${JSON.stringify(f.actual)}, expected ${JSON.stringify(f.expected)}`));
+    } else {
+      console.log(`Pure self-test: all ${results.length} checks passed`);
+    }
+    return { total: results.length, passed: results.length - failed.length, failed: failed.map(f => f.name) };
+  },
+};
+
+// Makes Pure require()-able under Node for a lightweight test runner, while
+// staying a plain global in the browser. No build step either way.
+if (typeof module !== 'undefined' && module.exports) module.exports = Pure;
 
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
@@ -1524,7 +1682,7 @@ const SECTION_LABELS = {
 // Diacritic-insensitive, case-insensitive comparison key. Escapes are used for
 // the combining-marks range because this file is served without a charset
 // header by the dev server (see the JS encoding rule in the constants doc).
-const stripAccents = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const stripAccents = s => Pure.stripAccents(s);
 
 // Each key is parsed independently so a single corrupt entry (bad sync, quota
 // truncation, manual edit) resets only that key, not the user's entire saved state.
@@ -1553,13 +1711,12 @@ function loadStorage() {
   } catch(e) { State.notes = {}; }
 
   try {
-    const ts = parseInt(localStorage.getItem(SK.TEXT_SIZE) || '17');
-    State.textSize = (isNaN(ts) || ts < 14 || ts > 22) ? 17 : ts;
+    State.textSize = clampTextSize(localStorage.getItem(SK.TEXT_SIZE));
   } catch(e) { State.textSize = 17; }
 
   try {
     const ad = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0');
-    State.activeDay = (ad >= 1 && ad <= 31) ? ad : null;
+    State.activeDay = (ad >= 1 && ad <= CFG.DAYS) ? ad : null;
   } catch(e) { State.activeDay = null; }
 
   try {
@@ -1644,6 +1801,32 @@ if ('serviceWorker' in navigator) {
 const App = {
   SAVE_ERROR_MSG: 'Enregistrement impossible — stockage plein ou navigation privée',
 
+  // â”€â”€ Corpus indexes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Resolving a paragraph_id used to mean a triple-nested walk over
+  // corpus→sections→paragraphs, written out four separate times — and two of
+  // those copies never broke on match, so they silently kept scanning and
+  // overwrote with the last hit. In renderEspace the walk ran once per saved
+  // favourite AND once per highlight, so 40 saved passages meant 40 full-corpus
+  // scans on every render. Built once here instead.
+  buildIndexes() {
+    State.paraIndex = {};   // paragraph_id -> { para, section, unit }
+    State.seqIndex  = {};   // sequence_meditative -> unit
+    State.unitIndex = {};   // unit_id -> unit
+    State.corpus.forEach(u => {
+      State.unitIndex[u.unit_id] = u;
+      State.seqIndex[u.sequence_meditative] = u;
+      if (u.day_number) State.dayMap[u.day_number] = u;
+      u.sections.forEach(section => {
+        section.paragraphs.forEach(para => {
+          State.paraIndex[para.paragraph_id] = { para, section, unit: u };
+        });
+      });
+    });
+  },
+
+  // Lookups live at module scope (findPara / unitById / currentUnit, declared
+  // above) so they can be called from any callback without a `this` binding.
+
   // Guards against a valid-JSON-but-wrong-shape corpus (empty array, schema
   // drift, partial upload) reaching render code that assumes the full shape.
   isValidCorpus(corpus) {
@@ -1662,12 +1845,9 @@ const App = {
   // progress bar and stats tiles while rendering no card — permanently, since
   // the card is the only UI that can remove them.
   reconcileStoredIds() {
-    const validUnitIds = new Set();
-    const validParaIds = new Set();
-    State.corpus.forEach(u => {
-      validUnitIds.add(u.unit_id);
-      u.sections.forEach(s => s.paragraphs.forEach(p => validParaIds.add(p.paragraph_id)));
-    });
+    // Reuse the indexes built in buildIndexes() rather than re-walking
+    const validUnitIds = new Set(Object.keys(State.unitIndex));
+    const validParaIds = new Set(Object.keys(State.paraIndex));
 
     const cleanRead = new Set([...State.read].filter(id => validUnitIds.has(id)));
     if (cleanRead.size !== State.read.size) { State.read = cleanRead; saveRead(); }
@@ -1714,7 +1894,7 @@ const App = {
       // or crashed app deep inside renderHome/renderReaderBody.
       if (!this.isValidCorpus(parsed)) throw new Error('invalid corpus shape');
       State.corpus = parsed;
-      State.corpus.forEach(u => { if (u.day_number) State.dayMap[u.day_number] = u; });
+      this.buildIndexes();   // also populates dayMap
       this.reconcileStoredIds();
     } catch(e) {
       // Show error with Retry — keep loading screen visible, don't hide it
@@ -1728,7 +1908,7 @@ const App = {
       document.getElementById('screen-loading').classList.add('active');
       document.getElementById('wide-welcome').querySelector('.ww-text').textContent = 'Erreur de chargement. Actualisez la page.';
       return;
-    } finally {}
+    }
     // Reached only on success (catch returns early)
     document.getElementById('screen-loading')?.classList.remove('active');
     const wlf = document.getElementById('wide-loading');
@@ -1779,7 +1959,15 @@ const App = {
     document.getElementById('wide-reader-scroll')?.addEventListener('scroll', () => this.recordScroll('wide-reader-scroll'), { passive: true });
     // Flush any pending offset if the app is backgrounded or closed mid-read
     window.addEventListener('pagehide', saveScrollPos);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveScrollPos(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') { saveScrollPos(); return; }
+      // Returning to a long-lived PWA: the date may have rolled over
+      this.checkDateRollover();
+    });
+    window.addEventListener('focus', () => this.checkDateRollover());
+
+    // Keep two open instances of the app in step
+    window.addEventListener('storage', e => this.handleStorageEvent(e));
 
     document.addEventListener('click', e => {
       if (!e.target.closest('#textsize-panel') && !e.target.closest('#btn-textsize')) {
@@ -1801,6 +1989,50 @@ const App = {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.APP_BASE + 'sw.js', { scope: window.APP_BASE }).catch(() => {});
   },
 
+  // â”€â”€ Date rollover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // todayDayNum was read once when the script first evaluated. An installed PWA
+  // is routinely left open for days, so after midnight "Aujourd'hui" kept
+  // pointing at yesterday — wrong hero card, wrong calendar ring and wrong
+  // daily practice — until a manual reload.
+  checkDateRollover() {
+    const today = new Date().getDate();
+    if (today === State.todayDayNum) return;
+    State.todayDayNum = today;
+    if (!State.corpus) return;
+    this.updateCalendar();
+    this.updateWideCalendar();
+    this.renderTodayCard();
+    this.buildList();
+    this.buildWideList();
+    if (!isWide()) this.renderHome();
+    const u = currentUnit();
+    if (u && State.readerOpen) this.renderReaderBody(u, isWide() ? 'wide-reader-body' : 'reader-body');
+  },
+
+  // â”€â”€ Cross-tab sync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Every save writes the whole Set, so with the app open twice (installed PWA
+  // plus a browser tab, or two tabs) the second writer clobbered the first
+  // one's additions. Reload the affected key when another context changes it.
+  handleStorageEvent(e) {
+    if (!e.key || !String(e.key).startsWith('mjv_')) return;
+    loadStorage();
+    if (!State.corpus) return;
+    this.reconcileStoredIds();
+    this.updateCalendar();
+    this.updateWideCalendar();
+    this.updateWideProgress();
+    this.buildList();
+    this.buildWideList();
+    const u = currentUnit();
+    if (u) {
+      this.updateActionBar(u);
+      this.updateWideActionBar(u);
+      if (State.readerOpen) this.renderReaderBody(u, isWide() ? 'wide-reader-body' : 'reader-body');
+    }
+    if (isWide() && State.widePanel === 'espace') this.renderEspace('wide-espace');
+    else if (!isWide() && document.getElementById('screen-espace')?.classList.contains('active')) this.renderEspace('espace-scroll');
+  },
+
   // Only reconcile when the layout bucket genuinely flips, so ordinary resizing
   // inside one bucket costs nothing.
   checkLayoutBucket() {
@@ -1817,7 +2049,7 @@ const App = {
   // losing the user's place mid-meditation.
   reconcileLayout() {
     State.lastWide = isWide();
-    const unit = State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
 
     // Re-open the current unit into whichever layout is now active. openUnit
     // reveals the correct containers (#wide-reader-content vs #screen-reader),
@@ -1872,7 +2104,7 @@ const App = {
     aide.style.display = 'none';
     if (panel === 'jours') {
       reader.style.display = '';
-      const hasOpen = State.currentSeq > 0 && State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
+      const hasOpen = State.currentSeq > 0 && currentUnit();
       readerContent.style.display = hasOpen ? 'flex' : 'none';
       welcome.style.display = hasOpen ? 'none' : 'flex';
       welcome.style.visibility = 'visible';
@@ -1890,25 +2122,85 @@ const App = {
     }
   },
 
-  // â”€â”€ Calendar (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  buildCalendar() {
-    const grid = document.getElementById('cal-grid');
+  // â”€â”€ Calendars (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // buildCalendar/buildWideCalendar and updateCalendar/updateWideCalendar were
+  // four functions that differed only by element id, cell class and dataset key.
+  // One implementation each now, driven by LAYOUT, so a fix can no longer land
+  // in one layout and be forgotten in the other.
+  LAYOUT: {
+    mobile: {
+      calGrid: 'cal-grid', calCell: 'cal-cell', calKey: 'day',
+      progressFill: 'progress-fill', progressLabel: 'progress-label',
+      progressBarSel: '#screen-home [role="progressbar"]',
+      listScroll: 'list-scroll', sectionLabel: 'list-section-label',
+      appendicesLabel: 'Compléments — Appendices', listTail: '<div style="height:16px"></div>',
+      sectionLabelExtra: ' style="margin-top:16px"',
+    },
+    wide: {
+      calGrid: 'wide-cal-grid', calCell: 'ws-cal-cell', calKey: 'wday',
+      progressFill: 'wide-progress-fill', progressLabel: 'wide-progress-label',
+      progressBarSel: '#wide-progress-track',
+      listScroll: 'wide-list-scroll', sectionLabel: 'ws-section-label',
+      appendicesLabel: 'Compléments', listTail: '<div style="height:12px"></div>',
+      sectionLabelExtra: '',
+    },
+  },
+
+  buildCalendarInto(cfg) {
+    const grid = document.getElementById(cfg.calGrid);
+    if (!grid) return;
     grid.innerHTML = '';
-    for (let i = 1; i <= 31; i++) {
+    for (let i = 1; i <= CFG.DAYS; i++) {
       const cell = document.createElement('button');
-      cell.className = 'cal-cell'; cell.textContent = i; cell.dataset.day = i;
-      cell.setAttribute('aria-label', `Jour ${i}`);
+      cell.className = cfg.calCell;
+      cell.textContent = i;
+      cell.dataset[cfg.calKey] = i;
       const unit = State.dayMap[i];
-      if (!unit) { cell.classList.add('appendix'); cell.disabled = true; }
-      else {
+      if (!unit) {
+        cell.classList.add('appendix');
+        cell.disabled = true;
+        cell.setAttribute('aria-label', `Jour ${i} — indisponible`);
+      } else {
         if (i === State.todayDayNum) cell.classList.add('today');
         if (State.read.has(unit.unit_id)) cell.classList.add('read');
         if (State.activeDay === i) cell.classList.add('active-day');
+        const state = i === State.todayDayNum ? "aujourd'hui" : (State.read.has(unit.unit_id) ? 'lu' : 'non lu');
+        cell.setAttribute('aria-label', `Jour ${i} — ${state}`);
         cell.addEventListener('click', () => this.openDay(i));
       }
       grid.appendChild(cell);
     }
   },
+
+  updateCalendarCells(cfg) {
+    document.querySelectorAll('.' + cfg.calCell).forEach(cell => {
+      const d = parseInt(cell.dataset[cfg.calKey]);
+      const unit = State.dayMap[d];
+      if (!unit) return;
+      const isRead = State.read.has(unit.unit_id);
+      cell.classList.toggle('read', isRead);
+      cell.classList.toggle('active-day', State.activeDay === d);
+      const state = d === State.todayDayNum ? "aujourd'hui" : (isRead ? 'lu' : 'non lu');
+      cell.setAttribute('aria-label', `Jour ${d} — ${state}`);
+    });
+  },
+
+  updateProgressBar(cfg) {
+    const total = totalUnits();
+    const count = Math.min(State.read.size, total);
+    const fill = document.getElementById(cfg.progressFill);
+    const label = document.getElementById(cfg.progressLabel);
+    if (fill) fill.style.width = (count / total * 100) + '%';
+    if (label) label.textContent = count + ' / ' + total;
+    const pbar = document.querySelector(cfg.progressBarSel);
+    if (pbar) {
+      pbar.setAttribute('aria-valuemax', total);
+      pbar.setAttribute('aria-valuenow', count);
+      pbar.setAttribute('aria-valuetext', count + ' sur ' + total + ' unités lues');
+    }
+  },
+
+  buildCalendar() { this.buildCalendarInto(this.LAYOUT.mobile); },
 
   buildAppendixRow(containerId) {
     const el = document.getElementById(containerId);
@@ -1930,109 +2222,29 @@ const App = {
   },
 
   updateCalendar() {
-    document.querySelectorAll('.cal-cell').forEach(cell => {
-      const d = parseInt(cell.dataset.day);
-      const unit = State.dayMap[d];
-      if (!unit) return;
-      cell.classList.toggle('read', State.read.has(unit.unit_id));
-      cell.classList.toggle('active-day', State.activeDay === d);
-    });
-    const total = State.corpus ? State.corpus.length : 37;
-    const count = Math.min(State.read.size, total);
-    document.getElementById('progress-fill').style.width = (count/total*100) + '%';
-    document.getElementById('progress-label').textContent = count + ' / ' + total;
-    // The progressbar declared valuemin/valuemax but never a current value, so
-    // AT read it as having no value at all.
-    const pbar = document.querySelector('#screen-home [role="progressbar"]');
-    if (pbar) {
-      pbar.setAttribute('aria-valuemax', total);
-      pbar.setAttribute('aria-valuenow', count);
-      pbar.setAttribute('aria-valuetext', count + ' sur ' + total + ' unités lues');
-    }
+    this.updateCalendarCells(this.LAYOUT.mobile);
+    this.updateProgressBar(this.LAYOUT.mobile);
     this.updateAppendixRows();
   },
 
-  // â”€â”€ Calendar (wide) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  buildWideCalendar() {
-    const grid = document.getElementById('wide-cal-grid');
-    grid.innerHTML = '';
-    for (let i = 1; i <= 31; i++) {
-      const cell = document.createElement('button');
-      cell.className = 'ws-cal-cell'; cell.textContent = i; cell.dataset.wday = i;
-      cell.setAttribute('aria-label', `Jour ${i}`);
-      const unit = State.dayMap[i];
-      if (!unit) { cell.classList.add('appendix'); cell.disabled = true; }
-      else {
-        if (i === State.todayDayNum) cell.classList.add('today');
-        if (State.read.has(unit.unit_id)) cell.classList.add('read');
-        if (State.activeDay === i) cell.classList.add('active-day');
-        cell.addEventListener('click', () => this.openDay(i));
-      }
-      grid.appendChild(cell);
-    }
-  },
+  buildWideCalendar() { this.buildCalendarInto(this.LAYOUT.wide); },
 
   updateWideCalendar() {
-    document.querySelectorAll('.ws-cal-cell').forEach(cell => {
-      const d = parseInt(cell.dataset.wday);
-      const unit = State.dayMap[d];
-      if (!unit) return;
-      cell.classList.toggle('read', State.read.has(unit.unit_id));
-      cell.classList.toggle('active-day', State.activeDay === d);
-    });
+    this.updateCalendarCells(this.LAYOUT.wide);
     this.updateAppendixRows();
   },
 
-  updateWideProgress() {
-    const total = State.corpus ? State.corpus.length : 37;
-    const count = Math.min(State.read.size, total);
-    document.getElementById('wide-progress-fill').style.width = (count/total*100) + '%';
-    document.getElementById('wide-progress-label').textContent = count + ' / ' + total;
-    const pbar = document.getElementById('wide-progress-track');
-    if (pbar) {
-      pbar.setAttribute('aria-valuemax', total);
-      pbar.setAttribute('aria-valuenow', count);
-      pbar.setAttribute('aria-valuetext', count + ' sur ' + total + ' unités lues');
-    }
-  },
+  updateWideProgress() { this.updateProgressBar(this.LAYOUT.wide); },
 
   // â”€â”€ Sidebar list (wide) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  buildWideList() {
-    const scroll = document.getElementById('wide-list-scroll');
-    const main = State.corpus.filter(u => u.unit_type === 'main_day');
-    const apps = State.corpus.filter(u => u.unit_type === 'appendix');
-    scroll.innerHTML =
-      '<div class="ws-section-label">Méditations du mois</div>' +
-      main.map(u => this.wideListItem(u)).join('') +
-      '<div class="ws-section-label">Compléments</div>' +
-      apps.map(u => this.wideListItem(u)).join('') +
-      '<div style="height:12px"></div>';
-  },
+  buildWideList() { this.buildUnitList(this.LAYOUT.wide, this.CARD_STYLE.wide); },
 
-  wideListItem(u) {
-    const isToday = u.day_number === State.todayDayNum;
-    const isRead  = State.read.has(u.unit_id);
-    const isActive = u.sequence_meditative === State.currentSeq;
-    const label = u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number;
-    const cirCls = isToday ? 'today-c' : (isRead ? 'read-c' : '');
-    const meta = u.day_number ? (u.date_default||'') : 'Appendice ' + u.appendix_number;
-    const nc = this.unitNoteCount(u);
-    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent-fg);margin-left:3px">✎${nc}</span>` : '';
-    const state = isToday ? "aujourd'hui" : (isRead ? 'lu' : 'non lu');
-    const aria = `${u.day_number ? 'Jour ' + u.day_number : 'Appendice ' + u.appendix_number} : ${u.title} — ${state}`;
-    return `<button type="button" class="ws-list-item${isActive?' active':''}" data-uid="${u.unit_id}" aria-label="${this.esc(aria)}"${isActive?' aria-current="true"':''} onclick="App.openUnit('${u.unit_id}')">
-      <div class="ws-day-circle ${cirCls}" aria-hidden="true">${label}</div>
-      <div class="ws-item-info">
-        <div class="ws-item-title">${this.esc(u.title)}${badge}</div>
-        <div class="ws-item-meta">${meta}</div>
-      </div>
-    </button>`;
-  },
+  wideListItem(u) { return this.renderUnitCard(u, this.CARD_STYLE.wide); },
 
   refreshWideListItem(unitId) {
     const el = document.querySelector(`[data-uid="${unitId}"]`);
     if (!el) return;
-    const unit = State.corpus.find(u => u.unit_id === unitId);
+    const unit = unitById(unitId);
     if (!unit) return;
     el.outerHTML = this.wideListItem(unit);
   },
@@ -2126,26 +2338,22 @@ const App = {
       <div style="height:20px"></div>`;
   },
 
-  renderNearbyDays(cur) {
-    const nearby = [];
-    for (let i = -2; i <= 2; i++) {
-      const d = cur+i; if (d>=1&&d<=31&&d!==cur&&State.dayMap[d]) nearby.push(State.dayMap[d]);
-    }
-    if (!nearby.length) return '';
-    return '<div class="list-section-label" style="margin-top:6px">Autres jours</div>' +
-      nearby.map(u => this.renderListCard(u)).join('') +
-      '<div style="height:20px"></div>';
+  // One list builder for both layouts.
+  buildUnitList(cfg, style) {
+    const el = document.getElementById(cfg.listScroll);
+    if (!el || !State.corpus) return;
+    const main = State.corpus.filter(u => u.unit_type === 'main_day');
+    const apps = State.corpus.filter(u => u.unit_type === 'appendix');
+    el.innerHTML =
+      `<div class="${cfg.sectionLabel}">Méditations du mois</div>` +
+      main.map(u => this.renderUnitCard(u, style)).join('') +
+      `<div class="${cfg.sectionLabel}"${cfg.sectionLabelExtra}>${cfg.appendicesLabel}</div>` +
+      apps.map(u => this.renderUnitCard(u, style)).join('') +
+      cfg.listTail;
   },
 
   buildList() {
-    const main = State.corpus.filter(u => u.unit_type === 'main_day');
-    const apps = State.corpus.filter(u => u.unit_type === 'appendix');
-    document.getElementById('list-scroll').innerHTML =
-      '<div class="list-section-label">Méditations du mois</div>' +
-      main.map(u => this.renderListCard(u)).join('') +
-      '<div class="list-section-label" style="margin-top:16px">Compléments — Appendices</div>' +
-      apps.map(u => this.renderListCard(u)).join('') +
-      '<div style="height:16px"></div>';
+    this.buildUnitList(this.LAYOUT.mobile, this.CARD_STYLE.mobile);
     // Re-apply any active search query
     const q = document.getElementById('search-input')?.value || '';
     if (q) this.renderSearchResults(q, 'list-scroll', 'search-clear');
@@ -2261,33 +2469,53 @@ const App = {
     el.innerHTML = html;
 
     if (!isMobile) {
-      const activeUid = State.corpus.find(u => u.sequence_meditative === State.currentSeq)?.unit_id;
+      const activeUid = currentUnit()?.unit_id;
       el.querySelectorAll('.ws-list-item').forEach(item => item.classList.toggle('active', item.dataset.uid === activeUid));
     }
   },
 
-  renderListCard(u) {
-    const today = State.todayDayNum;
-    const isToday = u.day_number === today;
+  // â”€â”€ Unit cards (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // renderListCard and wideListItem derived the same five values from a unit in
+  // two places. The derivation lives here once; only the class names and the
+  // chevron differ between layouts.
+  unitCardData(u) {
+    const isToday = u.day_number === State.todayDayNum;
     const isRead  = State.read.has(u.unit_id);
-    const label = u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number;
-    const cls   = isToday ? 'today-circle' : (isRead ? 'read-circle' : '');
-    const meta  = u.day_number ? (u.date_default||'') : 'Appendice ' + u.appendix_number;
-    const nc    = this.unitNoteCount(u);
-    const badge = nc > 0 ? `<span style="font-size:10px;color:var(--accent-fg);margin-left:4px">✎${nc}</span>` : '';
-    // A real <button> so this is reachable and activatable by keyboard/AT.
-    // aria-label spells out the state that the coloured circle conveys visually.
-    const state = isToday ? "aujourd'hui" : (isRead ? 'lu' : 'non lu');
-    const aria = `${u.day_number ? 'Jour ' + u.day_number : 'Appendice ' + u.appendix_number} : ${u.title} — ${state}`;
-    return `<button type="button" class="list-card" aria-label="${this.esc(aria)}" onclick="App.openUnit('${u.unit_id}')">
-      <div class="list-day-circle ${cls}" aria-hidden="true">${label}</div>
-      <div class="list-info">
-        <div class="list-title">${this.esc(u.title)}${badge}</div>
-        <div class="list-meta">${meta}</div>
-      </div>
-      <div class="list-chevron" aria-hidden="true">›</div>
+    const nc      = this.unitNoteCount(u);
+    const ref     = u.day_number ? 'Jour ' + u.day_number : 'Appendice ' + u.appendix_number;
+    return {
+      isToday, isRead,
+      isActive: u.sequence_meditative === State.currentSeq,
+      label: u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number,
+      meta:  u.day_number ? (u.date_default || '') : 'Appendice ' + u.appendix_number,
+      badge: nc > 0 ? `<span style="font-size:10px;color:var(--accent-fg);margin-left:4px">✎${nc}</span>` : '',
+      aria:  `${ref} : ${u.title} — ${isToday ? "aujourd'hui" : (isRead ? 'lu' : 'non lu')}`,
+    };
+  },
+
+  CARD_STYLE: {
+    mobile: { card:'list-card', circle:'list-day-circle', info:'list-info', title:'list-title', meta:'list-meta',
+              today:'today-circle', read:'read-circle', chevron:true,  activeCls:false },
+    wide:   { card:'ws-list-item', circle:'ws-day-circle', info:'ws-item-info', title:'ws-item-title', meta:'ws-item-meta',
+              today:'today-c',      read:'read-c',      chevron:false, activeCls:true },
+  },
+
+  renderUnitCard(u, st) {
+    const d = this.unitCardData(u);
+    const circleState = d.isToday ? st.today : (d.isRead ? st.read : '');
+    const activeAttrs = (st.activeCls && d.isActive) ? ' aria-current="true"' : '';
+    const activeClass = (st.activeCls && d.isActive) ? ' active' : '';
+    return `<button type="button" class="${st.card}${activeClass}" data-uid="${u.unit_id}" aria-label="${this.esc(d.aria)}"${activeAttrs} onclick="App.openUnit('${u.unit_id}')">
+      <div class="${st.circle} ${circleState}" aria-hidden="true">${d.label}</div>
+      <div class="${st.info}">
+        <div class="${st.title}">${this.esc(u.title)}${d.badge}</div>
+        <div class="${st.meta}">${d.meta}</div>
+      </div>${st.chevron ? `
+      <div class="list-chevron" aria-hidden="true">›</div>` : ''}
     </button>`;
   },
+
+  renderListCard(u) { return this.renderUnitCard(u, this.CARD_STYLE.mobile); },
 
   unitNoteCount(u) {
     return u.sections.reduce((a,s) => a + s.paragraphs.filter(p => State.notes[p.paragraph_id]).length, 0);
@@ -2302,7 +2530,7 @@ const App = {
   // targetPid: optional paragraph to jump to instead of the saved reading
   // position — used by full-text search results to land on the matched passage.
   openUnit(unitId, targetPid) {
-    const unit = State.corpus.find(u => u.unit_id === unitId);
+    const unit = unitById(unitId);
     if (!unit) return;
     State.currentSeq = unit.sequence_meditative;
     State.readerOpen = true;
@@ -2384,12 +2612,12 @@ const App = {
   recordScroll(scrollId) {
     const el = document.getElementById(scrollId);
     if (!el) return;
-    const unit = State.corpus?.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (!unit) return;
     const off = Math.round(el.scrollTop);
     // Don't persist trivial offsets — keeps the stored map small and means
     // "scrolled back to the top" clears the resume point rather than saving 0.
-    if (off > 40) State.scrollPos[unit.unit_id] = off;
+    if (off > CFG.SCROLL_MIN_SAVE) State.scrollPos[unit.unit_id] = off;
     else delete State.scrollPos[unit.unit_id];
     queueScrollSave();
   },
@@ -2436,90 +2664,107 @@ const App = {
   },
 
   // â”€â”€ Mobile reader nav + actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  updateReaderNav(unit) {
-    const seq = unit.sequence_meditative;
-    const prevU = State.corpus.find(u => u.sequence_meditative === seq - 1);
-    const nextU = State.corpus.find(u => u.sequence_meditative === seq + 1);
-    const pb = document.getElementById('reader-prev'), nb = document.getElementById('reader-next');
-    pb.disabled = !prevU; nb.disabled = !nextU;
-    if (prevU) { document.getElementById('reader-prev-label').textContent = prevU.day_number ? 'Jour '+prevU.day_number : 'App. '+prevU.appendix_number; pb.onclick = () => this.openUnit(prevU.unit_id); }
-    if (nextU) { document.getElementById('reader-next-label').textContent = nextU.day_number ? 'Jour '+nextU.day_number : 'App. '+nextU.appendix_number; nb.onclick = () => this.openUnit(nextU.unit_id); }
-    document.getElementById('reader-nav-center').textContent = seq + ' / ' + State.corpus.length;
+  // â”€â”€ Reader nav + action bar (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // updateReaderNav/updateWideNav and updateActionBar/updateWideActionBar were
+  // four functions differing only by element id. The activate button is the
+  // concrete case that had already drifted: mobile toggled 'active-day-btn',
+  // wide toggled 'active', so the same control was styled by different contracts.
+  // One implementation now applies both classes for either stylesheet.
+  BAR: {
+    mobile: {
+      prev:'reader-prev', next:'reader-next', prevLabel:'reader-prev-label', nextLabel:'reader-next-label',
+      center:'reader-nav-center',
+      completeBtn:'btn-complete', completeIcon:'complete-icon', completeLabel:'complete-label',
+      favBtn:'btn-fav', favIcon:'fav-icon',
+      activateBtn:'btn-activate', activateIcon:'activate-icon', activateLabel:'activate-label',
+    },
+    wide: {
+      prev:'wide-prev', next:'wide-next', prevLabel:'wide-prev-label', nextLabel:'wide-next-label',
+      center:'wide-nav-center',
+      completeBtn:'wide-btn-complete', completeIcon:'wide-complete-icon', completeLabel:'wide-complete-label',
+      favBtn:'wide-btn-fav', favIcon:'wide-fav-icon',
+      activateBtn:'wide-btn-activate', activateIcon:'wide-activate-icon', activateLabel:'wide-activate-label',
+    },
   },
 
-  updateActionBar(unit) {
+  shortRef(u) { return u.day_number ? 'Jour ' + u.day_number : 'App. ' + u.appendix_number; },
+
+  updateNavBar(unit, ids) {
+    const seq = unit.sequence_meditative;
+    const prevU = unitBySeq(seq - 1);
+    const nextU = unitBySeq(seq + 1);
+    const pb = document.getElementById(ids.prev), nb = document.getElementById(ids.next);
+    if (pb) {
+      pb.disabled = !prevU;
+      if (prevU) {
+        setText(ids.prevLabel, this.shortRef(prevU));
+        pb.onclick = () => this.openUnit(prevU.unit_id);
+        pb.setAttribute('aria-label', 'Précédent : ' + prevU.title);
+      }
+    }
+    if (nb) {
+      nb.disabled = !nextU;
+      if (nextU) {
+        setText(ids.nextLabel, this.shortRef(nextU));
+        nb.onclick = () => this.openUnit(nextU.unit_id);
+        nb.setAttribute('aria-label', 'Suivant : ' + nextU.title);
+      }
+    }
+    setText(ids.center, seq + ' / ' + totalUnits());
+  },
+
+  updateBar(unit, ids) {
     const isDone = State.read.has(unit.unit_id);
-    document.getElementById('complete-icon').textContent = isDone ? '✓' : '○';
-    document.getElementById('complete-label').textContent = isDone ? 'Lu' : 'Terminé';
-    const cb = document.getElementById('btn-complete');
-    cb.classList.toggle('done', !!isDone);
-    // State was conveyed only by glyph + colour; expose it to assistive tech.
-    cb.setAttribute('aria-pressed', isDone ? 'true' : 'false');
-    cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
-    const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
-    document.getElementById('fav-icon').textContent = hasFav ? '♥' : '♡';
-    const fb = document.getElementById('btn-fav');
-    fb.classList.toggle('active', hasFav);
-    fb.setAttribute('aria-pressed', hasFav ? 'true' : 'false');
-    fb.setAttribute('aria-label', hasFav ? 'Retirer des favoris' : 'Ajouter aux favoris');
-    // Active day button
+    setText(ids.completeIcon, isDone ? '✓' : '○');
+    setText(ids.completeLabel, isDone ? 'Lu' : 'Terminé');
+    const cb = document.getElementById(ids.completeBtn);
+    if (cb) {
+      cb.classList.toggle('done', !!isDone);
+      // State was conveyed only by glyph + colour; expose it to assistive tech.
+      cb.setAttribute('aria-pressed', isDone ? 'true' : 'false');
+      cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
+    }
+
+    const favPid = this.unitFavPid(unit);
+    const hasFav = favPid ? State.favorites.has(favPid) : false;
+    setText(ids.favIcon, hasFav ? '♥' : '♡');
+    const fb = document.getElementById(ids.favBtn);
+    if (fb) {
+      fb.classList.toggle('active', hasFav);
+      fb.setAttribute('aria-pressed', hasFav ? 'true' : 'false');
+      fb.setAttribute('aria-label', hasFav ? 'Retirer des favoris' : 'Ajouter aux favoris');
+    }
+
     const effectiveActive = State.activeDay || State.todayDayNum;
-    const isActiveDay = unit.day_number && unit.day_number === effectiveActive;
-    const activBtn = document.getElementById('btn-activate');
-    if (activBtn) {
-      document.getElementById('activate-icon').textContent = isActiveDay ? '✦' : '◇';
-      document.getElementById('activate-label').textContent = isActiveDay ? 'Actif' : 'Activer';
-      activBtn.classList.toggle('active-day-btn', isActiveDay);
-      activBtn.setAttribute('aria-pressed', isActiveDay ? 'true' : 'false');
-      activBtn.setAttribute('aria-label', isActiveDay ? 'Jour de pratique actif — appuyez pour réinitialiser' : 'Définir comme jour de pratique');
+    const isActiveDay = !!(unit.day_number && unit.day_number === effectiveActive);
+    const ab = document.getElementById(ids.activateBtn);
+    if (ab) {
+      setText(ids.activateIcon, isActiveDay ? '✦' : '◇');
+      setText(ids.activateLabel, isActiveDay ? 'Actif' : 'Activer');
+      // Both classes, because the two stylesheets historically used different ones
+      ab.classList.toggle('active-day-btn', isActiveDay);
+      ab.classList.toggle('active', isActiveDay);
+      ab.setAttribute('aria-pressed', isActiveDay ? 'true' : 'false');
+      ab.setAttribute('aria-label', isActiveDay
+        ? 'Jour de pratique actif — appuyez pour réinitialiser'
+        : 'Définir comme jour de pratique');
     }
   },
 
-  // â”€â”€ Wide reader nav + actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  updateWideNav(unit) {
-    const seq = unit.sequence_meditative;
-    const prevU = State.corpus.find(u => u.sequence_meditative === seq-1);
-    const nextU = State.corpus.find(u => u.sequence_meditative === seq+1);
-    const pb = document.getElementById('wide-prev'), nb = document.getElementById('wide-next');
-    pb.disabled = !prevU; nb.disabled = !nextU;
-    if (prevU) { document.getElementById('wide-prev-label').textContent = prevU.day_number ? 'Jour '+prevU.day_number : 'App. '+prevU.appendix_number; pb.onclick = () => this.openUnit(prevU.unit_id); }
-    if (nextU) { document.getElementById('wide-next-label').textContent = nextU.day_number ? 'Jour '+nextU.day_number : 'App. '+nextU.appendix_number; nb.onclick = () => this.openUnit(nextU.unit_id); }
-    document.getElementById('wide-nav-center').textContent = seq + ' / ' + State.corpus.length;
+  // The paragraph a day-level favourite is pinned to (the lesson's opening line)
+  unitFavPid(unit) {
+    const lesson = unit.sections.find(s => s.section_type === 'lesson');
+    return lesson && lesson.paragraphs.length ? lesson.paragraphs[0].paragraph_id : null;
   },
 
-  updateWideActionBar(unit) {
-    const isDone = State.read.has(unit.unit_id);
-    document.getElementById('wide-complete-icon').textContent = isDone ? '✓' : '○';
-    document.getElementById('wide-complete-label').textContent = isDone ? 'Lu' : 'Terminé';
-    const cb = document.getElementById('wide-btn-complete');
-    cb.classList.toggle('done', !!isDone);
-    cb.setAttribute('aria-pressed', isDone ? 'true' : 'false');
-    cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
-    const _fl = unit.sections.find(s=>s.section_type==='lesson'); const hasFav = _fl ? State.favorites.has(_fl.paragraphs[0]?.paragraph_id) : false;
-    document.getElementById('wide-fav-icon').textContent = hasFav ? '♥' : '♡';
-    const fb = document.getElementById('wide-btn-fav');
-    fb.classList.toggle('active', hasFav);
-    fb.setAttribute('aria-pressed', hasFav ? 'true' : 'false');
-    fb.setAttribute('aria-label', hasFav ? 'Retirer des favoris' : 'Ajouter aux favoris');
-    // Active day button
-    const effectiveActive = State.activeDay || State.todayDayNum;
-    const isActiveDay = unit.day_number && unit.day_number === effectiveActive;
-    const wideActivBtn = document.getElementById('wide-btn-activate');
-    if (wideActivBtn) {
-      document.getElementById('wide-activate-icon').textContent = isActiveDay ? '✦' : '◇';
-      document.getElementById('wide-activate-label').textContent = isActiveDay ? 'Actif' : 'Activer';
-      // Mobile toggles 'active-day-btn' here while wide toggled only 'active' —
-      // the two layouts disagreed on the styling contract for the same control.
-      // Both classes are applied so either stylesheet rule works.
-      wideActivBtn.classList.toggle('active', isActiveDay);
-      wideActivBtn.classList.toggle('active-day-btn', isActiveDay);
-      wideActivBtn.setAttribute('aria-pressed', isActiveDay ? 'true' : 'false');
-    }
-  },
+  updateReaderNav(unit)     { this.updateNavBar(unit, this.BAR.mobile); },
+  updateActionBar(unit)     { this.updateBar(unit, this.BAR.mobile); },
+  updateWideNav(unit)       { this.updateNavBar(unit, this.BAR.wide); },
+  updateWideActionBar(unit) { this.updateBar(unit, this.BAR.wide); },
 
   // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   toggleComplete() {
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (!unit) return;
     const key = unit.unit_id;
     const label = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
@@ -2535,11 +2780,12 @@ const App = {
   },
 
   toggleFavorite() {
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (!unit) return;
-    const lesson = unit.sections.find(s => s.section_type === 'lesson');
-    if (!lesson?.paragraphs.length) return;
-    const pid = lesson.paragraphs[0].paragraph_id;
+    // Same helper the action bar uses, so the toggle and the displayed state can
+    // never disagree about which paragraph a day-level favourite points at.
+    const pid = this.unitFavPid(unit);
+    if (!pid) return;
     const removing = State.favorites.has(pid);
     if (removing) State.favorites.delete(pid); else State.favorites.add(pid);
     const ok = saveFavorites();
@@ -2565,7 +2811,7 @@ const App = {
   },
 
   shareDay() {
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (!unit) return;
     const text = `31 Jours avec Marie — ${unit.ordinal_source||'Jour '+unit.day_number}\n${unit.title}`;
     if (navigator.share) navigator.share({ title: '31 Jours avec Marie', text }).catch(()=>{});
@@ -2574,7 +2820,7 @@ const App = {
 
   // â”€â”€ Active day â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   activateDay() {
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (!unit?.day_number) return;
     const d = unit.day_number;
     if (State.activeDay === d) {
@@ -2608,7 +2854,7 @@ const App = {
     this.updateWideProgress();
     this.buildList();
     this.buildWideList();
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (unit) { this.updateActionBar(unit); this.updateWideActionBar(unit); }
     if (isWide()) this.renderEspace('wide-espace');
     else this.renderEspace('espace-scroll');
@@ -2631,7 +2877,7 @@ const App = {
     if (isOpen) document.getElementById('wide-textsize-slider').value = State.textSize;
   },
   applyTextSize(size, save=true) {
-    size = Math.max(14, Math.min(22, parseInt(size)));
+    size = clampTextSize(size);
     State.textSize = size;
     document.documentElement.style.setProperty('--reader-size', size+'px');
     document.documentElement.style.setProperty('--reader-lh', size>19?'1.88':'1.82');
@@ -2712,11 +2958,9 @@ const App = {
     // Capture the opener before focus moves, so closing can return the user there
     this._modalOpener = document.activeElement;
     State.noteTargetPid = pid;
-    let para=null, unit=null;
-    for (const u of State.corpus) {
-      for (const s of u.sections) { for (const p of s.paragraphs) { if (p.paragraph_id===pid){para=p;unit=u;} } }
-    }
-    if (!para) return;
+    const hit = findPara(pid);
+    if (!hit) return;
+    const para = hit.para, unit = hit.unit;
     const existing = State.notes[pid];
     const dayLabel = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
     document.getElementById('note-modal-subtitle').textContent = dayLabel + ' · ' + pid;
@@ -2778,8 +3022,7 @@ const App = {
   saveNote() {
     const pid = State.noteTargetPid; if (!pid) return;
     const text = document.getElementById('note-textarea').value.trim();
-    let unit = null;
-    for (const u of State.corpus) { if (u.sections.some(s=>s.paragraphs.some(p=>p.paragraph_id===pid))){unit=u;break;} }
+    const unit = findPara(pid)?.unit || null;
 
     // Clearing the textarea deletes the note — treat that as destructive and
     // offer the same undo as the explicit delete button.
@@ -2826,7 +3069,7 @@ const App = {
   // Notes appear in the reader, the list note-count badges and Mon Espace —
   // all three need refreshing whenever a note is added, edited or removed.
   refreshAfterNoteChange() {
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (unit) {
       this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
       this.buildList();
@@ -2880,7 +3123,7 @@ const App = {
   },
 
   refreshAfterHighlightChange() {
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     if (unit) this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
     if (State.widePanel === 'espace' && isWide()) this.renderEspace('wide-espace');
   },
@@ -2937,7 +3180,6 @@ const App = {
     });
   },
   // keep old name as alias for any lingering references
-  toggleDark() { this.cycleTheme(); },
 
   // â”€â”€ Help / Aide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   renderHelp(containerId) {
@@ -3175,7 +3417,7 @@ const App = {
           <div class="help-icon">✶</div>
           <div class="help-text">
             <div class="help-label">Nouveau cycle</div>
-            <div class="help-desc">Dans <strong>Mon Espace</strong>, le bouton « Nouveau cycle » s'allume en or dès que vous avez marqué 31 jours ou plus — que ce soit dans l'application, sur votre mobile ou dans le livre. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos notes et favoris sont toujours conservés.</div>
+            <div class="help-desc">Dans <strong>Mon Espace</strong>, le bouton « Nouveau cycle » s'allume en or dès que les 31 jours du parcours sont marqués comme lus — que ce soit dans l'application, sur votre mobile ou dans le livre. Les appendices ne comptent pas dans ce total. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos notes et favoris sont toujours conservés.</div>
           </div>
         </div>
       </div>
@@ -3215,9 +3457,9 @@ const App = {
     if (State.favorites.size > 0) {
       html += '<div class="espace-section-title">Passages favoris</div>';
       State.favorites.forEach(pid => {
-        let para=null, unit=null;
-        for (const u of State.corpus) { for (const s of u.sections) { for (const p of s.paragraphs) { if(p.paragraph_id===pid){para=p;unit=u;} } } }
-        if (!para||!unit) return;
+        const hit = findPara(pid);
+        if (!hit) return;
+        const para = hit.para, unit = hit.unit;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
         html += `<button type="button" class="fav-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">♥ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
       });
@@ -3225,9 +3467,9 @@ const App = {
     if (State.highlights.size > 0) {
       html += `<div class="espace-section-title" style="margin-top:${favCount>0?'16px':'0'}">Passages surlignés</div>`;
       State.highlights.forEach(pid => {
-        let para=null, unit=null;
-        for (const u of State.corpus) { for (const s of u.sections) { for (const p of s.paragraphs) { if(p.paragraph_id===pid){para=p;unit=u;} } } }
-        if (!para||!unit) return;
+        const hit = findPara(pid);
+        if (!hit) return;
+        const para = hit.para, unit = hit.unit;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
         html += `<button type="button" class="fav-card" style="border-left:3px solid var(--highlight-accent)" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day" style="color:var(--highlight-accent)">◆ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
       });
@@ -3236,7 +3478,7 @@ const App = {
     if (noteEntries.length > 0) {
       html += `<div class="espace-section-title" style="margin-top:${(favCount>0||hlCount>0)?'16px':'0'}">Mes notes</div>`;
       noteEntries.forEach(([pid,note]) => {
-        const unit = State.corpus.find(u=>u.unit_id===note.unit_id); if (!unit) return;
+        const unit = unitById(note.unit_id); if (!unit) return;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
         const date = new Date(note.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
         html += `<button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button>`;
@@ -3245,18 +3487,25 @@ const App = {
     if (!readCount && !favCount && !hlCount && !noteCount) {
       html += '<div class="espace-empty"><div class="espace-empty-icon">✦</div><div class="espace-empty-text">Votre progression, vos favoris<br>et vos notes apparaîtront ici.</div></div>';
     }
+    // The gate counts main devotional days ONLY. It previously used
+    // State.read.size, which also counts the 6 appendices — so a reader with
+    // 25 days plus all 6 appendices was told the cycle was complete and the
+    // reset unlocked, with 6 days still unread.
+    const daysRead = daysReadCount();
+    const dayTotal = mainDayTotal();
+    const cycleReady = daysRead >= dayTotal;
     html += `
       <div class="espace-section-title" style="margin-top:24px">Fin de cycle</div>
       <div class="cycle-section">
-        <div class="cycle-card${readCount >= 31 ? ' ready' : ''}">
+        <div class="cycle-card${cycleReady ? ' ready' : ''}">
           <div class="cycle-icon">✶</div>
           <div class="cycle-text">
-            <div class="cycle-label">${readCount >= 31 ? 'Prêt pour un nouveau cycle !' : 'Disponible à partir du Jour 31'}</div>
-            <div class="cycle-desc">${readCount >= 31
+            <div class="cycle-label">${cycleReady ? 'Prêt pour un nouveau cycle !' : `${daysRead} / ${dayTotal} jours accomplis`}</div>
+            <div class="cycle-desc">${cycleReady
               ? 'Vos notes et favoris seront conservés.'
-              : 'Revenez ici lorsque vous approchez de la fin des 31 jours.'}</div>
+              : 'Disponible lorsque les ' + dayTotal + ' jours seront marqués comme lus.'}</div>
           </div>
-          <button class="cycle-btn" ${readCount >= 31 ? 'onclick="App.startNewCycle()"' : 'disabled'}>↺ Nouveau cycle</button>
+          <button class="cycle-btn" ${cycleReady ? 'onclick="App.startNewCycle()"' : 'disabled'}>↺ Nouveau cycle</button>
         </div>
       </div>
     `;
@@ -3275,7 +3524,7 @@ const App = {
   showDebug() {
     // Must mirror the bucket names in sw.js (shell is the version-scoped one)
     const swVer = 'mjv-shell-v' + APP_VERSION;
-    const unit = State.corpus.find(u => u.sequence_meditative === State.currentSeq);
+    const unit = currentUnit();
     const rows = [
       ['App', APP_VERSION],
       ['SW cache', swVer],
@@ -3334,14 +3583,12 @@ const App = {
 
     t._timer = setTimeout(() => t.classList.remove('show', 'with-action'), 6000);
   },
-  esc(str) {
-    if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  },
-  formatText(text) {
-    if (!text) return '';
-    return this.esc(text).replace(/«\s?([\s\S]*?)\s?»/g, '<em>« $1 »</em>');
-  },
+  esc(str) { return Pure.esc(str); },
+  formatText(text) { return Pure.formatText(text); },
+
+  // Runs the pure-logic checks in Pure.tests and reports to the console.
+  // Exposed on App so it can be triggered from the debug panel or console.
+  selfTest() { return Pure.selfTest(); },
 };
 
 document.addEventListener('DOMContentLoaded', () => App.init());
