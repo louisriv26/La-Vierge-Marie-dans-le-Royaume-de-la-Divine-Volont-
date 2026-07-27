@@ -1218,7 +1218,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">31 Jours avec Marie</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.7.0</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.7.1</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1340,7 +1340,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.7.0</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.7.1</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1532,7 +1532,7 @@ h1, h2, h3, h4 {
 
 <div id="debug-overlay" role="dialog" aria-modal="true" aria-label="Debug" onclick="if(event.target===this)App.hideDebug()">
   <div id="debug-box">
-    <h3>âš™ Debug</h3>
+    <h3>⚙ Debug</h3>
     <table id="debug-table"></table>
     <button id="debug-close" onclick="App.hideDebug()">Fermer</button>
   </div>
@@ -1577,7 +1577,7 @@ const hlColorOf = pid => {
   return (c && HL_COLORS[c]) ? c : HL_DEFAULT;
 };
 
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.7.1';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -3675,7 +3675,7 @@ const App = {
       <div class="help-section">
         <div class="help-section-title">✶ Installation et mode hors-ligne</div>
         <div class="help-item">
-          <div class="help-icon">â¤“</div>
+          <div class="help-icon">⤓</div>
           <div class="help-text">
             <div class="help-label">Installer sur l’écran d’accueil</div>
             <div class="help-desc">Sur iPhone : appuyez sur « Partager » puis « Sur l’écran d’accueil ». Sur Android : le navigateur propose automatiquement « Installer ». Une fois installée, l’application fonctionne entièrement hors-ligne.</div>
