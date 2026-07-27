@@ -492,7 +492,63 @@ html, body {
    inside the box rather than above it. */
 .para-practice .para-hl-btn, .para-practice .para-note-btn,
 .para-prayer .para-hl-btn, .para-prayer .para-note-btn { top: 4px; }
-.para-hl { background: rgba(201,168,76,0.10); border-radius: 4px; }
+/* ══ Highlight colours ══
+   Five tints, each with a dark-mode variant. Alphas are deliberately low so the
+   body text keeps a high contrast ratio on top of them (verified >10:1 in both
+   themes). .para-hl alone is the legacy/default gold, kept so any highlight
+   whose colour key is missing still renders. */
+.para-hl { background: rgba(201,168,76,0.16); border-radius: 4px; }
+.para-hl.hl-gold   { background: rgba(201,168,76,0.16); }
+.para-hl.hl-blue   { background: rgba(44,74,124,0.13); }
+.para-hl.hl-green  { background: rgba(39,140,96,0.15); }
+.para-hl.hl-purple { background: rgba(107,87,196,0.14); }
+.para-hl.hl-rose   { background: rgba(192,57,110,0.12); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .para-hl,
+  :root:not([data-theme="light"]) .para-hl.hl-gold   { background: rgba(212,168,67,0.20); }
+  :root:not([data-theme="light"]) .para-hl.hl-blue   { background: rgba(90,140,200,0.24); }
+  :root:not([data-theme="light"]) .para-hl.hl-green  { background: rgba(74,155,105,0.24); }
+  :root:not([data-theme="light"]) .para-hl.hl-purple { background: rgba(150,130,225,0.24); }
+  :root:not([data-theme="light"]) .para-hl.hl-rose   { background: rgba(200,95,145,0.22); }
+}
+[data-theme="dark"] .para-hl,
+[data-theme="dark"] .para-hl.hl-gold   { background: rgba(212,168,67,0.20); }
+[data-theme="dark"] .para-hl.hl-blue   { background: rgba(90,140,200,0.24); }
+[data-theme="dark"] .para-hl.hl-green  { background: rgba(74,155,105,0.24); }
+[data-theme="dark"] .para-hl.hl-purple { background: rgba(150,130,225,0.24); }
+[data-theme="dark"] .para-hl.hl-rose   { background: rgba(200,95,145,0.22); }
+
+/* ══ Highlight colour picker ══
+   A small popover anchored to the paragraph's highlight control. Opens only for
+   an already-highlighted paragraph, so the common case stays a single tap. */
+#hl-picker {
+  display: none; position: fixed; z-index: 210;
+  background: var(--white); border: 0.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  max-width: calc(100vw - 24px);
+}
+#hl-picker.open { display: block; }
+.hlp-row { display: flex; gap: 8px; align-items: center; }
+.hlp-swatch {
+  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+  border: 2px solid var(--border); padding: 0;
+  -webkit-tap-highlight-color: transparent; transition: transform 0.12s, border-color 0.12s;
+}
+.hlp-swatch:hover { transform: scale(1.08); }
+.hlp-swatch[aria-checked="true"] { border-color: var(--ink); border-width: 3px; }
+.hlp-swatch.sw-gold   { background: #C9A84C; }
+.hlp-swatch.sw-blue   { background: #2C4A7C; }
+.hlp-swatch.sw-green  { background: #278C60; }
+.hlp-swatch.sw-purple { background: #6B57C4; }
+.hlp-swatch.sw-rose   { background: #C0396E; }
+.hlp-remove {
+  margin-top: 9px; width: 100%; min-height: 40px;
+  background: transparent; border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--muted);
+  font-size: 13px; font-family: var(--font-ui); cursor: pointer;
+}
+.hlp-remove:hover { color: var(--danger); border-color: var(--danger); }
 .para-note {
   background: var(--note-bg); border: 0.5px solid var(--note-border);
   border-radius: var(--radius-sm); padding: 10px 13px; margin-top: -8px; margin-bottom: 1.1em;
@@ -696,6 +752,15 @@ h1, h2, h3, h4 {
 
 /* Mon Espace (shared styles) */
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+/* A saved passage carries its highlight colour into Mon Espace as a left stripe,
+   so the list mirrors what the reader looks like. */
+.fav-card.hl-card { border-left: 3px solid var(--border); }
+.fav-card.hl-card.hl-gold   { border-left-color: #C9A84C; }
+.fav-card.hl-card.hl-blue   { border-left-color: #2C4A7C; }
+.fav-card.hl-card.hl-green  { border-left-color: #278C60; }
+.fav-card.hl-card.hl-purple { border-left-color: #6B57C4; }
+.fav-card.hl-card.hl-rose   { border-left-color: #C0396E; }
+.fav-card.hl-card .fav-card-day { color: var(--muted); }
 .stat-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
 .stat-num { font-size: 26px; font-weight: 500; line-height: 1; }
 .stat-num.blue { color: var(--primary); } .stat-num.gold { color: var(--accent-fg); } .stat-num.green { color: #27AE60; }
@@ -1153,7 +1218,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">31 Jours avec Marie</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.6.0</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.7.0</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1221,9 +1286,6 @@ h1, h2, h3, h4 {
       <button class="action-btn complete-btn" id="btn-complete" onclick="App.toggleComplete()">
         <span class="action-icon" id="complete-icon">○</span><span id="complete-label">Terminé</span>
       </button>
-      <button class="action-btn" id="btn-fav" onclick="App.toggleFavorite()">
-        <span class="action-icon" id="fav-icon">♡</span><span>Favori</span>
-      </button>
       <button class="action-btn" id="btn-activate" onclick="App.activateDay()">
         <span class="action-icon" id="activate-icon">✦</span>
         <span id="activate-label">Activer</span>
@@ -1246,7 +1308,7 @@ h1, h2, h3, h4 {
 
   <div id="screen-espace" class="screen">
     <div class="topbar">
-      <div><h1 class="topbar-title">Mon Espace</h1><div class="topbar-sub">Favoris · Notes · Progression</div></div>
+      <div><h1 class="topbar-title">Mon Espace</h1><div class="topbar-sub">Surlignés · Notes · Progression</div></div>
     </div>
     <div class="espace-scroll" id="espace-scroll"></div>
   </div>
@@ -1278,7 +1340,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.6.0</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.7.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1364,9 +1426,6 @@ h1, h2, h3, h4 {
             <button class="wrt-btn complete-btn" id="wide-btn-complete" onclick="App.toggleComplete()">
               <span id="wide-complete-icon">○</span> <span id="wide-complete-label">Terminé</span>
             </button>
-            <button class="wrt-btn" id="wide-btn-fav" onclick="App.toggleFavorite()">
-              <span id="wide-fav-icon">♡</span> Favori
-            </button>
             <button class="wrt-btn" id="wide-btn-activate" onclick="App.activateDay()">
               <span id="wide-activate-icon">✦</span> <span id="wide-activate-label">Activer</span>
             </button>
@@ -1407,6 +1466,12 @@ h1, h2, h3, h4 {
 <!-- Toast (shared) -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- Highlight colour picker — anchored to the tapped paragraph's control -->
+<div id="hl-picker" role="dialog" aria-modal="true" aria-label="Couleur du surlignage">
+  <div class="hlp-row" id="hlp-swatches" role="radiogroup" aria-label="Couleur"></div>
+  <button type="button" class="hlp-remove" onclick="App.removeHighlightFromPicker()">✕ Retirer le surlignage</button>
+</div>
+
 <!-- First-run onboarding (shown once) -->
 <div id="onboard-modal" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
   <div id="onboard-box">
@@ -1441,7 +1506,7 @@ h1, h2, h3, h4 {
         <div class="onb-icon">✎</div>
         <div>
           <div class="onb-label">Surligner et annoter</div>
-          <div class="onb-desc">Chaque paragraphe porte deux petites icônes à droite : ◇ pour surligner, ✎ pour écrire une note. Tout est conservé dans <strong>Mon Espace</strong>.</div>
+          <div class="onb-desc">Chaque paragraphe porte deux petites icônes à droite : ◇ pour surligner, ✎ pour écrire une note. Appuyez sur un losange déjà plein (◆) pour choisir parmi cinq couleurs. Tout est conservé dans <strong>Mon Espace</strong>.</div>
         </div>
       </div>
     </div>
@@ -1494,9 +1559,25 @@ h1, h2, h3, h4 {
 </div>
 
 <script>
-const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded' };
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded', HL_COLOR:'mjv_hl_color', FAV_MIGRATED:'mjv_fav_migrated' };
 
-const APP_VERSION = '2.6.0';
+// Highlight colours. 'gold' is the default and the value every pre-v2.7.0
+// highlight migrates to. Keys are stored, not the CSS values, so the palette can
+// be retuned without touching saved data.
+const HL_COLORS = {
+  gold:   { label: 'Or',     cls: 'hl-gold',   sw: 'sw-gold' },
+  blue:   { label: 'Bleu',   cls: 'hl-blue',   sw: 'sw-blue' },
+  green:  { label: 'Vert',   cls: 'hl-green',  sw: 'sw-green' },
+  purple: { label: 'Violet', cls: 'hl-purple', sw: 'sw-purple' },
+  rose:   { label: 'Rose',   cls: 'hl-rose',   sw: 'sw-rose' },
+};
+const HL_DEFAULT = 'gold';
+const hlColorOf = pid => {
+  const c = State.highlights.get(pid);
+  return (c && HL_COLORS[c]) ? c : HL_DEFAULT;
+};
+
+const APP_VERSION = '2.7.0';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -1580,6 +1661,35 @@ const Pure = {
     return corpus.filter(u => u && u.unit_type === 'main_day' && readSet.has(u.unit_id)).length;
   },
 
+  // Highlight store parsing. Reads both persisted shapes: the pre-v2.7.0 plain
+  // array of paragraph_ids (no colour) and the v2.7.0+ { pid: colourKey } object.
+  // Reads the immutable HL_COLORS/HL_DEFAULT config but touches no DOM or State,
+  // so it stays deterministic and testable.
+  parseHighlights(raw) {
+    const m = new Map();
+    if (Array.isArray(raw)) {
+      raw.forEach(pid => { if (typeof pid === 'string' && pid) m.set(pid, HL_DEFAULT); });
+    } else if (raw && typeof raw === 'object') {
+      for (const [pid, colour] of Object.entries(raw)) {
+        if (!pid) continue;
+        m.set(pid, (typeof colour === 'string' && HL_COLORS[colour]) ? colour : HL_DEFAULT);
+      }
+    }
+    return m;
+  },
+
+  // Folds retired Favori entries into the highlight map. Mutates and returns the
+  // map. An id already highlighted keeps its colour — a favourite must never
+  // overwrite a deliberate colour choice.
+  mergeFavorites(map, favs) {
+    if (Array.isArray(favs)) {
+      favs.forEach(pid => {
+        if (typeof pid === 'string' && pid && !map.has(pid)) map.set(pid, HL_DEFAULT);
+      });
+    }
+    return map;
+  },
+
   // Window of text around a match, with the hit wrapped in <mark>.
   snippet(text, strippedText, q, padBefore, padAfter) {
     const at = strippedText.indexOf(q);
@@ -1631,6 +1741,27 @@ const Pure = {
     eq('daysRead: empty', Pure.daysRead(corpus, new Set()), 0);
     eq('daysRead: non-array', Pure.daysRead(null, new Set(['D1'])), 0);
 
+    // Highlight-store migration: both persisted shapes must load, and a
+    // retired favourite must survive as a highlight.
+    eq('hlStore: legacy array -> gold', JSON.stringify([...Pure.parseHighlights(['a','b'])]), JSON.stringify([['a','gold'],['b','gold']]));
+    eq('hlStore: object shape kept', JSON.stringify([...Pure.parseHighlights({a:'blue'})]), JSON.stringify([['a','blue']]));
+    eq('hlStore: unknown colour -> gold', JSON.stringify([...Pure.parseHighlights({a:'chartreuse'})]), JSON.stringify([['a','gold']]));
+    eq('hlStore: junk -> empty', Pure.parseHighlights(null).size, 0);
+    eq('hlStore: blank ids skipped', Pure.parseHighlights({'':'blue'}).size, 0);
+    eq('hlStore: favourite merged', (() => {
+      const m = Pure.parseHighlights({x:'blue'});
+      return Pure.mergeFavorites(m, ['x','y']).get('y');
+    })(), 'gold');
+    eq('hlStore: merge keeps existing colour', (() => {
+      const m = Pure.parseHighlights({x:'blue'});
+      return Pure.mergeFavorites(m, ['x']).get('x');
+    })(), 'blue');
+    eq('hlStore: merge counts additions', (() => {
+      const m = Pure.parseHighlights({x:'blue'});
+      Pure.mergeFavorites(m, ['x','y','z']);
+      return m.size;
+    })(), 3);
+
     const txt = 'Ô très douce Maman, me voici prosternée devant toi ce matin.';
     const snip = Pure.snippet(txt, Pure.stripAccents(txt), 'prosternee', 20, 20);
     t.push({ name: 'snippet: marks the hit', pass: snip.indexOf('<mark>prosternée</mark>') !== -1, actual: snip, expected: 'contains <mark>prosternée</mark>' });
@@ -1659,7 +1790,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = Pure;
 const State = {
   corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
-  read: new Set(), favorites: new Set(), notes: {}, highlights: new Set(), textSize: 17,
+  read: new Set(), notes: {}, textSize: 17,
+  // Map<paragraph_id, colourKey>. Was a Set of ids before v2.7.0; the loader
+  // migrates that shape, and folds in the retired Favori list.
+  highlights: new Map(),
+  lastHlColor: HL_DEFAULT,   // colour a fresh one-tap highlight uses
+  hlPickerPid: null,         // paragraph whose colour picker is open
   noteTargetPid: null, widePanel: 'jours',
   activeDay: null,  // devotional day — may differ from calendar day
   scrollPos: {},    // { [unit_id]: scrollTop px } — resume where the reader left off
@@ -1686,15 +1822,45 @@ const stripAccents = s => Pure.stripAccents(s);
 
 // Each key is parsed independently so a single corrupt entry (bad sync, quota
 // truncation, manual edit) resets only that key, not the user's entire saved state.
+// Favori was retired in v2.7.0 because highlighting serves the same purpose, and
+// the day-level heart was pinned to whichever paragraph happened to be first in
+// the lesson — opaque to the user. A saved favourite is exactly a
+// "keep this passage" marker, so each becomes a gold highlight rather than being
+// silently dropped. Runs once; the old key is only cleared after the merged
+// highlights have been written successfully, so a failed write loses nothing.
+function migrateFavoritesToHighlights() {
+  try {
+    if (localStorage.getItem(SK.FAV_MIGRATED) === '1') return;
+    const raw = localStorage.getItem(SK.FAVORITES);
+    if (raw === null) { localStorage.setItem(SK.FAV_MIGRATED, '1'); return; }
+
+    const favs = JSON.parse(raw || '[]');
+    const before = State.highlights.size;
+    Pure.mergeFavorites(State.highlights, favs);
+    const added = State.highlights.size - before;
+    if (added > 0 && !saveHighlights()) return;   // retry on a later launch
+    localStorage.setItem(SK.FAV_MIGRATED, '1');
+    localStorage.removeItem(SK.FAVORITES);
+    if (added > 0) State.favMigratedCount = added; // surfaced once via a toast
+  } catch(e) { /* leave the old key in place and retry next launch */ }
+}
+
 function loadStorage() {
   try { State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]')); }
   catch(e) { State.read = new Set(); }
 
-  try { State.favorites = new Set(JSON.parse(localStorage.getItem(SK.FAVORITES) || '[]')); }
-  catch(e) { State.favorites = new Set(); }
+  // Highlights: accepts both shapes. Pre-v2.7.0 stored a plain array of
+  // paragraph_ids with no colour; v2.7.0+ stores { paragraph_id: colourKey }.
+  try {
+    State.highlights = Pure.parseHighlights(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '{}'));
+  } catch(e) { State.highlights = new Map(); }
 
-  try { State.highlights = new Set(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '[]')); }
-  catch(e) { State.highlights = new Set(); }
+  try {
+    const c = localStorage.getItem(SK.HL_COLOR);
+    State.lastHlColor = (c && HL_COLORS[c]) ? c : HL_DEFAULT;
+  } catch(e) { State.lastHlColor = HL_DEFAULT; }
+
+  migrateFavoritesToHighlights();
 
   try {
     const parsed = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
@@ -1733,8 +1899,9 @@ function loadStorage() {
 // private-mode restrictions, storage disabled) so callers can tell the user
 // the truth instead of showing a success toast for a write that never happened.
 const saveRead       = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); return true; } catch(e){ return false; } };
-const saveFavorites  = () => { try { localStorage.setItem(SK.FAVORITES,  JSON.stringify([...State.favorites]));  return true; } catch(e){ return false; } };
-const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify([...State.highlights])); return true; } catch(e){ return false; } };
+// Persisted as an object { paragraph_id: colourKey } from v2.7.0 on.
+const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify(Object.fromEntries(State.highlights))); return true; } catch(e){ return false; } };
+const saveHlColor    = () => { try { localStorage.setItem(SK.HL_COLOR, State.lastHlColor); return true; } catch(e){ return false; } };
 const saveNotes      = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); return true; } catch(e){ return false; } };
 const saveTextSize   = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); return true; } catch(e){ return false; } };
 const saveActiveDay  = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
@@ -1852,10 +2019,7 @@ const App = {
     const cleanRead = new Set([...State.read].filter(id => validUnitIds.has(id)));
     if (cleanRead.size !== State.read.size) { State.read = cleanRead; saveRead(); }
 
-    const cleanFav = new Set([...State.favorites].filter(id => validParaIds.has(id)));
-    if (cleanFav.size !== State.favorites.size) { State.favorites = cleanFav; saveFavorites(); }
-
-    const cleanHl = new Set([...State.highlights].filter(id => validParaIds.has(id)));
+    const cleanHl = new Map([...State.highlights].filter(([pid]) => validParaIds.has(pid)));
     if (cleanHl.size !== State.highlights.size) { State.highlights = cleanHl; saveHighlights(); }
 
     const cleanNotes = {};
@@ -1976,10 +2140,33 @@ const App = {
       if (!e.target.closest('#wide-textsize-panel') && !e.target.closest('#wnav-textsize')) {
         document.getElementById('wide-textsize-panel').classList.remove('open');
       }
+      // Dismiss the colour picker on an outside tap (the control itself is
+      // excluded so tapping it again doesn't close-then-reopen)
+      if (State.hlPickerPid && !e.target.closest('#hl-picker') && !e.target.closest('.para-hl-btn')) {
+        this.closeHlPicker();
+      }
+    });
+
+    // The picker is anchored to a paragraph, so scrolling or resizing must not
+    // leave it floating somewhere unrelated.
+    ['reader-scroll','wide-reader-scroll'].forEach(id => {
+      document.getElementById(id)?.addEventListener('scroll', () => {
+        if (State.hlPickerPid) this.closeHlPicker();
+      }, { passive: true });
     });
 
     // Escape-to-close and Tab-trapping for every dialog
     document.addEventListener('keydown', e => this.handleModalKeydown(e));
+
+    // Tell the user their favourites moved rather than letting them wonder
+    // where the Favori button went.
+    if (State.favMigratedCount > 0) {
+      const n = State.favMigratedCount;
+      setTimeout(() => this.showToast(
+        n === 1 ? '1 favori converti en passage surligné' : n + ' favoris convertis en passages surlignés'
+      ), 900);
+      State.favMigratedCount = 0;
+    }
 
     // Last, so the welcome overlay sits above a fully-rendered app
     this.maybeShowOnboarding();
@@ -2638,7 +2825,13 @@ const App = {
       sec.paragraphs.forEach(p => {
         const note = State.notes[p.paragraph_id];
         const isHl = State.highlights.has(p.paragraph_id);
-        html += `<p class="${cls}${isHl?' para-hl':''}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-hl-btn${isHl?' active':''}" onclick="App.toggleHighlight('${p.paragraph_id}')" title="Surligner" aria-label="Surligner">${isHl?'◆':'◇'}</button><button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
+        const hlCls = isHl ? ' para-hl ' + HL_COLORS[hlColorOf(p.paragraph_id)].cls : '';
+        // One tap highlights in the last-used colour; tapping an already
+        // highlighted paragraph opens the picker to recolour or remove.
+        const hlLabel = isHl
+          ? 'Surlignage ' + HL_COLORS[hlColorOf(p.paragraph_id)].label.toLowerCase() + ' — changer la couleur ou retirer'
+          : 'Surligner ce paragraphe';
+        html += `<p class="${cls}${hlCls}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-hl-btn${isHl?' active':''}" onclick="App.onHighlightBtn('${p.paragraph_id}')" title="${isHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${isHl?'true':'false'}">${isHl?'◆':'◇'}</button><button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
         if (note) {
           html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
         }
@@ -2675,14 +2868,12 @@ const App = {
       prev:'reader-prev', next:'reader-next', prevLabel:'reader-prev-label', nextLabel:'reader-next-label',
       center:'reader-nav-center',
       completeBtn:'btn-complete', completeIcon:'complete-icon', completeLabel:'complete-label',
-      favBtn:'btn-fav', favIcon:'fav-icon',
       activateBtn:'btn-activate', activateIcon:'activate-icon', activateLabel:'activate-label',
     },
     wide: {
       prev:'wide-prev', next:'wide-next', prevLabel:'wide-prev-label', nextLabel:'wide-next-label',
       center:'wide-nav-center',
       completeBtn:'wide-btn-complete', completeIcon:'wide-complete-icon', completeLabel:'wide-complete-label',
-      favBtn:'wide-btn-fav', favIcon:'wide-fav-icon',
       activateBtn:'wide-btn-activate', activateIcon:'wide-activate-icon', activateLabel:'wide-activate-label',
     },
   },
@@ -2725,16 +2916,6 @@ const App = {
       cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
     }
 
-    const favPid = this.unitFavPid(unit);
-    const hasFav = favPid ? State.favorites.has(favPid) : false;
-    setText(ids.favIcon, hasFav ? '♥' : '♡');
-    const fb = document.getElementById(ids.favBtn);
-    if (fb) {
-      fb.classList.toggle('active', hasFav);
-      fb.setAttribute('aria-pressed', hasFav ? 'true' : 'false');
-      fb.setAttribute('aria-label', hasFav ? 'Retirer des favoris' : 'Ajouter aux favoris');
-    }
-
     const effectiveActive = State.activeDay || State.todayDayNum;
     const isActiveDay = !!(unit.day_number && unit.day_number === effectiveActive);
     const ab = document.getElementById(ids.activateBtn);
@@ -2749,12 +2930,6 @@ const App = {
         ? 'Jour de pratique actif — appuyez pour réinitialiser'
         : 'Définir comme jour de pratique');
     }
-  },
-
-  // The paragraph a day-level favourite is pinned to (the lesson's opening line)
-  unitFavPid(unit) {
-    const lesson = unit.sections.find(s => s.section_type === 'lesson');
-    return lesson && lesson.paragraphs.length ? lesson.paragraphs[0].paragraph_id : null;
   },
 
   updateReaderNav(unit)     { this.updateNavBar(unit, this.BAR.mobile); },
@@ -2777,37 +2952,6 @@ const App = {
     this.updateWideProgress();
     this.buildList();
     this.buildWideList();
-  },
-
-  toggleFavorite() {
-    const unit = currentUnit();
-    if (!unit) return;
-    // Same helper the action bar uses, so the toggle and the displayed state can
-    // never disagree about which paragraph a day-level favourite points at.
-    const pid = this.unitFavPid(unit);
-    if (!pid) return;
-    const removing = State.favorites.has(pid);
-    if (removing) State.favorites.delete(pid); else State.favorites.add(pid);
-    const ok = saveFavorites();
-    this.refreshAfterFavoriteChange(unit);
-    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
-    if (removing) {
-      this.showUndoToast('Retiré des favoris', () => {
-        State.favorites.add(pid);
-        saveFavorites();
-        this.refreshAfterFavoriteChange(unit);
-        this.showToast('Favori rétabli ♥');
-      });
-    } else {
-      this.showToast('Ajouté aux favoris ♥');
-    }
-  },
-
-  refreshAfterFavoriteChange(unit) {
-    this.updateActionBar(unit);
-    this.updateWideActionBar(unit);
-    // Keep the Mon Espace favourites list and counts in step with the toggle
-    if (isWide() && State.widePanel === 'espace') this.renderEspace('wide-espace');
   },
 
   shareDay() {
@@ -2842,7 +2986,7 @@ const App = {
 
   // â”€â”€ Cycle reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   startNewCycle() {
-    if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Notes et favoris seront conservés.')) return;
+    if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Vos surlignages et notes seront conservés.')) return;
     State.read = new Set();
     State.activeDay = null;
     // Resume points are reading progress, which this reset clears — notes,
@@ -2896,6 +3040,7 @@ const App = {
   // overlay, and focus was never returned to whatever opened the dialog.
   // Highest z-index first, so the topmost dialog is the one Escape closes.
   MODALS: [
+    { id: 'hl-picker',     close: function(){ App.closeHlPicker(); } },
     { id: 'onboard-modal', close: function(){ App.finishOnboarding(false); } },
     { id: 'note-modal',    close: function(){ App.closeNoteModal(); } },
     { id: 'debug-overlay', close: function(){ App.hideDebug(); } },
@@ -3104,28 +3249,115 @@ const App = {
   },
 
   // â”€â”€ Highlights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  toggleHighlight(pid) {
-    const removing = State.highlights.has(pid);
-    if (removing) State.highlights.delete(pid); else State.highlights.add(pid);
+  // The paragraph control does one of two things, so highlighting stays a
+  // single tap while colour choice is still reachable:
+  //   not highlighted → highlight immediately in the last-used colour
+  //   highlighted     → open the picker to recolour or remove
+  onHighlightBtn(pid) {
+    if (State.highlights.has(pid)) this.openHlPicker(pid);
+    else this.applyHighlight(pid, State.lastHlColor);
+  },
+
+  applyHighlight(pid, colour) {
+    const col = HL_COLORS[colour] ? colour : HL_DEFAULT;
+    const previous = State.highlights.get(pid);   // undefined when new
+    State.highlights.set(pid, col);
+    State.lastHlColor = col;
+    const ok = saveHighlights();
+    saveHlColor();
+    this.refreshAfterHighlightChange();
+    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
+    if (previous === undefined) {
+      this.showToast('Passage surligné ◆');
+    } else if (previous !== col) {
+      this.showToast('Couleur : ' + HL_COLORS[col].label.toLowerCase());
+    }
+  },
+
+  removeHighlight(pid) {
+    const previous = State.highlights.get(pid);
+    if (previous === undefined) return;
+    State.highlights.delete(pid);
     const ok = saveHighlights();
     this.refreshAfterHighlightChange();
     if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
-    if (removing) {
-      this.showUndoToast('Surligné retiré', () => {
-        State.highlights.add(pid);
-        saveHighlights();
-        this.refreshAfterHighlightChange();
-        this.showToast('Surlignage rétabli ◆');
-      });
-    } else {
-      this.showToast('Passage surligné ◆');
+    // Restores the original colour, not just the fact of being highlighted
+    this.showUndoToast('Surlignage retiré', () => {
+      State.highlights.set(pid, previous);
+      saveHighlights();
+      this.refreshAfterHighlightChange();
+      this.showToast('Surlignage rétabli ◆');
+    });
+  },
+
+  // ── Colour picker ──────────────────────────────────────────────────
+  openHlPicker(pid) {
+    const picker = document.getElementById('hl-picker');
+    const row = document.getElementById('hlp-swatches');
+    if (!picker || !row) return;
+    State.hlPickerPid = pid;
+    const current = hlColorOf(pid);
+
+    row.innerHTML = Object.keys(HL_COLORS).map(key => {
+      const c = HL_COLORS[key];
+      return `<button type="button" class="hlp-swatch ${c.sw}" role="radio"
+        aria-checked="${key === current ? 'true' : 'false'}"
+        aria-label="${c.label}" title="${c.label}"
+        onclick="App.pickHlColor('${key}')"></button>`;
+    }).join('');
+
+    picker.classList.add('open');
+    this.positionHlPicker(pid);
+    this.onModalOpened('hl-picker');
+  },
+
+  // Anchor above/below the paragraph's control, clamped inside the viewport so
+  // it can never render off-screen on a narrow phone.
+  positionHlPicker(pid) {
+    const picker = document.getElementById('hl-picker');
+    const btn = document.querySelector(`[data-pid="${pid}"] .para-hl-btn`);
+    if (!picker) return;
+    const pw = picker.offsetWidth, ph = picker.offsetHeight;
+    const M = 10;
+    if (!btn) { // no anchor (shouldn't happen) — centre it
+      picker.style.left = Math.max(M, (window.innerWidth - pw) / 2) + 'px';
+      picker.style.top  = Math.max(M, (window.innerHeight - ph) / 2) + 'px';
+      return;
     }
+    const r = btn.getBoundingClientRect();
+    let left = r.left + r.width / 2 - pw / 2;
+    left = Math.min(Math.max(M, left), window.innerWidth - pw - M);
+    let top = r.bottom + 8;
+    if (top + ph > window.innerHeight - M) top = r.top - ph - 8;  // flip above
+    top = Math.min(Math.max(M, top), window.innerHeight - ph - M);
+    picker.style.left = Math.round(left) + 'px';
+    picker.style.top  = Math.round(top) + 'px';
+  },
+
+  pickHlColor(key) {
+    const pid = State.hlPickerPid;
+    this.closeHlPicker();
+    if (pid) this.applyHighlight(pid, key);
+  },
+
+  removeHighlightFromPicker() {
+    const pid = State.hlPickerPid;
+    this.closeHlPicker();
+    if (pid) this.removeHighlight(pid);
+  },
+
+  closeHlPicker() {
+    const picker = document.getElementById('hl-picker');
+    if (picker) picker.classList.remove('open');
+    State.hlPickerPid = null;
+    this.onModalClosed();
   },
 
   refreshAfterHighlightChange() {
     const unit = currentUnit();
     if (unit) this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
     if (State.widePanel === 'espace' && isWide()) this.renderEspace('wide-espace');
+    else if (!isWide() && document.getElementById('screen-espace')?.classList.contains('active')) this.renderEspace('espace-scroll');
   },
 
   // â”€â”€ Dark mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -3234,7 +3466,7 @@ const App = {
           <div class="help-icon">♡</div>
           <div class="help-text">
             <div class="help-label">Mon Espace</div>
-            <div class="help-desc">Regroupe vos statistiques (jours lus, favoris, notes), vos passages favoris, vos notes personnelles et les options de réinitialisation.</div>
+            <div class="help-desc">Regroupe vos statistiques (jours lus, passages surlignés, notes), vos passages surlignés, vos notes personnelles et les options de réinitialisation.</div>
           </div>
         </div>
 
@@ -3336,7 +3568,7 @@ const App = {
           <div class="help-icon">⌕</div>
           <div class="help-text">
             <div class="help-label">Filtrer la liste</div>
-            <div class="help-desc">La barre de recherche en haut de la liste « Jours » filtre les 37 unités (31 jours + 6 appendices) par titre en temps réel. Tapez quelques lettres — les accents ne sont pas obligatoires (« eterne » trouve « Éternel »). Appuyez sur ✕ pour effacer et retrouver la liste complète.</div>
+            <div class="help-desc">La barre de recherche en haut de la liste « Jours » cherche à la fois dans les titres des 37 unités <strong>et dans le texte intégral des méditations</strong>. Les résultats sont groupés : d’abord les titres, puis les passages, avec le mot trouvé mis en évidence et le jour concerné. Appuyez sur un passage pour l’ouvrir directement à l’endroit exact. Les accents ne sont pas obligatoires (« eterne » trouve « Éternel »). Appuyez sur ✕ pour effacer.</div>
           </div>
         </div>
       </div>
@@ -3362,13 +3594,21 @@ const App = {
       </div>
 
       <div class="help-section">
-        <div class="help-section-title">✶ Favoris et notes</div>
+        <div class="help-section-title">✶ Surligner et annoter</div>
 
         <div class="help-item">
-          <div class="help-icon">♡</div>
+          <div class="help-icon">◇</div>
           <div class="help-text">
-            <div class="help-label">Ajouter un favori</div>
-            <div class="help-desc">Chaque paragraphe dispose d’une icône cœur (visible au survol ou au tap). Appuyez pour sauvegarder le passage. Retrouvez tous vos favoris dans Mon Espace.</div>
+            <div class="help-label">Surligner un passage</div>
+            <div class="help-desc">Chaque paragraphe porte une icône losange à droite. Appuyez une fois pour le surligner dans votre dernière couleur utilisée. Le losange devient plein (◆) et le passage est conservé dans <strong>Mon Espace</strong>.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">◆</div>
+          <div class="help-text">
+            <div class="help-label">Changer la couleur ou retirer</div>
+            <div class="help-desc">Appuyez sur le losange d’un paragraphe déjà surligné pour ouvrir la palette : cinq couleurs (or, bleu, vert, violet, rose) et l’option « Retirer le surlignage ». La couleur choisie devient votre couleur par défaut pour les surlignages suivants.</div>
           </div>
         </div>
 
@@ -3379,6 +3619,16 @@ const App = {
             <div class="help-desc">L’icône crayon ouvre une zone de note privée (jusqu’à 1 000 caractères) attachée à ce paragraphe spécifique. Vos notes sont conservées même lors des mises à jour de l’application. Elles s’affichent en jaune sous le paragraphe concerné.</div>
           </div>
         </div>
+
+        <div class="help-item">
+          <div class="help-icon">↺</div>
+          <div class="help-text">
+            <div class="help-label">Annuler une suppression</div>
+            <div class="help-desc">Lorsque vous retirez un surlignage ou supprimez une note, un bandeau « Annuler » apparaît quelques secondes en bas de l’écran. Appuyez dessus pour tout rétablir, couleur comprise.</div>
+          </div>
+        </div>
+
+        <div class="help-note">Le surlignage remplace l’ancienne fonction « Favori ». Vos favoris existants ont été convertis en passages surlignés — rien n’a été perdu.</div>
       </div>
 
       <div class="help-section">
@@ -3417,7 +3667,7 @@ const App = {
           <div class="help-icon">✶</div>
           <div class="help-text">
             <div class="help-label">Nouveau cycle</div>
-            <div class="help-desc">Dans <strong>Mon Espace</strong>, le bouton « Nouveau cycle » s'allume en or dès que les 31 jours du parcours sont marqués comme lus — que ce soit dans l'application, sur votre mobile ou dans le livre. Les appendices ne comptent pas dans ce total. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos notes et favoris sont toujours conservés.</div>
+            <div class="help-desc">Dans <strong>Mon Espace</strong>, le bouton « Nouveau cycle » s'allume en or dès que les 31 jours du parcours sont marqués comme lus — que ce soit dans l'application, sur votre mobile ou dans le livre. Les appendices ne comptent pas dans ce total. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos surlignages et vos notes sont toujours conservés.</div>
           </div>
         </div>
       </div>
@@ -3447,36 +3697,29 @@ const App = {
   renderEspace(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const readCount = State.read.size, favCount = State.favorites.size, noteCount = Object.keys(State.notes).length, hlCount = State.highlights.size;
-    let html = `<div class="stat-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">
+    // Favori was retired in v2.7.0; highlighting is the single "keep this
+    // passage" mechanism, so there is one list here instead of two.
+    const readCount = State.read.size, noteCount = Object.keys(State.notes).length, hlCount = State.highlights.size;
+    let html = `<div class="stat-grid">
       <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
-      <div class="stat-card"><div class="stat-num gold">${favCount}</div><div class="stat-label">Favoris</div></div>
       <div class="stat-card"><div class="stat-num" style="color:var(--highlight-accent)">${hlCount}</div><div class="stat-label">Surlignés</div></div>
       <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
     </div>`;
-    if (State.favorites.size > 0) {
-      html += '<div class="espace-section-title">Passages favoris</div>';
-      State.favorites.forEach(pid => {
+    if (hlCount > 0) {
+      html += '<div class="espace-section-title">Passages surlignés</div>';
+      // Map iteration yields (value, key) — colour first, then paragraph id
+      State.highlights.forEach((colour, pid) => {
         const hit = findPara(pid);
         if (!hit) return;
         const para = hit.para, unit = hit.unit;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
-        html += `<button type="button" class="fav-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">♥ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
-      });
-    }
-    if (State.highlights.size > 0) {
-      html += `<div class="espace-section-title" style="margin-top:${favCount>0?'16px':'0'}">Passages surlignés</div>`;
-      State.highlights.forEach(pid => {
-        const hit = findPara(pid);
-        if (!hit) return;
-        const para = hit.para, unit = hit.unit;
-        const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
-        html += `<button type="button" class="fav-card" style="border-left:3px solid var(--highlight-accent)" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day" style="color:var(--highlight-accent)">◆ ${this.esc(label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
+        const col = HL_COLORS[colour] || HL_COLORS[HL_DEFAULT];
+        html += `<button type="button" class="fav-card hl-card ${col.cls}" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">◆ ${this.esc(label)} · ${this.esc(col.label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
       });
     }
     const noteEntries = Object.entries(State.notes).sort((a,b)=>((b[1]&&b[1].ts)||0)-((a[1]&&a[1].ts)||0));
     if (noteEntries.length > 0) {
-      html += `<div class="espace-section-title" style="margin-top:${(favCount>0||hlCount>0)?'16px':'0'}">Mes notes</div>`;
+      html += `<div class="espace-section-title" style="margin-top:${hlCount>0?'16px':'0'}">Mes notes</div>`;
       noteEntries.forEach(([pid,note]) => {
         const unit = unitById(note.unit_id); if (!unit) return;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
@@ -3484,8 +3727,8 @@ const App = {
         html += `<button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button>`;
       });
     }
-    if (!readCount && !favCount && !hlCount && !noteCount) {
-      html += '<div class="espace-empty"><div class="espace-empty-icon">✦</div><div class="espace-empty-text">Votre progression, vos favoris<br>et vos notes apparaîtront ici.</div></div>';
+    if (!readCount && !hlCount && !noteCount) {
+      html += '<div class="espace-empty"><div class="espace-empty-icon">✦</div><div class="espace-empty-text">Votre progression, vos passages surlignés<br>et vos notes apparaîtront ici.</div></div>';
     }
     // The gate counts main devotional days ONLY. It previously used
     // State.read.size, which also counts the 6 appendices — so a reader with
@@ -3502,7 +3745,7 @@ const App = {
           <div class="cycle-text">
             <div class="cycle-label">${cycleReady ? 'Prêt pour un nouveau cycle !' : `${daysRead} / ${dayTotal} jours accomplis`}</div>
             <div class="cycle-desc">${cycleReady
-              ? 'Vos notes et favoris seront conservés.'
+              ? 'Vos surlignages et notes seront conservés.'
               : 'Disponible lorsque les ' + dayTotal + ' jours seront marqués comme lus.'}</div>
           </div>
           <button class="cycle-btn" ${cycleReady ? 'onclick="App.startNewCycle()"' : 'disabled'}>↺ Nouveau cycle</button>
@@ -3534,8 +3777,8 @@ const App = {
       ['todayDayNum', State.todayDayNum],
       ['currentSeq', State.currentSeq ?? '—'],
       ['unit ouvert', unit ? unit.unit_id : '—'],
-      ['Favoris', State.favorites.size],
       ['Surlignés', State.highlights.size],
+      ['Couleur déf.', State.lastHlColor],
       ['Notes', Object.keys(State.notes).length],
       ['Thème', document.documentElement.dataset.theme ?? 'system'],
       ['Layout', window.innerWidth + 'px'],
