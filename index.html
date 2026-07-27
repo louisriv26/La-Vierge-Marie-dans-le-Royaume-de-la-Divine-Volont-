@@ -420,7 +420,7 @@ html, body {
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   DESKTOP LAYOUT  (â‰¥ 1200px)
+   DESKTOP LAYOUT  (≥ 1200px)
    Wider sidebar, wider reading column
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (min-width: 1200px) {
@@ -592,7 +592,7 @@ html, body {
 .progress-wrap { padding: 6px 16px 10px; flex-shrink: 0; }
 .progress-row { display: flex; align-items: center; gap: 10px; }
 
-/* â”€â”€ Appendix circles row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Appendix circles row ──────────────────────────────────────── */
 .appendix-row { display: flex; gap: 5px; padding: 6px 0 2px; align-items: center; }
 .appendix-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; flex-shrink: 0; }
 .app-circle { width: 26px; height: 26px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
@@ -886,8 +886,8 @@ h1, h2, h3, h4 {
   line-height: 1.65;
 }
 
-/* â”€â”€ Help section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-/* â”€â”€ Reset section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Help section ──────────────────────────────────────────── */
+/* ── Reset section ───────────────────────────────────────────── */
 .cycle-section { padding: 0 16px; }
 .cycle-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.3s, background 0.3s; }
 .cycle-card.ready { border-color: var(--accent); background: var(--practice-bg); }
@@ -1218,7 +1218,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">31 Jours avec Marie</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.7.1</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.7.2</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
@@ -1332,7 +1332,7 @@ h1, h2, h3, h4 {
 </div>
 
 <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     WIDE LAYOUT  (â‰¥ 768px — iPad, desktop)
+     WIDE LAYOUT  (≥ 768px — iPad, desktop)
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="wide-shell">
 
@@ -1340,7 +1340,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.7.1</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.7.2</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1577,7 +1577,7 @@ const hlColorOf = pid => {
   return (c && HL_COLORS[c]) ? c : HL_DEFAULT;
 };
 
-const APP_VERSION = '2.7.1';
+const APP_VERSION = '2.7.2';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -1804,7 +1804,7 @@ const State = {
   lastWide: null,   // last observed layout bucket — reconcile only on a real flip
 };
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helpers ──────────────────────────────────────────────────
 const isWide = () => window.innerWidth >= 768 && window.innerHeight >= 600;
 
 // Shared by the reader and by full-text search results
@@ -1964,11 +1964,11 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// â”€â”€ App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── App ──────────────────────────────────────────────────────
 const App = {
   SAVE_ERROR_MSG: 'Enregistrement impossible — stockage plein ou navigation privée',
 
-  // â”€â”€ Corpus indexes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Corpus indexes ──────────────────────────────────────────
   // Resolving a paragraph_id used to mean a triple-nested walk over
   // corpus→sections→paragraphs, written out four separate times — and two of
   // those copies never broke on match, so they silently kept scanning and
@@ -2176,7 +2176,7 @@ const App = {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.APP_BASE + 'sw.js', { scope: window.APP_BASE }).catch(() => {});
   },
 
-  // â”€â”€ Date rollover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Date rollover ───────────────────────────────────────────
   // todayDayNum was read once when the script first evaluated. An installed PWA
   // is routinely left open for days, so after midnight "Aujourd'hui" kept
   // pointing at yesterday — wrong hero card, wrong calendar ring and wrong
@@ -2196,7 +2196,7 @@ const App = {
     if (u && State.readerOpen) this.renderReaderBody(u, isWide() ? 'wide-reader-body' : 'reader-body');
   },
 
-  // â”€â”€ Cross-tab sync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Cross-tab sync ─────────────────────────────────────────
   // Every save writes the whole Set, so with the app open twice (installed PWA
   // plus a browser tab, or two tabs) the second writer clobbered the first
   // one's additions. Reload the affected key when another context changes it.
@@ -2256,7 +2256,7 @@ const App = {
     }
   },
 
-  // â”€â”€ Mobile navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Mobile navigation ────────────────────────────────────────
   showScreen(name, initial = false) {
     ['loading','home','list','reader','espace','aide'].forEach(s => {
       document.getElementById('screen-' + s)?.classList.toggle('active', s === name);
@@ -2274,7 +2274,7 @@ const App = {
     if (name !== 'reader') document.getElementById('textsize-panel').classList.remove('open');
   },
 
-  // â”€â”€ Wide navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Wide navigation ──────────────────────────────────────────
   wideNav(panel) {
     State.widePanel = panel;
     document.querySelectorAll('.wt-nav-btn[aria-pressed]').forEach(b => b.setAttribute('aria-pressed', 'false'));
@@ -2309,7 +2309,7 @@ const App = {
     }
   },
 
-  // â”€â”€ Calendars (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Calendars (shared) ──────────────────────────────────────
   // buildCalendar/buildWideCalendar and updateCalendar/updateWideCalendar were
   // four functions that differed only by element id, cell class and dataset key.
   // One implementation each now, driven by LAYOUT, so a fix can no longer land
@@ -2423,7 +2423,7 @@ const App = {
 
   updateWideProgress() { this.updateProgressBar(this.LAYOUT.wide); },
 
-  // â”€â”€ Sidebar list (wide) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Sidebar list (wide) ──────────────────────────────────────
   buildWideList() { this.buildUnitList(this.LAYOUT.wide, this.CARD_STYLE.wide); },
 
   wideListItem(u) { return this.renderUnitCard(u, this.CARD_STYLE.wide); },
@@ -2437,7 +2437,7 @@ const App = {
   },
 
 
-  // â”€â”€ Today card: Pratique + Oraison â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Today card: Pratique + Oraison ───────────────────────────
   getTodayData(dayNum) {
     // Use provided dayNum, which renderTodayCard passes as activeDay ?? todayDayNum
     const unit = State.dayMap[dayNum];
@@ -2491,7 +2491,7 @@ const App = {
     }
   },
 
-  // â”€â”€ Home (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Home (mobile) ────────────────────────────────────────────
   renderHome() {
     const today = State.todayDayNum;
     const unit = State.dayMap[today] || State.corpus[0];
@@ -2553,7 +2553,7 @@ const App = {
     this._searchTimer = setTimeout(() => this.renderSearchResults(query, scrollId, clearId), 140);
   },
 
-  // â”€â”€ Full-text search index â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Full-text search index ───────────────────────────────────
   // Built once on first search: pre-stripping every paragraph avoids redoing
   // NFD normalisation for the whole corpus on each keystroke.
   buildSearchIndex() {
@@ -2661,7 +2661,7 @@ const App = {
     }
   },
 
-  // â”€â”€ Unit cards (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Unit cards (shared) ────────────────────────────────────
   // renderListCard and wideListItem derived the same five values from a unit in
   // two places. The derivation lives here once; only the class names and the
   // chevron differ between layouts.
@@ -2708,7 +2708,7 @@ const App = {
     return u.sections.reduce((a,s) => a + s.paragraphs.filter(p => State.notes[p.paragraph_id]).length, 0);
   },
 
-  // â”€â”€ Open unit (works for both layouts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Open unit (works for both layouts) ───────────────────────
   openDay(dayNum) {
     const unit = State.dayMap[dayNum];
     if (unit) this.openUnit(unit.unit_id);
@@ -2782,7 +2782,7 @@ const App = {
     setTimeout(() => target.classList.remove('para-flash'), 1800);
   },
 
-  // â”€â”€ Reading position â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Reading position ────────────────────────────────────────
   // Resume where the reader left off. Offsets are stored per unit_id, so
   // reopening a half-read meditation lands where you stopped instead of at the
   // hero title. Unread units have no saved offset and open at the top.
@@ -2809,7 +2809,7 @@ const App = {
     queueScrollSave();
   },
 
-  // â”€â”€ Reader body (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Reader body (shared) ─────────────────────────────────────
   renderReaderBody(unit, bodyId) {
     const sectionLabels = SECTION_LABELS;
     const paraClass = {
@@ -2856,8 +2856,8 @@ const App = {
     document.getElementById(bodyId).innerHTML = html;
   },
 
-  // â”€â”€ Mobile reader nav + actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // â”€â”€ Reader nav + action bar (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Mobile reader nav + actions ──────────────────────────────
+  // ── Reader nav + action bar (shared) ─────────────────────────
   // updateReaderNav/updateWideNav and updateActionBar/updateWideActionBar were
   // four functions differing only by element id. The activate button is the
   // concrete case that had already drifted: mobile toggled 'active-day-btn',
@@ -2937,7 +2937,7 @@ const App = {
   updateWideNav(unit)       { this.updateNavBar(unit, this.BAR.wide); },
   updateWideActionBar(unit) { this.updateBar(unit, this.BAR.wide); },
 
-  // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Actions ──────────────────────────────────────────────────
   toggleComplete() {
     const unit = currentUnit();
     if (!unit) return;
@@ -2962,7 +2962,7 @@ const App = {
     else navigator.clipboard?.writeText(text).then(()=>this.showToast('Copié !')).catch(()=>{});
   },
 
-  // â”€â”€ Active day â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Active day ──────────────────────────────────────────────────
   activateDay() {
     const unit = currentUnit();
     if (!unit?.day_number) return;
@@ -2984,7 +2984,7 @@ const App = {
     this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
   },
 
-  // â”€â”€ Cycle reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Cycle reset ───────────────────────────────────────────────
   startNewCycle() {
     if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Vos surlignages et notes seront conservés.')) return;
     State.read = new Set();
@@ -3005,7 +3005,7 @@ const App = {
     this.showToast(ok ? 'Nouveau cycle commencé ✦' : this.SAVE_ERROR_MSG);
   },
 
-  // â”€â”€ Text size â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Text size ─────────────────────────────────────────────────
   toggleTextsizePanel() {
     const panel = document.getElementById('textsize-panel');
     const isOpen = panel.classList.toggle('open');
@@ -3034,7 +3034,7 @@ const App = {
     if (save) saveTextSize();
   },
 
-  // â”€â”€ Modal accessibility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Modal accessibility ──────────────────────────────────────
   // Previously no keydown handler existed anywhere in the app: dialogs could not
   // be dismissed with Escape, Tab walked out into the hidden page behind the
   // overlay, and focus was never returned to whatever opened the dialog.
@@ -3098,7 +3098,7 @@ const App = {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   },
 
-  // â”€â”€ Notes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Notes ─────────────────────────────────────────────────────
   openNoteModal(pid) {
     // Capture the opener before focus moves, so closing can return the user there
     this._modalOpener = document.activeElement;
@@ -3227,7 +3227,7 @@ const App = {
     if (isWide() && State.widePanel === 'espace') this.renderEspace('wide-espace');
   },
 
-  // â”€â”€ First-run onboarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── First-run onboarding ────────────────────────────────────
   maybeShowOnboarding() {
     let seen = false;
     try { seen = localStorage.getItem(SK.ONBOARDED) === '1'; } catch(e) { seen = true; }
@@ -3248,7 +3248,7 @@ const App = {
     }
   },
 
-  // â”€â”€ Highlights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Highlights ─────────────────────────────────────────────
   // The paragraph control does one of two things, so highlighting stays a
   // single tap while colour choice is still reachable:
   //   not highlighted → highlight immediately in the last-used colour
@@ -3360,7 +3360,7 @@ const App = {
     else if (!isWide() && document.getElementById('screen-espace')?.classList.contains('active')) this.renderEspace('espace-scroll');
   },
 
-  // â”€â”€ Dark mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Dark mode ───────────────────────────────────────────────
   cycleTheme() {
     const html = document.documentElement;
     const current = localStorage.getItem('mjv_theme') || 'system';
@@ -3413,7 +3413,7 @@ const App = {
   },
   // keep old name as alias for any lingering references
 
-  // â”€â”€ Help / Aide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Help / Aide ─────────────────────────────────────────────
   renderHelp(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -3756,7 +3756,7 @@ const App = {
     el.innerHTML = html;
   },
 
-  // â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Utilities ─────────────────────────────────────────────────
   debugTap() {
     const now = Date.now();
     if (!this._dbgTaps) this._dbgTaps = [];
