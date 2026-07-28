@@ -31,7 +31,7 @@ window.APP_BASE = (function() {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Marie">
-<title>31 Jours avec Marie</title>
+<title>La Vierge Marie dans le Royaume de la Divine Volonté</title>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1299,7 +1299,7 @@ h1, h2, h3, h4 {
   <div id="screen-home" class="screen">
     <div class="topbar">
       <div>
-        <h1 class="topbar-title">31 Jours avec Marie</h1>
+        <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
         <div class="mobile-version" onclick="App.debugTap()">v2.9.0</div>
       </div>
@@ -1421,9 +1421,9 @@ h1, h2, h3, h4 {
 
   <!-- Top bar -->
   <div id="wide-topbar">
-    <div class="wt-brand">31 Jours avec Marie</div>
+    <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.9.0</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -3054,7 +3054,7 @@ const App = {
     State.readerOpen = true;
 
     const badge = unit.day_number
-      ? `Jour ${unit.day_number} · 31 Jours avec Marie`
+      ? `Jour ${unit.day_number} · La Vierge Marie dans le Royaume de la Divine Volonté`
       : `Appendice ${unit.appendix_number} · Complément`;
 
     if (isWide()) {
@@ -3330,8 +3330,8 @@ const App = {
   shareDay() {
     const unit = currentUnit();
     if (!unit) return;
-    const text = `31 Jours avec Marie — ${unit.ordinal_source||'Jour '+unit.day_number}\n${unit.title}`;
-    if (navigator.share) navigator.share({ title: '31 Jours avec Marie', text }).catch(()=>{});
+    const text = `La Vierge Marie dans le Royaume de la Divine Volonté — ${unit.ordinal_source||'Jour '+unit.day_number}\n${unit.title}`;
+    if (navigator.share) navigator.share({ title: 'La Vierge Marie dans le Royaume de la Divine Volonté', text }).catch(()=>{});
     else navigator.clipboard?.writeText(text).then(()=>this.showToast('Copié !')).catch(()=>{});
   },
 
@@ -3986,7 +3986,7 @@ const App = {
       <div class="help-section">
         <div class="help-section-title">✶ À propos de cette application</div>
         <p class="help-desc" style="margin-bottom:12px">
-          <strong>31 Jours avec Marie</strong> est une application de méditation spirituelle basée sur
+          <strong>La Vierge Marie dans le Royaume de la Divine Volonté</strong> est une application de méditation spirituelle basée sur
           l’ouvrage <em>La Vierge Marie dans le Royaume de la Divine Volonté</em> de Luisa Piccarreta.
           Elle propose 31 méditations quotidiennes accompagnées de 6 appendices, soit 37 unités au total.
           L’application fonctionne hors-ligne une fois installée.
