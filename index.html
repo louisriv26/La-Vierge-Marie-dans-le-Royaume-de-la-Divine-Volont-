@@ -693,8 +693,11 @@ html, body {
 /* ── Appendix circles row ──────────────────────────────────────── */
 .appendix-row { display: flex; gap: 5px; padding: 6px 0 2px; align-items: center; }
 .appendix-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; flex-shrink: 0; }
-.app-circle { width: 26px; height: 26px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
-.app-circle.read { background: var(--accent); border-color: var(--accent); color: #fff; }
+.app-circle { position: relative; width: 26px; height: 26px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
+/* Matches .cal-cell.read exactly (ring + small dot, not a filled background)
+   so a read appendix and a read day communicate the same thing the same way. */
+.app-circle.read { color: var(--accent); border-color: var(--accent); background: transparent; }
+.app-circle.read::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--accent); }
 .app-circle.active { box-shadow: 0 0 0 2.5px var(--accent), 0 0 0 4.5px rgba(201,168,76,0.25); }
 .app-circle:hover { border-color: var(--primary); color: var(--primary); }
 .progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
@@ -1334,7 +1337,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.5</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.6</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1456,7 +1459,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.5</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.6</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1743,7 +1746,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.9.5';
+const APP_VERSION = '2.9.6';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
