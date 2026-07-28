@@ -518,6 +518,59 @@ html, body {
 [data-theme="dark"] .para-hl.hl-purple { background: rgba(150,130,225,0.24); }
 [data-theme="dark"] .para-hl.hl-rose   { background: rgba(200,95,145,0.22); }
 
+/* ══ Range highlights (partial-paragraph) ══
+   A <mark> wrapping part of a paragraph. Uses the same tints as the
+   whole-paragraph classes so both modes look like one feature. color:inherit
+   is required — the UA default gives mark a black-on-yellow scheme that would
+   ignore the theme entirely. */
+.hl-mark {
+  background: rgba(201,168,76,0.16);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0.05em 0;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.hl-mark.hl-gold   { background: rgba(201,168,76,0.16); }
+.hl-mark.hl-blue   { background: rgba(44,74,124,0.13); }
+.hl-mark.hl-green  { background: rgba(39,140,96,0.15); }
+.hl-mark.hl-purple { background: rgba(107,87,196,0.14); }
+.hl-mark.hl-rose   { background: rgba(192,57,110,0.12); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hl-mark,
+  :root:not([data-theme="light"]) .hl-mark.hl-gold   { background: rgba(212,168,67,0.20); }
+  :root:not([data-theme="light"]) .hl-mark.hl-blue   { background: rgba(90,140,200,0.24); }
+  :root:not([data-theme="light"]) .hl-mark.hl-green  { background: rgba(74,155,105,0.24); }
+  :root:not([data-theme="light"]) .hl-mark.hl-purple { background: rgba(150,130,225,0.24); }
+  :root:not([data-theme="light"]) .hl-mark.hl-rose   { background: rgba(200,95,145,0.22); }
+}
+[data-theme="dark"] .hl-mark,
+[data-theme="dark"] .hl-mark.hl-gold   { background: rgba(212,168,67,0.20); }
+[data-theme="dark"] .hl-mark.hl-blue   { background: rgba(90,140,200,0.24); }
+[data-theme="dark"] .hl-mark.hl-green  { background: rgba(74,155,105,0.24); }
+[data-theme="dark"] .hl-mark.hl-purple { background: rgba(150,130,225,0.24); }
+[data-theme="dark"] .hl-mark.hl-rose   { background: rgba(200,95,145,0.22); }
+
+/* ══ Selection action bar ══
+   Custom "Surligner" bar shown near a text selection. Not rendered on Android,
+   where whole-paragraph tap-highlighting is the only mode (the OS selection bar
+   there cannot be suppressed, so competing with it is a fight we don't pick). */
+#sel-bar {
+  display: none; position: fixed; z-index: 220;
+  background: var(--ink); border-radius: 20px;
+  padding: 6px 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+}
+#sel-bar.open { display: flex; gap: 6px; align-items: center; }
+.selbar-btn {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 8px 14px;
+  background: transparent; border: none; border-radius: 14px;
+  color: var(--ivory); font-size: 13.5px; font-family: var(--font-ui);
+  cursor: pointer; white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.selbar-btn:hover { background: rgba(255,255,255,0.16); }
+
 /* ══ Highlight colour picker ══
    A small popover anchored to the paragraph's highlight control. Opens only for
    an already-highlighted paragraph, so the common case stays a single tap. */
@@ -1248,7 +1301,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">31 Jours avec Marie</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.8.0</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.0</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1370,7 +1423,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.8.0</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.9.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1507,6 +1560,14 @@ h1, h2, h3, h4 {
   <div class="tp-row" id="tp-options" role="radiogroup" aria-label="Thème"></div>
 </div>
 
+<!-- Selection action bar — appears over a text selection in the reader.
+     Hidden on Android, where whole-paragraph tapping is the only mode. -->
+<div id="sel-bar" role="toolbar" aria-label="Actions sur la sélection">
+  <button type="button" class="selbar-btn" onclick="App.highlightSelection()">
+    <span aria-hidden="true">◆</span> Surligner
+  </button>
+</div>
+
 <!-- First-run onboarding (shown once) -->
 <div id="onboard-modal" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
   <div id="onboard-box">
@@ -1607,10 +1668,35 @@ const HL_COLORS = {
   rose:   { label: 'Rose',   cls: 'hl-rose',   sw: 'sw-rose' },
 };
 const HL_DEFAULT = 'gold';
+
+// ── Highlight records ─────────────────────────────────────────────────
+// A paragraph can hold several independent highlights, so the store is
+//   Map<paragraph_id, HighlightRecord[]>
+// with HighlightRecord = { id, color, range: {start,end}|null, text, ts }.
+//
+//   range: null            → the WHOLE paragraph (the Android mode, and still
+//                            available everywhere via the ◇ button)
+//   range: {start,end}      → a character span of the paragraph's source text,
+//                            offsets against corpus text (immutable), so they
+//                            survive re-render.
+//
+// Offsets are stored rather than DOM positions because renderReaderBody
+// regenerates the paragraph's innerHTML; anything DOM-anchored would not
+// survive a single state change.
+const hlRecords = pid => State.highlights.get(pid) || [];
+const hasWholeParaHl = pid => hlRecords(pid).some(h => !h.range);
+const wholeParaHl = pid => hlRecords(pid).find(h => !h.range) || null;
+const rangeHls = pid => hlRecords(pid).filter(h => h.range);
+const safeColor = c => (typeof c === 'string' && HL_COLORS[c]) ? c : HL_DEFAULT;
+// Colour shown on the ◇/◆ control: the whole-paragraph highlight's colour if
+// there is one, otherwise the first range highlight's.
 const hlColorOf = pid => {
-  const c = State.highlights.get(pid);
-  return (c && HL_COLORS[c]) ? c : HL_DEFAULT;
+  const recs = hlRecords(pid);
+  const whole = recs.find(h => !h.range);
+  return safeColor((whole || recs[0] || {}).color);
 };
+let _hlIdCounter = 0;
+const newHlId = () => 'h' + Date.now().toString(36) + (_hlIdCounter++).toString(36);
 
 // Theme picker. Label is "Automatique" (not "Système") to match the wording
 // used in the sibling apps — the stored value stays the internal 'system'
@@ -1623,7 +1709,7 @@ const currentThemeMode = () => {
   return (saved === 'dark' || saved === 'light') ? saved : 'system';
 };
 
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.9.0';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -1707,34 +1793,151 @@ const Pure = {
     return corpus.filter(u => u && u.unit_type === 'main_day' && readSet.has(u.unit_id)).length;
   },
 
-  // Highlight store parsing. Reads both persisted shapes: the pre-v2.7.0 plain
-  // array of paragraph_ids (no colour) and the v2.7.0+ { pid: colourKey } object.
-  // Reads the immutable HL_COLORS/HL_DEFAULT config but touches no DOM or State,
-  // so it stays deterministic and testable.
+  // Highlight store parsing. Accepts every shape this app has persisted:
+  //   ["pid", …]                        pre-v2.7.0 — ids only, no colour
+  //   { pid: "colour" }                 v2.7.0–v2.8.0 — one whole-para colour
+  //   { pid: [ {color, range, …}, … ] } v2.9.0+ — records, ranges optional
+  // Always returns Map<pid, HighlightRecord[]>. Reads the immutable
+  // HL_COLORS/HL_DEFAULT config but touches no DOM or State, so it stays
+  // deterministic and testable.
   parseHighlights(raw) {
     const m = new Map();
+    // Synthesises a stable id for records saved before ids existed, derived
+    // from the paragraph + colour + range so it is deterministic across loads.
+    let pidSeed = '';
+    const rec = (color, range, text, ts, id) => ({
+      id: id || ('h' + Math.abs(Pure.hashStr(pidSeed + color + JSON.stringify(range || 0))).toString(36)),
+      color: (typeof color === 'string' && HL_COLORS[color]) ? color : HL_DEFAULT,
+      range: Pure.validRange(range),
+      text: typeof text === 'string' ? text : '',
+      ts: typeof ts === 'number' ? ts : 0,
+    });
+
     if (Array.isArray(raw)) {
-      raw.forEach(pid => { if (typeof pid === 'string' && pid) m.set(pid, HL_DEFAULT); });
-    } else if (raw && typeof raw === 'object') {
-      for (const [pid, colour] of Object.entries(raw)) {
-        if (!pid) continue;
-        m.set(pid, (typeof colour === 'string' && HL_COLORS[colour]) ? colour : HL_DEFAULT);
+      raw.forEach(pid => {
+        if (typeof pid === 'string' && pid) { pidSeed = pid; m.set(pid, [rec(HL_DEFAULT, null)]); }
+      });
+      return m;
+    }
+    if (!raw || typeof raw !== 'object') return m;
+
+    for (const [pid, val] of Object.entries(raw)) {
+      if (!pid) continue;
+      pidSeed = pid;
+      if (typeof val === 'string') {              // v2.7.0–v2.8.0 shape
+        m.set(pid, [rec(val, null)]);
+      } else if (Array.isArray(val)) {            // v2.9.0+ shape
+        const list = val
+          .filter(h => h && typeof h === 'object')
+          .map(h => rec(h.color, h.range, h.text, h.ts, h.id));
+        // Drop nothing silently: a record with a malformed range degrades to a
+        // whole-paragraph highlight rather than vanishing.
+        if (list.length) m.set(pid, Pure.dedupeHls(list));
       }
     }
     return m;
   },
 
-  // Folds retired Favori entries into the highlight map. Mutates and returns the
-  // map. An id already highlighted keeps its colour — a favourite must never
-  // overwrite a deliberate colour choice.
+  // A range is only usable if both offsets are non-negative integers and
+  // start < end. Anything else becomes null → whole-paragraph highlight.
+  validRange(r) {
+    if (!r || typeof r !== 'object') return null;
+    const s = r.start, e = r.end;
+    if (!Number.isInteger(s) || !Number.isInteger(e)) return null;
+    if (s < 0 || e <= s) return null;
+    return { start: s, end: e };
+  },
+
+  // Small stable hash, used only to synthesise ids for records that predate
+  // them. Not security-relevant.
+  hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return h;
+  },
+
+  // One whole-paragraph highlight max, and no two range highlights with
+  // identical bounds. Later entries win (they were saved more recently).
+  dedupeHls(list) {
+    const out = [];
+    let whole = null;
+    const seen = new Set();
+    list.forEach(h => {
+      if (!h.range) { whole = h; return; }
+      const key = h.range.start + ':' + h.range.end;
+      if (seen.has(key)) {
+        out[out.findIndex(x => x.range && (x.range.start + ':' + x.range.end) === key)] = h;
+      } else {
+        seen.add(key);
+        out.push(h);
+      }
+    });
+    out.sort((a, b) => a.range.start - b.range.start);
+    return whole ? [whole, ...out] : out;
+  },
+
+  // Folds retired Favori entries in as whole-paragraph highlights. Mutates and
+  // returns the map. A paragraph that already has any highlight is left alone —
+  // a favourite must never overwrite a deliberate colour or range choice.
   mergeFavorites(map, favs) {
     if (Array.isArray(favs)) {
       favs.forEach(pid => {
-        if (typeof pid === 'string' && pid && !map.has(pid)) map.set(pid, HL_DEFAULT);
+        if (typeof pid === 'string' && pid && !map.has(pid)) {
+          map.set(pid, [{ id: 'fav' + Math.abs(Pure.hashStr(pid)).toString(36), color: HL_DEFAULT, range: null, text: '', ts: 0 }]);
+        }
       });
     }
     return map;
   },
+
+  // ── Range highlighting ──────────────────────────────────────────────
+  // Takes the paragraph's source text and its highlight records, and returns
+  // the usable range highlights: clamped to the text, overlaps dropped, sorted.
+  // A range that no longer fits the text (corpus edited under a saved
+  // highlight) is dropped here rather than producing broken markup.
+  usableRanges(text, records) {
+    const len = (text || '').length;
+    const out = [];
+    (records || [])
+      .filter(h => h && h.range)
+      .map(h => ({ h, start: h.range.start, end: Math.min(h.range.end, len) }))
+      .filter(r => r.start < len && r.end > r.start)
+      .sort((a, b) => a.start - b.start || a.end - b.end)
+      .forEach(r => {
+        // First-wins on overlap: a later range that collides with one already
+        // accepted is skipped, so marks can never nest or interleave.
+        if (out.length && r.start < out[out.length - 1].end) return;
+        out.push(r);
+      });
+    return out;
+  },
+
+  // Builds a paragraph's inner HTML with highlighted spans wrapped in <mark>.
+  // colorCls maps a colour key to its CSS class.
+  //
+  // When the paragraph has no range highlights this returns exactly what
+  // formatText() used to, so unhighlighted paragraphs render byte-identically
+  // to before this feature existed.
+  //
+  // Known, accepted limitation: the « … » → <em> styling is applied per slice,
+  // so a highlight boundary landing inside a guillemet pair loses the italics
+  // for that pair. Preferred over emitting overlapping/nested tags.
+  paragraphHtml(text, records, colorCls) {
+    const src = text || '';
+    const ranges = Pure.usableRanges(src, records);
+    if (!ranges.length) return Pure.formatText(src);
+    let html = '', cursor = 0;
+    ranges.forEach(r => {
+      if (r.start > cursor) html += Pure.formatText(src.slice(cursor, r.start));
+      const cls = colorCls[Pure.safeColorKey(r.h.color)] || colorCls[HL_DEFAULT];
+      html += '<mark class="hl-mark ' + cls + '">' + Pure.formatText(src.slice(r.start, r.end)) + '</mark>';
+      cursor = r.end;
+    });
+    if (cursor < src.length) html += Pure.formatText(src.slice(cursor));
+    return html;
+  },
+
+  safeColorKey(c) { return (typeof c === 'string' && HL_COLORS[c]) ? c : HL_DEFAULT; },
 
   // Window of text around a match, with the hit wrapped in <mark>.
   snippet(text, strippedText, q, padBefore, padAfter) {
@@ -1787,26 +1990,86 @@ const Pure = {
     eq('daysRead: empty', Pure.daysRead(corpus, new Set()), 0);
     eq('daysRead: non-array', Pure.daysRead(null, new Set(['D1'])), 0);
 
-    // Highlight-store migration: both persisted shapes must load, and a
-    // retired favourite must survive as a highlight.
-    eq('hlStore: legacy array -> gold', JSON.stringify([...Pure.parseHighlights(['a','b'])]), JSON.stringify([['a','gold'],['b','gold']]));
-    eq('hlStore: object shape kept', JSON.stringify([...Pure.parseHighlights({a:'blue'})]), JSON.stringify([['a','blue']]));
-    eq('hlStore: unknown colour -> gold', JSON.stringify([...Pure.parseHighlights({a:'chartreuse'})]), JSON.stringify([['a','gold']]));
+    // ── Highlight store: every persisted shape must load into records ──
+    const recs = (raw, pid) => Pure.parseHighlights(raw).get(pid) || [];
+
+    // pre-v2.7.0: bare id array → one whole-paragraph gold record
+    eq('hlStore: legacy array count', recs(['a','b'], 'a').length, 1);
+    eq('hlStore: legacy array colour', recs(['a'], 'a')[0].color, 'gold');
+    eq('hlStore: legacy array is whole-para', recs(['a'], 'a')[0].range, null);
+    // v2.7.0–v2.8.0: { pid: colour } → one whole-paragraph record, colour kept
+    eq('hlStore: colour-map colour kept', recs({a:'blue'}, 'a')[0].color, 'blue');
+    eq('hlStore: colour-map is whole-para', recs({a:'blue'}, 'a')[0].range, null);
+    eq('hlStore: unknown colour -> gold', recs({a:'chartreuse'}, 'a')[0].color, 'gold');
+    // v2.9.0+: record arrays with ranges
+    eq('hlStore: record range kept', JSON.stringify(recs({a:[{color:'rose',range:{start:5,end:9}}]}, 'a')[0].range), '{"start":5,"end":9}');
+    eq('hlStore: record count', recs({a:[{color:'rose',range:{start:0,end:3}},{color:'blue',range:{start:5,end:9}}]}, 'a').length, 2);
+    // malformed ranges degrade to whole-paragraph rather than vanishing
+    eq('hlStore: end<=start -> whole', recs({a:[{color:'blue',range:{start:9,end:9}}]}, 'a')[0].range, null);
+    eq('hlStore: negative -> whole', recs({a:[{color:'blue',range:{start:-2,end:4}}]}, 'a')[0].range, null);
+    eq('hlStore: non-integer -> whole', recs({a:[{color:'blue',range:{start:1.5,end:4}}]}, 'a')[0].range, null);
     eq('hlStore: junk -> empty', Pure.parseHighlights(null).size, 0);
     eq('hlStore: blank ids skipped', Pure.parseHighlights({'':'blue'}).size, 0);
+    eq('hlStore: empty record array skipped', Pure.parseHighlights({a:[]}).size, 0);
+    // ranges are sorted and de-duplicated, whole-para pinned first
+    eq('hlStore: ranges sorted', recs({a:[{color:'blue',range:{start:20,end:25}},{color:'rose',range:{start:2,end:6}}]}, 'a').map(h=>h.range.start).join(','), '2,20');
+    eq('hlStore: identical ranges deduped', recs({a:[{color:'blue',range:{start:2,end:6}},{color:'rose',range:{start:2,end:6}}]}, 'a').length, 1);
+    eq('hlStore: later duplicate wins', recs({a:[{color:'blue',range:{start:2,end:6}},{color:'rose',range:{start:2,end:6}}]}, 'a')[0].color, 'rose');
+    eq('hlStore: whole-para first', recs({a:[{color:'blue',range:{start:2,end:6}},{color:'rose',range:null}]}, 'a')[0].range, null);
+    eq('hlStore: ids are stable across loads',
+      recs({a:[{color:'blue',range:{start:2,end:6}}]}, 'a')[0].id,
+      recs({a:[{color:'blue',range:{start:2,end:6}}]}, 'a')[0].id);
+
+    // retired Favori entries survive as whole-paragraph highlights
     eq('hlStore: favourite merged', (() => {
       const m = Pure.parseHighlights({x:'blue'});
-      return Pure.mergeFavorites(m, ['x','y']).get('y');
+      return (Pure.mergeFavorites(m, ['x','y']).get('y') || [])[0].color;
     })(), 'gold');
-    eq('hlStore: merge keeps existing colour', (() => {
+    eq('hlStore: merge leaves existing paragraph alone', (() => {
       const m = Pure.parseHighlights({x:'blue'});
-      return Pure.mergeFavorites(m, ['x']).get('x');
+      return Pure.mergeFavorites(m, ['x']).get('x')[0].color;
     })(), 'blue');
     eq('hlStore: merge counts additions', (() => {
       const m = Pure.parseHighlights({x:'blue'});
       Pure.mergeFavorites(m, ['x','y','z']);
       return m.size;
     })(), 3);
+
+    // ── Range highlighting: offsets and rendering ──
+    const CC = { gold:'hl-gold', blue:'hl-blue', rose:'hl-rose' };
+    const R = (s,e,c) => ({ id:'x', color:c||'gold', range:{start:s,end:e}, text:'', ts:0 });
+    const body = 'Le Fiat de Marie ouvre le Royaume.';   // 34 chars
+
+    eq('range: none -> plain formatText', Pure.paragraphHtml(body, [], CC), Pure.formatText(body));
+    eq('range: whole-para record is not a range', Pure.paragraphHtml(body, [{id:'x',color:'blue',range:null}], CC), Pure.formatText(body));
+    eq('range: single mark', Pure.paragraphHtml(body, [R(3,7,'blue')], CC),
+       'Le <mark class="hl-mark hl-blue">Fiat</mark> de Marie ouvre le Royaume.');
+    // deliberately passed out of order to prove they are sorted before rendering
+    eq('range: two marks, order preserved', Pure.paragraphHtml(body, [R(17,22,'rose'), R(3,7,'blue')], CC),
+       'Le <mark class="hl-mark hl-blue">Fiat</mark> de Marie <mark class="hl-mark hl-rose">ouvre</mark> le Royaume.');
+    eq('range: at very start', Pure.paragraphHtml(body, [R(0,2)], CC).indexOf('<mark class="hl-mark hl-gold">Le</mark>'), 0);
+    eq('range: to very end', Pure.paragraphHtml(body, [R(26,34)], CC).endsWith('<mark class="hl-mark hl-gold">Royaume.</mark>'), true);
+    eq('range: unknown colour falls back to gold', Pure.paragraphHtml(body, [R(3,7,'nope')], CC).indexOf('hl-gold') > -1, true);
+    // overlap must never nest marks
+    eq('range: overlap dropped', (Pure.paragraphHtml(body, [R(3,10), R(5,12)], CC).match(/<mark/g) || []).length, 1);
+    eq('range: touching ranges both kept', (Pure.paragraphHtml(body, [R(0,2), R(2,6)], CC).match(/<mark/g) || []).length, 2);
+    // clamping / stale offsets after a corpus edit
+    eq('range: end past text is clamped', Pure.paragraphHtml('abc', [R(1,99)], CC), 'a<mark class="hl-mark hl-gold">bc</mark>');
+    eq('range: start past text is dropped', Pure.paragraphHtml('abc', [R(50,60)], CC), 'abc');
+    eq('usableRanges: sorted', Pure.usableRanges('abcdef', [R(4,6), R(0,2)]).map(r=>r.start).join(','), '0,4');
+    eq('usableRanges: empty for no records', Pure.usableRanges('abc', []).length, 0);
+    eq('usableRanges: null-safe text', Pure.usableRanges(null, [R(0,2)]).length, 0);
+    // escaping must survive slicing
+    eq('range: escapes inside a mark', Pure.paragraphHtml('a <b> c', [R(2,5)], CC),
+       'a <mark class="hl-mark hl-gold">&lt;b&gt;</mark> c');
+    eq('range: escapes outside a mark', Pure.paragraphHtml('<i> x', [R(4,5)], CC),
+       '&lt;i&gt; <mark class="hl-mark hl-gold">x</mark>');
+    // guillemets: a pair fully inside a slice still gets italics; a pair split
+    // by the highlight boundary loses them (documented, accepted trade-off)
+    eq('range: guillemets inside mark keep em',
+       Pure.paragraphHtml('Il dit « Fiat » ainsi', [R(7,15)], CC).indexOf('<em>') > -1, true);
+    eq('range: split guillemets emit no broken tags',
+       /<em>[^<]*$/.test(Pure.paragraphHtml('Il dit « Fiat » ainsi', [R(7,12)], CC)), false);
 
     const txt = 'Ô très douce Maman, me voici prosternée devant toi ce matin.';
     const snip = Pure.snippet(txt, Pure.stripAccents(txt), 'prosternee', 20, 20);
@@ -1843,6 +2106,8 @@ const State = {
   lastHlColor: HL_DEFAULT,   // colour a fresh one-tap highlight uses
   hlPickerPid: null,         // paragraph whose colour picker is open
   themePickerOpen: false,    // is the theme picker popover open?
+  pendingSel: null,          // { pid, start, end, text } last usable selection
+  forceRangeSupport: undefined, // test hook to override the Android gate
   noteTargetPid: null, widePanel: 'jours',
   activeDay: null,  // devotional day — may differ from calendar day
   scrollPos: {},    // { [unit_id]: scrollTop px } — resume where the reader left off
@@ -2203,8 +2468,23 @@ const App = {
       document.getElementById(id)?.addEventListener('scroll', () => {
         if (State.hlPickerPid) this.closeHlPicker();
         if (State.themePickerOpen) this.closeThemePicker();
+        if (State.pendingSel) this.hideSelBar();
       }, { passive: true });
     });
+
+    // Partial-paragraph highlighting (not on Android — see
+    // rangeHighlightSupported). Debounced because selectionchange fires
+    // continuously while a drag-select is in progress.
+    if (this.rangeHighlightSupported()) {
+      let selTimer = null;
+      document.addEventListener('selectionchange', () => {
+        clearTimeout(selTimer);
+        selTimer = setTimeout(() => this.trackSelection(), 220);
+      });
+      // Tapping the bar must not clear the selection before the click lands
+      document.getElementById('sel-bar')?.addEventListener('mousedown', e => e.preventDefault());
+      document.getElementById('sel-bar')?.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+    }
 
     // Escape-to-close and Tab-trapping for every dialog
     document.addEventListener('keydown', e => this.handleModalKeydown(e));
@@ -2860,29 +3140,71 @@ const App = {
     queueScrollSave();
   },
 
+  // ── Paragraph rendering ──────────────────────────────────────
+  // A paragraph carries up to one whole-paragraph highlight (tinting the whole
+  // <p>) plus any number of range highlights (each wrapped in a <mark>). Both
+  // modes can coexist on the same paragraph.
+  PARA_CLASS: {
+    soul_intro:'para-soul', soul_response:'para-soul',
+    lesson:'para-mary', queen_response:'para-mary', unit_intro_note:'para-mary',
+    practice:'para-practice', jaculatory_prayer:'para-prayer',
+  },
+
+  paragraphMarkup(p, cls) {
+    const pid = p.paragraph_id;
+    const recs = hlRecords(pid);
+    const whole = wholeParaHl(pid);
+    const anyHl = recs.length > 0;
+
+    // Whole-paragraph tint (only when a range-less record exists)
+    const wholeCls = whole ? ' para-hl ' + HL_COLORS[safeColor(whole.color)].cls : '';
+
+    // Inner text with <mark> spans for each range highlight
+    const colorCls = {};
+    Object.keys(HL_COLORS).forEach(k => { colorCls[k] = HL_COLORS[k].cls; });
+    const inner = Pure.paragraphHtml(p.text, recs, colorCls);
+
+    // The ◇/◆ control: tap to whole-para highlight, tap again for the picker.
+    // Its state reflects whether the paragraph has ANY highlight.
+    const hlLabel = anyHl
+      ? 'Surlignage ' + HL_COLORS[hlColorOf(pid)].label.toLowerCase() + ' — changer la couleur ou retirer'
+      : 'Surligner ce paragraphe';
+
+    return `<p class="${cls}${wholeCls}" data-pid="${pid}">${inner}`
+      + `<button class="para-hl-btn${anyHl?' active':''}" onclick="App.onHighlightBtn('${pid}')" title="${anyHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${anyHl?'true':'false'}">${anyHl?'◆':'◇'}</button>`
+      + `<button class="para-note-btn" onclick="App.openNoteModal('${pid}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
+  },
+
+  // Rebuilds ONE paragraph in place instead of the whole reader body.
+  // Required for range highlighting: re-rendering the entire body would destroy
+  // the user's live text selection mid-action, and would also reset scroll
+  // position on long meditations.
+  renderParagraph(pid) {
+    const hit = findPara(pid);
+    if (!hit) return false;
+    const cls = this.PARA_CLASS[hit.section.section_type] || 'para-mary';
+    let replaced = false;
+    // Both layouts may hold a copy of the paragraph; update whichever exist.
+    document.querySelectorAll(`[data-pid="${pid}"]`).forEach(el => {
+      if (el.tagName !== 'P') return;
+      el.outerHTML = this.paragraphMarkup(hit.para, cls);
+      replaced = true;
+    });
+    return replaced;
+  },
+
   // ── Reader body (shared) ─────────────────────────────────────
   renderReaderBody(unit, bodyId) {
     const sectionLabels = SECTION_LABELS;
-    const paraClass = {
-      soul_intro:'para-soul', soul_response:'para-soul',
-      lesson:'para-mary', queen_response:'para-mary', unit_intro_note:'para-mary',
-      practice:'para-practice', jaculatory_prayer:'para-prayer',
-    };
+    const paraClass = this.PARA_CLASS;   // shared with renderParagraph()
     let html = '';
     unit.sections.forEach(sec => {
       const label = sectionLabels[sec.section_type] || sec.section_title_source || sec.section_type;
       const cls   = paraClass[sec.section_type] || 'para-mary';
       html += `<h3 class="section-label">${this.esc(label)}</h3>`;
       sec.paragraphs.forEach(p => {
+        html += this.paragraphMarkup(p, cls);
         const note = State.notes[p.paragraph_id];
-        const isHl = State.highlights.has(p.paragraph_id);
-        const hlCls = isHl ? ' para-hl ' + HL_COLORS[hlColorOf(p.paragraph_id)].cls : '';
-        // One tap highlights in the last-used colour; tapping an already
-        // highlighted paragraph opens the picker to recolour or remove.
-        const hlLabel = isHl
-          ? 'Surlignage ' + HL_COLORS[hlColorOf(p.paragraph_id)].label.toLowerCase() + ' — changer la couleur ou retirer'
-          : 'Surligner ce paragraphe';
-        html += `<p class="${cls}${hlCls}" data-pid="${p.paragraph_id}">${this.formatText(p.text)}<button class="para-hl-btn${isHl?' active':''}" onclick="App.onHighlightBtn('${p.paragraph_id}')" title="${isHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${isHl?'true':'false'}">${isHl?'◆':'◇'}</button><button class="para-note-btn" onclick="App.openNoteModal('${p.paragraph_id}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
         if (note) {
           html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
         }
@@ -3306,40 +3628,179 @@ const App = {
   //   not highlighted → highlight immediately in the last-used colour
   //   highlighted     → open the picker to recolour or remove
   onHighlightBtn(pid) {
-    if (State.highlights.has(pid)) this.openHlPicker(pid);
+    if (hlRecords(pid).length) this.openHlPicker(pid);
     else this.applyHighlight(pid, State.lastHlColor);
   },
 
-  applyHighlight(pid, colour) {
-    const col = HL_COLORS[colour] ? colour : HL_DEFAULT;
-    const previous = State.highlights.get(pid);   // undefined when new
-    State.highlights.set(pid, col);
-    State.lastHlColor = col;
+  // Writes the store, persists, re-renders just the affected paragraph, and
+  // reports honestly if the write failed. Central so every highlight mutation
+  // goes through the same path.
+  commitHighlights(pid, opts) {
     const ok = saveHighlights();
-    saveHlColor();
-    this.refreshAfterHighlightChange();
-    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
-    if (previous === undefined) {
-      this.showToast('Passage surligné ◆');
-    } else if (previous !== col) {
-      this.showToast('Couleur : ' + HL_COLORS[col].label.toLowerCase());
-    }
+    if (!this.renderParagraph(pid)) this.refreshAfterHighlightChange();
+    this.refreshHighlightSurfaces();
+    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return false; }
+    if (opts && opts.toast) this.showToast(opts.toast);
+    return true;
   },
 
+  // Whole-paragraph highlight (range: null). Also used to recolour: an existing
+  // whole-paragraph record is updated in place rather than duplicated.
+  applyHighlight(pid, colour) {
+    const col = safeColor(colour);
+    const recs = hlRecords(pid).slice();
+    const existing = recs.find(h => !h.range);
+    const isNew = !existing;
+    if (existing) {
+      if (existing.color === col) return;         // nothing to do
+      existing.color = col;
+    } else {
+      recs.unshift({ id: newHlId(), color: col, range: null, text: '', ts: Date.now() });
+    }
+    State.highlights.set(pid, Pure.dedupeHls(recs));
+    State.lastHlColor = col;
+    saveHlColor();
+    this.commitHighlights(pid, { toast: isNew ? 'Paragraphe surligné ◆' : 'Couleur : ' + HL_COLORS[col].label.toLowerCase() });
+  },
+
+  // Partial highlight over a character range of the paragraph's source text.
+  applyRangeHighlight(pid, start, end, colour, text) {
+    const col = safeColor(colour);
+    const recs = hlRecords(pid).slice();
+    recs.push({ id: newHlId(), color: col, range: { start, end }, text: text || '', ts: Date.now() });
+    State.highlights.set(pid, Pure.dedupeHls(recs));
+    State.lastHlColor = col;
+    saveHlColor();
+    this.commitHighlights(pid, { toast: 'Passage surligné ◆' });
+  },
+
+  // Removes every highlight on a paragraph (what the picker's Retirer does).
   removeHighlight(pid) {
-    const previous = State.highlights.get(pid);
-    if (previous === undefined) return;
+    const previous = hlRecords(pid);
+    if (!previous.length) return;
     State.highlights.delete(pid);
-    const ok = saveHighlights();
-    this.refreshAfterHighlightChange();
-    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
-    // Restores the original colour, not just the fact of being highlighted
+    if (!this.commitHighlights(pid)) return;
+    // Undo restores the exact records, ranges and colours included
+    this.showUndoToast(previous.length > 1 ? 'Surlignages retirés' : 'Surlignage retiré', () => {
+      State.highlights.set(pid, previous);
+      this.commitHighlights(pid, { toast: 'Surlignage rétabli ◆' });
+    });
+  },
+
+  // Removes one specific record — used by Mon Espace, where each record is its
+  // own card and removing one must not disturb the others.
+  removeHighlightRecord(pid, hlId) {
+    const previous = hlRecords(pid);
+    const kept = previous.filter(h => h.id !== hlId);
+    if (kept.length === previous.length) return;
+    if (kept.length) State.highlights.set(pid, kept); else State.highlights.delete(pid);
+    if (!this.commitHighlights(pid)) return;
     this.showUndoToast('Surlignage retiré', () => {
       State.highlights.set(pid, previous);
-      saveHighlights();
-      this.refreshAfterHighlightChange();
-      this.showToast('Surlignage rétabli ◆');
+      this.commitHighlights(pid, { toast: 'Surlignage rétabli ◆' });
     });
+  },
+
+  // ── Text selection → partial highlight ─────────────────────────────
+  // Android is excluded deliberately: its OS-level selection bar
+  // (Copy/Share/Search/Translate) cannot be suppressed by a web page, so a
+  // custom bar would compete with it. Android keeps whole-paragraph tapping,
+  // which needs no selection at all. Desktop gets this for free alongside
+  // iPhone/iPad, which is also what makes it testable here.
+  rangeHighlightSupported() {
+    if (State.forceRangeSupport !== undefined) return State.forceRangeSupport; // test hook
+    return !/Android/i.test(navigator.userAgent || '');
+  },
+
+  // Records the last usable selection. Kept in State because tapping the bar
+  // can clear the live selection before the handler runs — especially on iOS.
+  trackSelection() {
+    if (!this.rangeHighlightSupported()) return;
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) { this.hideSelBar(); return; }
+    const range = sel.getRangeAt(0);
+    // Must be entirely inside ONE paragraph of the reader
+    const startP = range.startContainer.parentElement?.closest?.('[data-pid]')
+                || range.startContainer.closest?.('[data-pid]');
+    const endP = range.endContainer.parentElement?.closest?.('[data-pid]')
+              || range.endContainer.closest?.('[data-pid]');
+    if (!startP || startP !== endP || startP.tagName !== 'P') { this.hideSelBar(); return; }
+    if (!String(range.toString() || '').trim()) { this.hideSelBar(); return; }
+
+    const offsets = this.offsetsFromRange(startP, range);
+    if (!offsets) { this.hideSelBar(); return; }
+
+    State.pendingSel = { pid: startP.dataset.pid, start: offsets.start, end: offsets.end, text: range.toString() };
+    this.showSelBar(range);
+  },
+
+  showSelBar(range) {
+    const bar = document.getElementById('sel-bar');
+    if (!bar) return;
+    bar.classList.add('open');
+    // Anchor above the selection, flipping below when there's no room
+    const rects = range.getClientRects();
+    const r = rects.length ? rects[0] : range.getBoundingClientRect();
+    const bw = bar.offsetWidth, bh = bar.offsetHeight, M = 10;
+    let left = r.left + r.width / 2 - bw / 2;
+    left = Math.min(Math.max(M, left), window.innerWidth - bw - M);
+    let top = r.top - bh - 10;
+    if (top < M) top = (rects.length ? rects[rects.length - 1].bottom : r.bottom) + 10;
+    top = Math.min(Math.max(M, top), window.innerHeight - bh - M);
+    bar.style.left = Math.round(left) + 'px';
+    bar.style.top = Math.round(top) + 'px';
+  },
+
+  hideSelBar() {
+    document.getElementById('sel-bar')?.classList.remove('open');
+    State.pendingSel = null;
+  },
+
+  // Surligner tapped: apply the last-used colour immediately (consistent with
+  // the one-tap paragraph behaviour), then the picker is available on the ◆.
+  highlightSelection() {
+    const s = State.pendingSel;
+    this.hideSelBar();
+    if (!s) return;
+    try { window.getSelection()?.removeAllRanges(); } catch(e) {}
+    this.applyRangeHighlight(s.pid, s.start, s.end, State.lastHlColor, s.text);
+  },
+
+  // ── DOM Range → text offsets ───────────────────────────────────────
+  // Converts a selection inside a paragraph into offsets against the corpus
+  // source text. Walks only text nodes and skips the two action buttons, so a
+  // paragraph already containing <mark> elements (from earlier highlights)
+  // still yields offsets in the ORIGINAL text's coordinate space.
+  offsetsFromRange(paraEl, range) {
+    if (!paraEl || !range) return null;
+    const walker = document.createTreeWalker(paraEl, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        // The ◇ and ✎ buttons live inside the <p>; their glyphs are not part of
+        // the paragraph's text and must not shift the offsets.
+        for (let n = node.parentNode; n && n !== paraEl; n = n.parentNode) {
+          if (n.nodeType === 1 && n.tagName === 'BUTTON') return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let pos = 0, start = null, end = null, node;
+    while ((node = walker.nextNode())) {
+      const len = node.nodeValue.length;
+      if (node === range.startContainer) start = pos + Math.min(range.startOffset, len);
+      if (node === range.endContainer)   end   = pos + Math.min(range.endOffset, len);
+      pos += len;
+    }
+    // Selection anchored on an element rather than a text node (can happen when
+    // the user selects across a <mark> boundary): fall back to the range's own
+    // text length measured from the start we did find.
+    if (start !== null && end === null) {
+      const s = String(range.toString() || '');
+      if (s) end = start + s.length;
+    }
+    if (start === null || end === null) return null;
+    if (end < start) { const t = start; start = end; end = t; }
+    if (end <= start) return null;
+    return { start, end };
   },
 
   // ── Colour picker ──────────────────────────────────────────────────
@@ -3392,7 +3853,21 @@ const App = {
   pickHlColor(key) {
     const pid = State.hlPickerPid;
     this.closeHlPicker();
-    if (pid) this.applyHighlight(pid, key);
+    if (!pid) return;
+    const col = safeColor(key);
+    const recs = hlRecords(pid);
+    const ranges = recs.filter(h => h.range);
+    // If the paragraph only carries range highlights, "change the colour"
+    // means recolour those — NOT add a whole-paragraph tint on top of them.
+    if (ranges.length && !recs.some(h => !h.range)) {
+      const next = recs.map(h => h.range ? Object.assign({}, h, { color: col }) : h);
+      State.highlights.set(pid, Pure.dedupeHls(next));
+      State.lastHlColor = col;
+      saveHlColor();
+      this.commitHighlights(pid, { toast: 'Couleur : ' + HL_COLORS[col].label.toLowerCase() });
+      return;
+    }
+    this.applyHighlight(pid, col);
   },
 
   removeHighlightFromPicker() {
@@ -3408,10 +3883,16 @@ const App = {
     this.onModalClosed();
   },
 
+  // Full reader re-render — the fallback for when the changed paragraph isn't
+  // currently in the DOM. renderParagraph() is preferred (see commitHighlights).
   refreshAfterHighlightChange() {
     const unit = currentUnit();
     if (unit) this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
-    if (State.widePanel === 'espace' && isWide()) this.renderEspace('wide-espace');
+  },
+
+  // Surfaces outside the reader that show highlight counts/lists.
+  refreshHighlightSurfaces() {
+    if (isWide() && State.widePanel === 'espace') this.renderEspace('wide-espace');
     else if (!isWide() && document.getElementById('screen-espace')?.classList.contains('active')) this.renderEspace('espace-scroll');
   },
 
@@ -3676,8 +4157,24 @@ const App = {
         <div class="help-item">
           <div class="help-icon">◇</div>
           <div class="help-text">
-            <div class="help-label">Surligner un passage</div>
-            <div class="help-desc">Chaque paragraphe porte une icône losange à droite. Appuyez une fois pour le surligner dans votre dernière couleur utilisée. Le losange devient plein (◆) et le passage est conservé dans <strong>Mon Espace</strong>.</div>
+            <div class="help-label">Surligner un paragraphe entier</div>
+            <div class="help-desc">Chaque paragraphe porte une icône losange à droite. Appuyez une fois pour le surligner dans votre dernière couleur utilisée. Le losange devient plein (◆) et le passage est conservé dans <strong>Mon Espace</strong>. Disponible sur tous les appareils.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">✧</div>
+          <div class="help-text">
+            <div class="help-label">Surligner une partie seulement</div>
+            <div class="help-desc">Sur iPhone, iPad et ordinateur : sélectionnez les mots souhaités avec le doigt (ou la souris), puis appuyez sur <strong>◆ Surligner</strong> dans la petite barre qui apparaît. Seuls ces mots sont surlignés. Vous pouvez surligner plusieurs passages différents dans un même paragraphe.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">◈</div>
+          <div class="help-text">
+            <div class="help-label">Sur Android et Samsung</div>
+            <div class="help-desc">Le surlignage se fait par paragraphe entier (l'icône losange). La sélection mot à mot n'est pas proposée sur ces appareils, car le menu de sélection du système Android ne peut pas être remplacé par une application web. Tout le reste fonctionne de façon identique.</div>
           </div>
         </div>
 
@@ -3776,7 +4273,18 @@ const App = {
     if (!el) return;
     // Favori was retired in v2.7.0; highlighting is the single "keep this
     // passage" mechanism, so there is one list here instead of two.
-    const readCount = State.read.size, noteCount = Object.keys(State.notes).length, hlCount = State.highlights.size;
+    // One card PER HIGHLIGHT, not per paragraph: two highlighted phrases in the
+    // same paragraph are two separate things the user saved, so they list
+    // separately. The stat tile counts highlights for the same reason.
+    const hlList = [];
+    State.highlights.forEach((records, pid) => {
+      const hit = findPara(pid);
+      if (!hit) return;
+      (records || []).forEach(h => hlList.push({ h, pid, para: hit.para, unit: hit.unit }));
+    });
+    hlList.sort((a, b) => (b.h.ts || 0) - (a.h.ts || 0));
+
+    const readCount = State.read.size, noteCount = Object.keys(State.notes).length, hlCount = hlList.length;
     let html = `<div class="stat-grid">
       <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
       <div class="stat-card"><div class="stat-num" style="color:var(--highlight-accent)">${hlCount}</div><div class="stat-label">Surlignés</div></div>
@@ -3784,14 +4292,15 @@ const App = {
     </div>`;
     if (hlCount > 0) {
       html += '<div class="espace-section-title">Passages surlignés</div>';
-      // Map iteration yields (value, key) — colour first, then paragraph id
-      State.highlights.forEach((colour, pid) => {
-        const hit = findPara(pid);
-        if (!hit) return;
-        const para = hit.para, unit = hit.unit;
+      hlList.forEach(({ h, pid, para, unit }) => {
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
-        const col = HL_COLORS[colour] || HL_COLORS[HL_DEFAULT];
-        html += `<button type="button" class="fav-card hl-card ${col.cls}" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">◆ ${this.esc(label)} · ${this.esc(col.label)}</div><div class="fav-card-text">${this.esc(para.text)}</div></button>`;
+        const col = HL_COLORS[safeColor(h.color)];
+        // A range highlight shows the highlighted phrase; a whole-paragraph one
+        // shows the paragraph, matching what the user actually marked.
+        const ranges = Pure.usableRanges(para.text, [h]);
+        const shown = ranges.length ? para.text.slice(ranges[0].start, ranges[0].end) : para.text;
+        const kind = h.range ? 'Passage' : 'Paragraphe';
+        html += `<button type="button" class="fav-card hl-card ${col.cls}" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">◆ ${this.esc(label)} · ${this.esc(kind)} · ${this.esc(col.label)}</div><div class="fav-card-text">${this.esc(shown)}</div></button>`;
       });
     }
     const noteEntries = Object.entries(State.notes).sort((a,b)=>((b[1]&&b[1].ts)||0)-((a[1]&&a[1].ts)||0));
@@ -3854,8 +4363,16 @@ const App = {
       ['todayDayNum', State.todayDayNum],
       ['currentSeq', State.currentSeq ?? '—'],
       ['unit ouvert', unit ? unit.unit_id : '—'],
-      ['Surlignés', State.highlights.size],
+      ['Surlignés', (() => {
+        let paras = 0, ranges = 0, wholes = 0;
+        State.highlights.forEach(recs => {
+          paras++;
+          (recs || []).forEach(h => h.range ? ranges++ : wholes++);
+        });
+        return `${wholes + ranges} (${wholes} para, ${ranges} passages) / ${paras} §`;
+      })()],
       ['Couleur déf.', State.lastHlColor],
+      ['Sélection', this.rangeHighlightSupported() ? 'partielle activée' : 'paragraphe seul (Android)'],
       ['Notes', Object.keys(State.notes).length],
       ['Thème', document.documentElement.dataset.theme ?? 'system'],
       ['Layout', window.innerWidth + 'px'],
