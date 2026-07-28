@@ -2,12 +2,21 @@
 <html lang="fr">
 <head>
 <script>
-// Apply dark mode immediately to avoid flash; set theme button icon
+// Apply dark mode immediately to avoid flash; set theme button icon.
+// "Automatique" (no explicit saved choice) must ALSO resolve to a real
+// data-theme attribute here, not just rely on an @media(prefers-color-scheme)
+// CSS fallback — every dark-mode fix added since v2.9.2 targets the
+// [data-theme="dark"] attribute selector, not the older, narrower @media
+// blocks, so leaving the attribute unset in system mode silently loses all
+// of them (this is the actual cause of "automatic mode looks wrong" reports).
 (function(){
   try {
     const saved = localStorage.getItem('mjv_theme');
     if (saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
     else if (saved === 'light') document.documentElement.setAttribute('data-theme','light');
+    else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.setAttribute('data-theme','dark');
+    }
     // Icon is set after DOMContentLoaded via App.init — buttons don't exist yet here
   } catch(e){}
 })();
@@ -296,6 +305,11 @@ html, body {
     display: flex; align-items: center; gap: 10px;
     padding: 9px 14px; cursor: pointer;
     border-left: 2.5px solid transparent;
+    /* This is a <button> (renderUnitCard is shared with .list-card, which
+       already resets its background) -- without this it falls back to the
+       browser's default button grey, invisible on a near-white light-mode
+       page but glaring against the dark-mode sidebar. */
+    background: transparent;
     transition: background 0.12s, border-color 0.12s;
   }
   .ws-list-item:hover { background: var(--ivory-deep); }
@@ -993,9 +1007,14 @@ h1, h2, h3, h4 {
 .cycle-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 3px; transition: color 0.3s; }
 .cycle-card.ready .cycle-label { color: var(--accent-fg); }
 .cycle-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
-/* Only ever rendered once the cycle is ready -- the disabled/not-yet state
-   shows no button at all (see renderEspace), so there is no not-ready style. */
-.cycle-btn { flex-shrink: 0; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--accent); background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
+/* Always rendered and always clickable (see renderEspace) -- a reader
+   splitting reading across two devices/the physical book may never see
+   31/31 on this one, so the reset can't be gated on it. Plain outline by
+   default; .ready adds the gold "you've actually finished" treatment. */
+.cycle-btn { flex-shrink: 0; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.3s; }
+.cycle-btn:hover { border-color: var(--primary); color: var(--primary); }
+.cycle-card.ready .cycle-btn { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
+.cycle-card.ready .cycle-btn:hover { color: #fff; }
 
 .help-section { margin-bottom: 24px; }
 .help-section-title {
@@ -1315,7 +1334,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.4</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.5</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1437,7 +1456,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.4</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.5</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1722,8 +1741,9 @@ const currentThemeMode = () => {
   const saved = localStorage.getItem('mjv_theme');
   return (saved === 'dark' || saved === 'light') ? saved : 'system';
 };
+const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.9.4';
+const APP_VERSION = '2.9.5';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -2404,7 +2424,18 @@ const App = {
   async init() {
     loadStorage();
     this.applyTextSize(State.textSize, false);
+    this.syncSystemTheme();  // belt-and-suspenders alongside the head-script's early pass
     this.syncThemeIcon();
+    // Automatique mode must react live to the OS preference changing while
+    // the app stays open (routine on desktop, where switching appearance
+    // without reloading is the common case) — a one-time check at load
+    // isn't enough.
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        this.syncSystemTheme();
+        this.syncThemeIcon();
+      });
+    }
     if (!isStorageAvailable()) {
       this.showToast('Attention : votre navigateur ne permet pas d’enregistrer vos données ici');
     }
@@ -3429,7 +3460,16 @@ const App = {
 
   // ── Cycle reset ───────────────────────────────────────────────
   startNewCycle() {
-    if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Vos surlignages et notes seront conservés.')) return;
+    // A reader may split reading across two devices and the physical book, so
+    // this device's count can legitimately be far from 31/31 while the cycle
+    // is, in fact, done elsewhere — the message states this device's count
+    // rather than blocking the reset on it.
+    const daysRead = daysReadCount();
+    const dayTotal = mainDayTotal();
+    const msg = daysRead >= dayTotal
+      ? 'Recommencer le cycle ? Votre progression sera remise à zéro. Vos surlignages et notes seront conservés.'
+      : `Recommencer le cycle ? ${daysRead} / ${dayTotal} jours sont marqués comme lus sur cet appareil — cette progression sera remise à zéro. Vos surlignages et notes seront conservés.`;
+    if (!confirm(msg)) return;
     State.read = new Set();
     State.activeDay = null;
     State.activeAppendix = null;
@@ -4070,14 +4110,26 @@ const App = {
   applyTheme(mode) {
     const html = document.documentElement;
     if (mode === 'system') {
-      html.removeAttribute('data-theme');
       try { localStorage.removeItem('mjv_theme'); } catch(e) {}
+      this.syncSystemTheme();  // resolve immediately to the OS's actual preference
     } else {
       html.setAttribute('data-theme', mode);
       try { localStorage.setItem('mjv_theme', mode); } catch(e) {}
     }
     this.syncThemeIcon();
     this.showToast('Thème ' + THEME_LABELS[mode].toLowerCase() + ' activé');
+  },
+
+  // In "Automatique" mode, the data-theme attribute must track the OS
+  // preference directly rather than being left unset — every dark-mode fix
+  // in this file targets [data-theme="dark"], not the older @media
+  // fallback, so an unset attribute silently loses all of them. A no-op
+  // whenever an explicit Clair/Sombre choice is active.
+  syncSystemTheme() {
+    if (currentThemeMode() !== 'system') return;
+    const html = document.documentElement;
+    if (systemPrefersDark()) html.setAttribute('data-theme', 'dark');
+    else html.removeAttribute('data-theme');
   },
 
   syncThemeIcon() {
@@ -4376,7 +4428,7 @@ const App = {
           <div class="help-icon">✶</div>
           <div class="help-text">
             <div class="help-label">Nouveau cycle</div>
-            <div class="help-desc"><strong>Mon Espace</strong> affiche votre progression (X / 31 jours accomplis) en bas de l'écran. Le bouton « Nouveau cycle » n'apparaît qu'une fois les 31 jours du parcours marqués comme lus — que ce soit dans l'application, sur votre mobile ou dans le livre ; avant cela, seule la progression est visible. Les appendices ne comptent pas dans ce total. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos surlignages et vos notes sont toujours conservés.</div>
+            <div class="help-desc"><strong>Mon Espace</strong> affiche votre progression (X / 31 jours accomplis) en bas de l'écran. Le bouton « Nouveau cycle » est toujours disponible — vous n'avez pas besoin d'avoir marqué les 31 jours comme lus sur cet appareil pour l'utiliser, ce qui est utile si vous lisez aussi sur un autre appareil ou dans le livre. Il s'illumine en or une fois les 31 jours marqués comme lus. Les appendices ne comptent pas dans ce total. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos surlignages et vos notes sont toujours conservés.</div>
           </div>
         </div>
       </div>
@@ -4451,10 +4503,11 @@ const App = {
     if (!readCount && !hlCount && !noteCount) {
       html += '<div class="espace-empty"><div class="espace-empty-icon">✦</div><div class="espace-empty-text">Votre progression, vos passages surlignés<br>et vos notes apparaîtront ici.</div></div>';
     }
-    // The gate counts main devotional days ONLY. It previously used
-    // State.read.size, which also counts the 6 appendices — so a reader with
-    // 25 days plus all 6 appendices was told the cycle was complete and the
-    // reset unlocked, with 6 days still unread.
+    // "Ready" only changes the label/celebratory styling below — the reset
+    // itself is available at any progress level. A reader may split reading
+    // across two devices and the physical book, so this device's count may
+    // never reach 31/31 even once the cycle is genuinely finished; gating
+    // the button on it made the reset unreachable for that (common) case.
     const daysRead = daysReadCount();
     const dayTotal = mainDayTotal();
     const cycleReady = daysRead >= dayTotal;
@@ -4467,9 +4520,9 @@ const App = {
             <div class="cycle-label">${cycleReady ? 'Prêt pour un nouveau cycle !' : `${daysRead} / ${dayTotal} jours accomplis`}</div>
             <div class="cycle-desc">${cycleReady
               ? 'Vos surlignages et notes seront conservés.'
-              : 'Le bouton « Nouveau cycle » apparaîtra ici une fois les ' + dayTotal + ' jours marqués comme lus.'}</div>
+              : 'Vous pouvez recommencer à tout moment — utile si vous lisez aussi sur un autre appareil ou dans le livre. Vos surlignages et notes seront conservés.'}</div>
           </div>
-          ${cycleReady ? '<button class="cycle-btn" onclick="App.startNewCycle()">↺ Nouveau cycle</button>' : ''}
+          <button class="cycle-btn" onclick="App.startNewCycle()">↺ Nouveau cycle</button>
         </div>
       </div>
     `;
