@@ -680,6 +680,7 @@ html, body {
 .appendix-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; flex-shrink: 0; }
 .app-circle { width: 26px; height: 26px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
 .app-circle.read { background: var(--accent); border-color: var(--accent); color: #fff; }
+.app-circle.active { box-shadow: 0 0 0 2.5px var(--accent), 0 0 0 4.5px rgba(201,168,76,0.25); }
 .app-circle:hover { border-color: var(--primary); color: var(--primary); }
 .progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
@@ -1301,7 +1302,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.0</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.1</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1423,7 +1424,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.0</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.1</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1655,7 +1656,7 @@ h1, h2, h3, h4 {
 </div>
 
 <script>
-const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded', HL_COLOR:'mjv_hl_color', FAV_MIGRATED:'mjv_fav_migrated' };
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', ACTIVE_APPENDIX:'mjv_active_appendix', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded', HL_COLOR:'mjv_hl_color', FAV_MIGRATED:'mjv_fav_migrated' };
 
 // Highlight colours. 'gold' is the default and the value every pre-v2.7.0
 // highlight migrates to. Keys are stored, not the CSS values, so the palette can
@@ -1709,7 +1710,7 @@ const currentThemeMode = () => {
   return (saved === 'dark' || saved === 'light') ? saved : 'system';
 };
 
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.9.1';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -1718,6 +1719,7 @@ const APP_VERSION = '2.9.0';
 // progress bar and cycle button silently disagreed.
 const CFG = {
   DAYS: 31,             // calendar cells / main devotional days
+  APPENDICES: 6,        // fixed corpus constant, see constants doc
   TEXT_MIN: 14,
   TEXT_MAX: 22,
   TEXT_DEFAULT: 17,
@@ -1742,6 +1744,19 @@ const currentUnit = () => (State.seqIndex && State.seqIndex[State.currentSeq]) |
 const unitById    = id  => (State.unitIndex && State.unitIndex[id]) || null;
 const unitBySeq   = seq => (State.seqIndex && State.seqIndex[seq]) || null;
 const findPara    = pid => (State.paraIndex && State.paraIndex[pid]) || null;
+// The unit currently "active" as the devotional focus — an explicitly
+// activated appendix takes precedence (mutually exclusive with activeDay),
+// otherwise an explicitly activated day, otherwise today's calendar day.
+// Appendices have no calendar-day fallback of their own.
+const isUnitActive = unit => !!unit && (
+  unit.appendix_number ? unit.appendix_number === State.activeAppendix :
+  unit.day_number ? unit.day_number === (State.activeDay || State.todayDayNum) :
+  false
+);
+const effectiveActiveUnit = () => {
+  if (State.activeAppendix) return State.appendixMap[State.activeAppendix] || null;
+  return State.dayMap[State.activeDay || State.todayDayNum] || null;
+};
 
 // Null-safe text setter. The nav/action-bar updaters used to chain dozens of
 // bare document.getElementById(...).textContent calls, so a single renamed or
@@ -2097,7 +2112,7 @@ const Pure = {
 if (typeof module !== 'undefined' && module.exports) module.exports = Pure;
 
 const State = {
-  corpus: null, dayMap: {}, currentSeq: 1, prevScreen: 'home',
+  corpus: null, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
   read: new Set(), notes: {}, textSize: 17,
   // Map<paragraph_id, colourKey>. Was a Set of ids before v2.7.0; the loader
@@ -2110,6 +2125,7 @@ const State = {
   forceRangeSupport: undefined, // test hook to override the Android gate
   noteTargetPid: null, widePanel: 'jours',
   activeDay: null,  // devotional day — may differ from calendar day
+  activeAppendix: null, // active appendix (A1-A6); mutually exclusive with activeDay
   scrollPos: {},    // { [unit_id]: scrollTop px } — resume where the reader left off
   pendingUndo: null,// { label, restore } — last destructive action, restorable via toast
   readerOpen: false,// is a unit currently displayed in the reader? drives reconcileLayout
@@ -2198,6 +2214,11 @@ function loadStorage() {
   } catch(e) { State.activeDay = null; }
 
   try {
+    const aa = parseInt(localStorage.getItem(SK.ACTIVE_APPENDIX) || '0');
+    State.activeAppendix = (aa >= 1 && aa <= CFG.APPENDICES) ? aa : null;
+  } catch(e) { State.activeAppendix = null; }
+
+  try {
     const sp = JSON.parse(localStorage.getItem(SK.SCROLL) || '{}');
     State.scrollPos = {};
     if (sp && typeof sp === 'object') {
@@ -2217,6 +2238,7 @@ const saveHlColor    = () => { try { localStorage.setItem(SK.HL_COLOR, State.las
 const saveNotes      = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); return true; } catch(e){ return false; } };
 const saveTextSize   = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); return true; } catch(e){ return false; } };
 const saveActiveDay  = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
+const saveActiveAppendix = () => { try { localStorage.setItem(SK.ACTIVE_APPENDIX, State.activeAppendix || ''); return true; } catch(e){ return false; } };
 const saveScrollPos  = () => { try { localStorage.setItem(SK.SCROLL, JSON.stringify(State.scrollPos)); return true; } catch(e){ return false; } };
 
 // Scroll fires rapidly — record into State immediately (cheap) but debounce the
@@ -2295,6 +2317,7 @@ const App = {
       State.unitIndex[u.unit_id] = u;
       State.seqIndex[u.sequence_meditative] = u;
       if (u.day_number) State.dayMap[u.day_number] = u;
+      if (u.appendix_number) State.appendixMap[u.appendix_number] = u;
       u.sections.forEach(section => {
         section.paragraphs.forEach(para => {
           State.paraIndex[para.paragraph_id] = { para, section, unit: u };
@@ -2729,8 +2752,9 @@ const App = {
     el.innerHTML = '<span class="appendix-label">App.</span>' +
       apps.map(u => {
         const isRead = State.read.has(u.unit_id);
-        const cls = isRead ? ' read' : '';
-        return '<button class="app-circle' + cls + '" title="' + u.title + '" onclick="App.openUnit(' + "'" + u.unit_id + "'" + ')">A' + u.appendix_number + '</button>';
+        const isActive = State.activeAppendix === u.appendix_number;
+        const cls = (isRead ? ' read' : '') + (isActive ? ' active' : '');
+        return '<button class="app-circle' + cls + '" title="' + u.title + '" aria-pressed="' + isActive + '" onclick="App.openUnit(' + "'" + u.unit_id + "'" + ')">A' + u.appendix_number + '</button>';
       }).join('');
   },
 
@@ -2769,23 +2793,22 @@ const App = {
 
 
   // ── Today card: Pratique + Oraison ───────────────────────────
-  getTodayData(dayNum) {
-    // Use provided dayNum, which renderTodayCard passes as activeDay ?? todayDayNum
-    const unit = State.dayMap[dayNum];
+  // Accepts a unit directly (day or appendix) rather than a day number, since
+  // the active devotional focus can now be either.
+  getTodayData(unit) {
     if (!unit) return null;
     const pratique = unit.sections.find(s => s.section_type === 'practice');
     const oraison  = unit.sections.find(s => s.section_type === 'jaculatory_prayer');
     return {
       pratique: pratique ? pratique.paragraphs.map(p => p.text).join(' ') : '',
       oraison:  oraison  ? oraison.paragraphs.map(p => p.text).join(' ') : '',
-      ordinal:  unit.ordinal_source || ('Jour ' + dayNum),
+      ordinal:  unit.ordinal_source || (unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number),
     };
   },
 
   renderTodayCard() {
-    // Use activeDay if set, otherwise fall back to calendar day
-    const dayToShow = State.activeDay || State.todayDayNum;
-    const data = this.getTodayData(dayToShow);
+    // Active appendix > active day > today's calendar day
+    const data = this.getTodayData(effectiveActiveUnit());
     if (!data) return;
 
     // Mobile card
@@ -3210,10 +3233,9 @@ const App = {
         }
       });
     });
-    // If this is the active devotional day, append the "Pour aujourd'hui" reminder
-    const effectiveActiveDay = State.activeDay || State.todayDayNum;
-    if (unit.day_number && unit.day_number === effectiveActiveDay) {
-      const data = this.getTodayData(unit.day_number);
+    // If this is the active devotional unit, append the "Pour aujourd'hui" reminder
+    if (isUnitActive(unit)) {
+      const data = this.getTodayData(unit);
       if (data) {
         html += `
           <div class="reader-today-reminder">
@@ -3289,8 +3311,7 @@ const App = {
       cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
     }
 
-    const effectiveActive = State.activeDay || State.todayDayNum;
-    const isActiveDay = !!(unit.day_number && unit.day_number === effectiveActive);
+    const isActiveDay = isUnitActive(unit);
     const ab = document.getElementById(ids.activateBtn);
     if (ab) {
       setText(ids.activateIcon, isActiveDay ? '✦' : '◇');
@@ -3338,15 +3359,35 @@ const App = {
   // ── Active day ──────────────────────────────────────────────────
   activateDay() {
     const unit = currentUnit();
-    if (!unit?.day_number) return;
-    const d = unit.day_number;
-    if (State.activeDay === d) {
-      // Deactivate — revert to calendar day
-      State.activeDay = null;
-      this.showToast(saveActiveDay() ? 'Jour de pratique réinitialisé' : this.SAVE_ERROR_MSG);
+    if (!unit) return;
+    if (unit.appendix_number) {
+      const a = unit.appendix_number;
+      if (State.activeAppendix === a) {
+        State.activeAppendix = null;
+        this.showToast(saveActiveAppendix() ? 'Jour de pratique réinitialisé' : this.SAVE_ERROR_MSG);
+      } else {
+        // Mutually exclusive with an active day — only one devotional focus at a time.
+        State.activeAppendix = a;
+        State.activeDay = null;
+        const ok = saveActiveAppendix() && saveActiveDay();
+        this.showToast(ok ? 'Appendice ' + a + ' activé comme jour de pratique ✦' : this.SAVE_ERROR_MSG);
+      }
+      this.updateAppendixRows();
+    } else if (unit.day_number) {
+      const d = unit.day_number;
+      if (State.activeDay === d) {
+        // Deactivate — revert to calendar day
+        State.activeDay = null;
+        this.showToast(saveActiveDay() ? 'Jour de pratique réinitialisé' : this.SAVE_ERROR_MSG);
+      } else {
+        State.activeDay = d;
+        State.activeAppendix = null;
+        const ok = saveActiveDay() && saveActiveAppendix();
+        this.showToast(ok ? 'Jour ' + d + ' activé comme jour de pratique ✦' : this.SAVE_ERROR_MSG);
+      }
+      this.updateAppendixRows();
     } else {
-      State.activeDay = d;
-      this.showToast(saveActiveDay() ? 'Jour ' + d + ' activé comme jour de pratique ✦' : this.SAVE_ERROR_MSG);
+      return;
     }
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
@@ -3362,13 +3403,15 @@ const App = {
     if (!confirm('Recommencer le cycle ? Votre progression sera remise à zéro. Vos surlignages et notes seront conservés.')) return;
     State.read = new Set();
     State.activeDay = null;
+    State.activeAppendix = null;
     // Resume points are reading progress, which this reset clears — notes,
     // favourites and highlights are deliberately preserved.
     State.scrollPos = {};
-    const ok = saveRead() && saveActiveDay() && saveScrollPos();
+    const ok = saveRead() && saveActiveDay() && saveActiveAppendix() && saveScrollPos();
     this.updateCalendar();
     this.updateWideCalendar();
     this.updateWideProgress();
+    this.updateAppendixRows();
     this.buildList();
     this.buildWideList();
     const unit = currentUnit();
@@ -3954,8 +3997,7 @@ const App = {
   },
 
   openTodayModal() {
-    const dayToShow = State.activeDay || State.todayDayNum;
-    const data = this.getTodayData(dayToShow);
+    const data = this.getTodayData(effectiveActiveUnit());
     if (!data) return;
     document.getElementById('today-modal-day').textContent = data.ordinal;
     const body = document.getElementById('today-modal-body');
@@ -4210,8 +4252,8 @@ const App = {
         <div class="help-item">
           <div class="help-icon">✶</div>
           <div class="help-text">
-            <div class="help-label">Activer un jour</div>
-            <div class="help-desc">Le bouton « Activer » dans le lecteur désigne ce jour comme votre jour de pratique personnel, indépendamment de la date du calendrier. La carte « Pour aujourd’hui » sur l’accueil et dans la barre latérale affiche toujours la pratique et l’oraison de <em>ce</em> jour — appuyez dessus pour l’ouvrir en grand. Un double anneau doré l’identifie dans le calendrier. Appuyez à nouveau sur « Activer » pour revenir au jour calendaire.</div>
+            <div class="help-label">Activer un jour ou un appendice</div>
+            <div class="help-desc">Le bouton « Activer » dans le lecteur désigne ce jour — ou cet appendice — comme votre jour de pratique personnel, indépendamment de la date du calendrier. La carte « Pour aujourd’hui » sur l’accueil et dans la barre latérale affiche toujours la pratique et l’oraison de <em>cette</em> unité — appuyez dessus pour l’ouvrir en grand. Un double anneau doré l’identifie : dans le calendrier pour un jour, sur son cercle « App. » pour un appendice. Un seul élément peut être actif à la fois. Appuyez à nouveau sur « Activer » pour revenir au jour calendaire.</div>
           </div>
         </div>
         <div class="help-item">
@@ -4360,6 +4402,7 @@ const App = {
       ['Corpus', State.corpus.length + ' unités'],
       ['Lu', State.read.size + ' / ' + State.corpus.length],
       ['activeDay', State.activeDay ?? 'null'],
+      ['activeAppendix', State.activeAppendix ?? 'null'],
       ['todayDayNum', State.todayDayNum],
       ['currentSeq', State.currentSeq ?? '—'],
       ['unit ouvert', unit ? unit.unit_id : '—'],
