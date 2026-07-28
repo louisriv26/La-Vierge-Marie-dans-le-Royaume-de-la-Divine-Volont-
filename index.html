@@ -530,6 +530,7 @@ html, body {
   padding: 0.05em 0;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+  cursor: pointer;
 }
 .hl-mark.hl-gold   { background: rgba(201,168,76,0.16); }
 .hl-mark.hl-blue   { background: rgba(44,74,124,0.13); }
@@ -1314,7 +1315,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.3</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.4</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1436,7 +1437,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.3</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.4</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1722,7 +1723,7 @@ const currentThemeMode = () => {
   return (saved === 'dark' || saved === 'light') ? saved : 'system';
 };
 
-const APP_VERSION = '2.9.3';
+const APP_VERSION = '2.9.4';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -1949,7 +1950,11 @@ const Pure = {
   // Known, accepted limitation: the « … » → <em> styling is applied per slice,
   // so a highlight boundary landing inside a guillemet pair loses the italics
   // for that pair. Preferred over emitting overlapping/nested tags.
-  paragraphHtml(text, records, colorCls) {
+  // pid is optional and purely data (a string threaded into the output, not a
+  // DOM lookup) so every existing 3-arg test call is byte-identical; passing
+  // it wires each mark to App.onMarkClick so tapping a highlighted passage
+  // can recolour or remove just that one record.
+  paragraphHtml(text, records, colorCls, pid) {
     const src = text || '';
     const ranges = Pure.usableRanges(src, records);
     if (!ranges.length) return Pure.formatText(src);
@@ -1957,7 +1962,10 @@ const Pure = {
     ranges.forEach(r => {
       if (r.start > cursor) html += Pure.formatText(src.slice(cursor, r.start));
       const cls = colorCls[Pure.safeColorKey(r.h.color)] || colorCls[HL_DEFAULT];
-      html += '<mark class="hl-mark ' + cls + '">' + Pure.formatText(src.slice(r.start, r.end)) + '</mark>';
+      // data-hlid lets openHlPicker() anchor the popover to this exact mark
+      // when it's tapped; onclick does the actual dispatch.
+      const tap = pid ? ' data-hlid="' + r.h.id + '" onclick="App.onMarkClick(event,\'' + pid + '\',\'' + r.h.id + '\')"' : '';
+      html += '<mark class="hl-mark ' + cls + '"' + tap + '>' + Pure.formatText(src.slice(r.start, r.end)) + '</mark>';
       cursor = r.end;
     });
     if (cursor < src.length) html += Pure.formatText(src.slice(cursor));
@@ -2071,6 +2079,13 @@ const Pure = {
     eq('range: whole-para record is not a range', Pure.paragraphHtml(body, [{id:'x',color:'blue',range:null}], CC), Pure.formatText(body));
     eq('range: single mark', Pure.paragraphHtml(body, [R(3,7,'blue')], CC),
        'Le <mark class="hl-mark hl-blue">Fiat</mark> de Marie ouvre le Royaume.');
+    // pid is optional: omitting it (as above) must stay byte-identical to
+    // every pre-existing assertion in this block. Passing it wires the mark
+    // to App.onMarkClick so tapping a highlighted passage can recolour/remove
+    // just that one record.
+    eq('range: pid wires onMarkClick with the record id', Pure.paragraphHtml(body, [R(3,7,'blue')], CC, 'PID1'),
+       'Le <mark class="hl-mark hl-blue" data-hlid="x" onclick="App.onMarkClick(event,\'PID1\',\'x\')">Fiat</mark> de Marie ouvre le Royaume.');
+    eq('range: no pid -> no onclick/data-hlid (unchanged output)', Pure.paragraphHtml(body, [R(3,7,'blue')], CC).indexOf('onclick'), -1);
     // deliberately passed out of order to prove they are sorted before rendering
     eq('range: two marks, order preserved', Pure.paragraphHtml(body, [R(17,22,'rose'), R(3,7,'blue')], CC),
        'Le <mark class="hl-mark hl-blue">Fiat</mark> de Marie <mark class="hl-mark hl-rose">ouvre</mark> le Royaume.');
@@ -2132,6 +2147,8 @@ const State = {
   highlights: new Map(),
   lastHlColor: HL_DEFAULT,   // colour a fresh one-tap highlight uses
   hlPickerPid: null,         // paragraph whose colour picker is open
+  hlPickerHlId: null,        // specific range record being recoloured/removed (null = whole-paragraph mode)
+  hlPickerNewSel: null,      // {pid,start,end,text} for a pending, not-yet-committed selection awaiting a colour pick
   themePickerOpen: false,    // is the theme picker popover open?
   pendingSel: null,          // { pid, start, end, text } last usable selection
   forceRangeSupport: undefined, // test hook to override the Android gate
@@ -2489,7 +2506,7 @@ const App = {
       }
       // Dismiss the colour picker on an outside tap (the control itself is
       // excluded so tapping it again doesn't close-then-reopen)
-      if (State.hlPickerPid && !e.target.closest('#hl-picker') && !e.target.closest('.para-hl-btn')) {
+      if (State.hlPickerPid && !e.target.closest('#hl-picker') && !e.target.closest('.para-hl-btn') && !e.target.closest('#sel-bar')) {
         this.closeHlPicker();
       }
       if (State.themePickerOpen && !e.target.closest('#theme-picker') && !e.target.closest('#dark-toggle-btn') && !e.target.closest('#wnav-dark')) {
@@ -3197,7 +3214,7 @@ const App = {
     // Inner text with <mark> spans for each range highlight
     const colorCls = {};
     Object.keys(HL_COLORS).forEach(k => { colorCls[k] = HL_COLORS[k].cls; });
-    const inner = Pure.paragraphHtml(p.text, recs, colorCls);
+    const inner = Pure.paragraphHtml(p.text, recs, colorCls, pid);
 
     // The ◇/◆ control: tap to whole-para highlight, tap again for the picker.
     // Its state reflects whether the paragraph has ANY highlight.
@@ -3811,14 +3828,18 @@ const App = {
     State.pendingSel = null;
   },
 
-  // Surligner tapped: apply the last-used colour immediately (consistent with
-  // the one-tap paragraph behaviour), then the picker is available on the ◆.
+  // Surligner tapped: open the colour picker (anchored where the selection
+  // bar was) instead of committing immediately, so a colour can be chosen
+  // before the highlight is created — matching the paragraph-tap and
+  // existing-passage flows, which both go through the same picker.
   highlightSelection() {
     const s = State.pendingSel;
+    if (!s) { this.hideSelBar(); return; }
+    const bar = document.getElementById('sel-bar');
+    const anchorRect = bar ? bar.getBoundingClientRect() : null;
     this.hideSelBar();
-    if (!s) return;
     try { window.getSelection()?.removeAllRanges(); } catch(e) {}
-    this.applyRangeHighlight(s.pid, s.start, s.end, State.lastHlColor, s.text);
+    this.openHlPicker(s.pid, null, s, anchorRect);
   },
 
   // ── DOM Range → text offsets ───────────────────────────────────────
@@ -3859,13 +3880,31 @@ const App = {
   },
 
   // ── Colour picker ──────────────────────────────────────────────────
-  openHlPicker(pid) {
+  // Three modes, mutually exclusive:
+  //  - openHlPicker(pid)               whole-paragraph, existing behaviour:
+  //    recolours/removes every range record at once (or the whole-para tint).
+  //  - openHlPicker(pid, hlId)         one specific range record, from tapping
+  //    an already-highlighted passage: recolours/removes ONLY that record.
+  //  - openHlPicker(pid, null, newSel, rect) a pending selection with no
+  //    record yet (from the "Surligner" bar): picking a colour creates it;
+  //    there is nothing to remove, so the Retirer button hides. rect is the
+  //    selection bar's position, captured before it was hidden (its own
+  //    getBoundingClientRect() would be zeroed by then).
+  openHlPicker(pid, hlId, newSel, rect) {
     this.closeThemePicker();  // only one popover open at a time
     const picker = document.getElementById('hl-picker');
     const row = document.getElementById('hlp-swatches');
     if (!picker || !row) return;
     State.hlPickerPid = pid;
-    const current = hlColorOf(pid);
+    State.hlPickerHlId = hlId || null;
+    State.hlPickerNewSel = newSel || null;
+
+    let current;
+    if (newSel) current = State.lastHlColor;
+    else if (hlId) {
+      const rec = hlRecords(pid).find(h => h.id === hlId);
+      current = rec ? safeColor(rec.color) : HL_DEFAULT;
+    } else current = hlColorOf(pid);
 
     row.innerHTML = Object.keys(HL_COLORS).map(key => {
       const c = HL_COLORS[key];
@@ -3875,10 +3914,22 @@ const App = {
         onclick="App.pickHlColor('${key}')"></button>`;
     }).join('');
 
+    const removeBtn = picker.querySelector('.hlp-remove');
+    if (removeBtn) removeBtn.style.display = newSel ? 'none' : '';
+
     picker.classList.add('open');
-    const anchor = document.querySelector(`[data-pid="${pid}"] .para-hl-btn`);
+    const anchor = newSel
+      ? (rect || document.getElementById('sel-bar'))
+      : (hlId ? document.querySelector(`mark[data-hlid="${hlId}"]`) : document.querySelector(`[data-pid="${pid}"] .para-hl-btn`));
     this.positionPickerNear('hl-picker', anchor);
     this.onModalOpened('hl-picker');
+  },
+
+  // Tapping an already-highlighted passage: recolour or remove just that one
+  // record, without disturbing any other highlight in the same paragraph.
+  onMarkClick(event, pid, hlId) {
+    event.stopPropagation();
+    this.openHlPicker(pid, hlId);
   },
 
   // Anchors a fixed-position popover next to `anchorEl`, flipping above when
@@ -3895,7 +3946,9 @@ const App = {
       picker.style.top  = Math.max(M, (window.innerHeight - ph) / 2) + 'px';
       return;
     }
-    const r = anchorEl.getBoundingClientRect();
+    // Accepts either a live element or a pre-captured rect (needed when the
+    // real anchor, e.g. the selection toolbar, is about to be hidden).
+    const r = anchorEl.getBoundingClientRect ? anchorEl.getBoundingClientRect() : anchorEl;
     let left = r.left + r.width / 2 - pw / 2;
     left = Math.min(Math.max(M, left), window.innerWidth - pw - M);
     let top = r.bottom + 8;
@@ -3907,9 +3960,31 @@ const App = {
 
   pickHlColor(key) {
     const pid = State.hlPickerPid;
+    const hlId = State.hlPickerHlId;
+    const newSel = State.hlPickerNewSel;
     this.closeHlPicker();
-    if (!pid) return;
     const col = safeColor(key);
+
+    // Pending selection, nothing persisted yet: create the record now.
+    if (newSel) {
+      this.applyRangeHighlight(newSel.pid, newSel.start, newSel.end, col, newSel.text);
+      return;
+    }
+    if (!pid) return;
+
+    // One specific record, from tapping a highlighted passage: recolour only
+    // that record, leaving every other highlight in the paragraph untouched.
+    if (hlId) {
+      const recs = hlRecords(pid);
+      const next = recs.map(h => h.id === hlId ? Object.assign({}, h, { color: col }) : h);
+      State.highlights.set(pid, Pure.dedupeHls(next));
+      State.lastHlColor = col;
+      saveHlColor();
+      this.commitHighlights(pid, { toast: 'Couleur : ' + HL_COLORS[col].label.toLowerCase() });
+      return;
+    }
+
+    // Whole-paragraph mode (existing behaviour, unchanged).
     const recs = hlRecords(pid);
     const ranges = recs.filter(h => h.range);
     // If the paragraph only carries range highlights, "change the colour"
@@ -3927,14 +4002,20 @@ const App = {
 
   removeHighlightFromPicker() {
     const pid = State.hlPickerPid;
+    const hlId = State.hlPickerHlId;
+    const isNewSel = !!State.hlPickerNewSel;
     this.closeHlPicker();
-    if (pid) this.removeHighlight(pid);
+    if (isNewSel || !pid) return;  // nothing persisted yet for a new selection
+    if (hlId) this.removeHighlightRecord(pid, hlId);
+    else this.removeHighlight(pid);
   },
 
   closeHlPicker() {
     const picker = document.getElementById('hl-picker');
     if (picker) picker.classList.remove('open');
     State.hlPickerPid = null;
+    State.hlPickerHlId = null;
+    State.hlPickerNewSel = null;
     this.onModalClosed();
   },
 
@@ -4220,7 +4301,7 @@ const App = {
           <div class="help-icon">✧</div>
           <div class="help-text">
             <div class="help-label">Surligner une partie seulement</div>
-            <div class="help-desc">Sur iPhone, iPad et ordinateur : sélectionnez les mots souhaités avec le doigt (ou la souris), puis appuyez sur <strong>◆ Surligner</strong> dans la petite barre qui apparaît. Seuls ces mots sont surlignés. Vous pouvez surligner plusieurs passages différents dans un même paragraphe.</div>
+            <div class="help-desc">Sur iPhone, iPad et ordinateur : sélectionnez les mots souhaités avec le doigt (ou la souris), puis appuyez sur <strong>◆ Surligner</strong> dans la petite barre qui apparaît. Choisissez une couleur dans la palette qui s'ouvre : seuls ces mots sont surlignés dans cette couleur. Vous pouvez surligner plusieurs passages différents dans un même paragraphe.</div>
           </div>
         </div>
 
@@ -4236,7 +4317,7 @@ const App = {
           <div class="help-icon">◆</div>
           <div class="help-text">
             <div class="help-label">Changer la couleur ou retirer</div>
-            <div class="help-desc">Appuyez sur le losange d’un paragraphe déjà surligné pour ouvrir la palette : cinq couleurs (or, bleu, vert, violet, rose) et l’option « Retirer le surlignage ». La couleur choisie devient votre couleur par défaut pour les surlignages suivants.</div>
+            <div class="help-desc">Appuyez sur le losange d’un paragraphe déjà surligné — ou directement sur un passage déjà surligné — pour ouvrir la palette : cinq couleurs (or, bleu, vert, violet, rose) et l’option « Retirer le surlignage ». Appuyer sur un passage précis ne change ou ne retire que ce passage, sans toucher aux autres surlignages du même paragraphe. La couleur choisie devient votre couleur par défaut pour les surlignages suivants.</div>
           </div>
         </div>
 
