@@ -549,6 +549,36 @@ html, body {
   font-size: 13px; font-family: var(--font-ui); cursor: pointer;
 }
 .hlp-remove:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ══ Theme picker ══
+   Same anchored-popover pattern as the highlight colour picker. Replaces the
+   old tap-to-cycle behaviour (system → dark → light → system) with an
+   explicit three-way choice, so "automatic" is a visible option rather than
+   something you land on partway through a cycle. */
+#theme-picker {
+  display: none; position: fixed; z-index: 210;
+  background: var(--white); border: 0.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  max-width: calc(100vw - 24px);
+}
+#theme-picker.open { display: block; }
+.tp-row { display: flex; gap: 6px; }
+.tp-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 64px; min-height: 52px; padding: 8px 10px;
+  border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+  background: transparent; color: var(--muted); cursor: pointer;
+  font-size: 11px; font-family: var(--font-ui); white-space: nowrap;
+  -webkit-tap-highlight-color: transparent; transition: all 0.15s;
+}
+.tp-btn-icon { font-size: 18px; }
+.tp-btn:hover { border-color: var(--primary); color: var(--primary); }
+/* --hero-bg, not --primary: dark-mode --primary is a lighter blue meant for
+   foreground text and only reaches ~4.32:1 with white text (fails AA at this
+   font size). --hero-bg stays deep in both themes — verified >=8.8:1. */
+.tp-btn[aria-checked="true"] { background: var(--hero-bg); border-color: var(--hero-bg); color: #fff; }
+
 .para-note {
   background: var(--note-bg); border: 0.5px solid var(--note-border);
   border-radius: var(--radius-sm); padding: 10px 13px; margin-top: -8px; margin-bottom: 1.1em;
@@ -1218,10 +1248,10 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">31 Jours avec Marie</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.7.2</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.8.0</div>
       </div>
       <div class="topbar-actions">
-        <button class="topbar-action" id="dark-toggle-btn" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
+        <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
         <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">☰</button>
       </div>
     </div>
@@ -1340,7 +1370,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">31 Jours avec Marie</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.7.2</span>
+    <span class="version-badge" title="31 Jours avec Marie" onclick="App.debugTap()">v2.8.0</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1354,7 +1384,7 @@ h1, h2, h3, h4 {
       <button class="wt-nav-btn" id="wnav-aide" onclick="App.wideNav('aide')" aria-label="Aide" aria-pressed="false">
         <span class="wt-nav-icon">?</span> Aide
       </button>
-      <button class="wt-nav-btn" id="wnav-dark" onclick="App.cycleTheme()" aria-label="Thème" title="Thème">◑</button>
+      <button class="wt-nav-btn" id="wnav-dark" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
     </nav>
   </div>
 
@@ -1472,6 +1502,11 @@ h1, h2, h3, h4 {
   <button type="button" class="hlp-remove" onclick="App.removeHighlightFromPicker()">✕ Retirer le surlignage</button>
 </div>
 
+<!-- Theme picker — anchored to whichever theme button was tapped -->
+<div id="theme-picker" role="dialog" aria-modal="true" aria-label="Thème">
+  <div class="tp-row" id="tp-options" role="radiogroup" aria-label="Thème"></div>
+</div>
+
 <!-- First-run onboarding (shown once) -->
 <div id="onboard-modal" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
   <div id="onboard-box">
@@ -1577,7 +1612,18 @@ const hlColorOf = pid => {
   return (c && HL_COLORS[c]) ? c : HL_DEFAULT;
 };
 
-const APP_VERSION = '2.7.2';
+// Theme picker. Label is "Automatique" (not "Système") to match the wording
+// used in the sibling apps — the stored value stays the internal 'system'
+// token, so this is a display-only change with nothing to migrate.
+const THEME_LABELS = { system: 'Automatique', dark: 'Sombre', light: 'Clair' };
+const THEME_ICONS  = { system: '◑', dark: '☽', light: '☀' };
+const THEME_ORDER  = ['system', 'light', 'dark'];
+const currentThemeMode = () => {
+  const saved = localStorage.getItem('mjv_theme');
+  return (saved === 'dark' || saved === 'light') ? saved : 'system';
+};
+
+const APP_VERSION = '2.8.0';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -1796,6 +1842,7 @@ const State = {
   highlights: new Map(),
   lastHlColor: HL_DEFAULT,   // colour a fresh one-tap highlight uses
   hlPickerPid: null,         // paragraph whose colour picker is open
+  themePickerOpen: false,    // is the theme picker popover open?
   noteTargetPid: null, widePanel: 'jours',
   activeDay: null,  // devotional day — may differ from calendar day
   scrollPos: {},    // { [unit_id]: scrollTop px } — resume where the reader left off
@@ -2145,6 +2192,9 @@ const App = {
       if (State.hlPickerPid && !e.target.closest('#hl-picker') && !e.target.closest('.para-hl-btn')) {
         this.closeHlPicker();
       }
+      if (State.themePickerOpen && !e.target.closest('#theme-picker') && !e.target.closest('#dark-toggle-btn') && !e.target.closest('#wnav-dark')) {
+        this.closeThemePicker();
+      }
     });
 
     // The picker is anchored to a paragraph, so scrolling or resizing must not
@@ -2152,6 +2202,7 @@ const App = {
     ['reader-scroll','wide-reader-scroll'].forEach(id => {
       document.getElementById(id)?.addEventListener('scroll', () => {
         if (State.hlPickerPid) this.closeHlPicker();
+        if (State.themePickerOpen) this.closeThemePicker();
       }, { passive: true });
     });
 
@@ -3040,6 +3091,7 @@ const App = {
   // overlay, and focus was never returned to whatever opened the dialog.
   // Highest z-index first, so the topmost dialog is the one Escape closes.
   MODALS: [
+    { id: 'theme-picker',  close: function(){ App.closeThemePicker(); } },
     { id: 'hl-picker',     close: function(){ App.closeHlPicker(); } },
     { id: 'onboard-modal', close: function(){ App.finishOnboarding(false); } },
     { id: 'note-modal',    close: function(){ App.closeNoteModal(); } },
@@ -3292,6 +3344,7 @@ const App = {
 
   // ── Colour picker ──────────────────────────────────────────────────
   openHlPicker(pid) {
+    this.closeThemePicker();  // only one popover open at a time
     const picker = document.getElementById('hl-picker');
     const row = document.getElementById('hlp-swatches');
     if (!picker || !row) return;
@@ -3307,24 +3360,26 @@ const App = {
     }).join('');
 
     picker.classList.add('open');
-    this.positionHlPicker(pid);
+    const anchor = document.querySelector(`[data-pid="${pid}"] .para-hl-btn`);
+    this.positionPickerNear('hl-picker', anchor);
     this.onModalOpened('hl-picker');
   },
 
-  // Anchor above/below the paragraph's control, clamped inside the viewport so
-  // it can never render off-screen on a narrow phone.
-  positionHlPicker(pid) {
-    const picker = document.getElementById('hl-picker');
-    const btn = document.querySelector(`[data-pid="${pid}"] .para-hl-btn`);
+  // Anchors a fixed-position popover next to `anchorEl`, flipping above when
+  // there's no room below, and clamped inside the viewport so it can never
+  // render off-screen on a narrow phone. Shared by the highlight colour
+  // picker and the theme picker.
+  positionPickerNear(pickerId, anchorEl) {
+    const picker = document.getElementById(pickerId);
     if (!picker) return;
     const pw = picker.offsetWidth, ph = picker.offsetHeight;
     const M = 10;
-    if (!btn) { // no anchor (shouldn't happen) — centre it
+    if (!anchorEl) { // no anchor (shouldn't happen) — centre it
       picker.style.left = Math.max(M, (window.innerWidth - pw) / 2) + 'px';
       picker.style.top  = Math.max(M, (window.innerHeight - ph) / 2) + 'px';
       return;
     }
-    const r = btn.getBoundingClientRect();
+    const r = anchorEl.getBoundingClientRect();
     let left = r.left + r.width / 2 - pw / 2;
     left = Math.min(Math.max(M, left), window.innerWidth - pw - M);
     let top = r.bottom + 8;
@@ -3360,28 +3415,63 @@ const App = {
     else if (!isWide() && document.getElementById('screen-espace')?.classList.contains('active')) this.renderEspace('espace-scroll');
   },
 
-  // ── Dark mode ───────────────────────────────────────────────
-  cycleTheme() {
+  // ── Theme ─────────────────────────────────────────────────────
+  // Explicit Automatique / Clair / Sombre picker, replacing the old
+  // tap-to-cycle behaviour. THEME_LABELS/THEME_ICONS/THEME_ORDER and
+  // currentThemeMode() are module-level (declared near HL_COLORS) so the
+  // picker's rendering doesn't depend on `this`.
+  openThemePicker(e) {
+    this.closeHlPicker();  // only one popover open at a time
+    const anchor = e && e.currentTarget;
+    const picker = document.getElementById('theme-picker');
+    const row = document.getElementById('tp-options');
+    if (!picker || !row) return;
+    const current = currentThemeMode();
+
+    row.innerHTML = THEME_ORDER.map(key => `<button type="button" class="tp-btn" role="radio"
+      aria-checked="${key === current ? 'true' : 'false'}"
+      aria-label="${THEME_LABELS[key]}"
+      onclick="App.pickTheme('${key}')"><span class="tp-btn-icon" aria-hidden="true">${THEME_ICONS[key]}</span>${THEME_LABELS[key]}</button>`).join('');
+
+    State.themePickerOpen = true;
+    picker.classList.add('open');
+    this.positionPickerNear('theme-picker', anchor);
+    this.onModalOpened('theme-picker');
+  },
+
+  pickTheme(mode) {
+    this.closeThemePicker();
+    this.applyTheme(mode);
+  },
+
+  closeThemePicker() {
+    document.getElementById('theme-picker')?.classList.remove('open');
+    State.themePickerOpen = false;
+    this.onModalClosed();
+  },
+
+  applyTheme(mode) {
     const html = document.documentElement;
-    const current = localStorage.getItem('mjv_theme') || 'system';
-    const order = ['system', 'dark', 'light'];
-    const next = order[(order.indexOf(current) + 1) % 3];
-    if (next === 'system') {
+    if (mode === 'system') {
       html.removeAttribute('data-theme');
       try { localStorage.removeItem('mjv_theme'); } catch(e) {}
     } else {
-      html.setAttribute('data-theme', next);
-      try { localStorage.setItem('mjv_theme', next); } catch(e) {}
+      html.setAttribute('data-theme', mode);
+      try { localStorage.setItem('mjv_theme', mode); } catch(e) {}
     }
-    const icons = { system: '◑', dark: '☽', light: '☀' };
-    const labels = { system: 'Thème système', dark: 'Mode sombre', light: 'Mode clair' };
-    document.querySelectorAll('#dark-toggle-btn, #wnav-dark').forEach(btn => {
-      btn.textContent = icons[next];
-      btn.title = labels[next];
-      btn.setAttribute('aria-label', labels[next]);
-    });
-    this.showToast(labels[next] + ' ✓');
+    this.syncThemeIcon();
+    this.showToast('Thème ' + THEME_LABELS[mode].toLowerCase() + ' activé');
   },
+
+  syncThemeIcon() {
+    const mode = currentThemeMode();
+    document.querySelectorAll('#dark-toggle-btn, #wnav-dark').forEach(btn => {
+      btn.textContent = THEME_ICONS[mode];
+      btn.title = 'Thème : ' + THEME_LABELS[mode];
+      btn.setAttribute('aria-label', 'Thème : ' + THEME_LABELS[mode]);
+    });
+  },
+
   openTodayModal() {
     const dayToShow = State.activeDay || State.todayDayNum;
     const data = this.getTodayData(dayToShow);
@@ -3400,19 +3490,6 @@ const App = {
     document.getElementById('today-modal').classList.remove('open');
     this.onModalClosed();
   },
-  syncThemeIcon() {
-    const saved = localStorage.getItem('mjv_theme');
-    const mode = (saved === 'dark' || saved === 'light') ? saved : 'system';
-    const icons  = { system: '◑', dark: '☽', light: '☀' };
-    const labels = { system: 'Thème système', dark: 'Mode sombre', light: 'Mode clair' };
-    document.querySelectorAll('#dark-toggle-btn, #wnav-dark').forEach(btn => {
-      btn.textContent = icons[mode];
-      btn.title = labels[mode];
-      btn.setAttribute('aria-label', labels[mode]);
-    });
-  },
-  // keep old name as alias for any lingering references
-
   // ── Help / Aide ─────────────────────────────────────────────
   renderHelp(containerId) {
     const el = document.getElementById(containerId);
@@ -3656,7 +3733,7 @@ const App = {
           <div class="help-icon">◑</div>
           <div class="help-text">
             <div class="help-label">Thème</div>
-            <div class="help-desc">Le bouton de thème (en haut de l’écran) alterne entre trois modes : <strong>◑ Système</strong> (suit le réglage de l’appareil), <strong>☽ Sombre</strong> et <strong>☀ Clair</strong>. L’icône reflète le mode actif. Le choix est mémorisé entre les sessions.</div>
+            <div class="help-desc">Le bouton de thème (en haut de l’écran) ouvre un choix entre trois modes : <strong>◑ Automatique</strong> (suit le réglage de l’appareil), <strong>☽ Sombre</strong> et <strong>☀ Clair</strong>. L’icône reflète le mode actif. Le choix est mémorisé entre les sessions.</div>
           </div>
         </div>
       </div>
