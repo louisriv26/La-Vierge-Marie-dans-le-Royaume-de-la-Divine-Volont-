@@ -179,8 +179,8 @@ html, body {
     display: flex;
     align-items: flex-end;
     gap: 0;
-    background: var(--primary);
-    color: var(--white);
+    background: var(--hero-bg);
+    color: #fff;
     flex-shrink: 0;
     min-height: calc(52px + var(--safe-top));
     padding: calc(var(--safe-top) + 0px) 20px 8px;
@@ -189,7 +189,7 @@ html, body {
     font-family: var(--font-reader);
     font-size: 18px;
     font-style: italic;
-    color: var(--white);
+    color: #fff;
     flex: 1;
   }
   .wt-date {
@@ -216,8 +216,8 @@ html, body {
     align-items: center;
     gap: 6px;
   }
-  .wt-nav-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
-  .wt-nav-btn.active { background: rgba(255,255,255,0.18); color: var(--white); }
+  .wt-nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  .wt-nav-btn.active { background: rgba(255,255,255,0.18); color: #fff; }
   .wt-nav-icon { font-size: 16px; }
 
   /* Main body: sidebar + reader */
@@ -280,7 +280,7 @@ html, body {
     transition: all 0.12s; background: transparent;
   }
   .ws-cal-cell:hover:not(:disabled) { color: var(--primary); border-color: var(--border); }
-  .ws-cal-cell.today { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
+  .ws-cal-cell.today { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); box-shadow: 0 0 0 2px var(--accent); }
   .ws-cal-cell.read { color: var(--accent); border-color: var(--accent); }
   .ws-cal-cell.appendix { color: var(--border); cursor: default; }
   .ws-cal-cell.active-day { box-shadow: 0 0 0 2.5px var(--accent), 0 0 0 4.5px rgba(201,168,76,0.25); }
@@ -309,7 +309,7 @@ html, body {
     font-size: 11px; font-weight: 600; flex-shrink: 0;
     border: 1.5px solid var(--border); color: var(--muted); background: var(--ivory);
   }
-  .ws-day-circle.today-c { background: var(--primary); color: var(--white); border-color: var(--primary); }
+  .ws-day-circle.today-c { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); }
   .ws-day-circle.read-c { background: var(--accent); color: var(--white); border-color: var(--accent); }
   .ws-item-info { flex: 1; min-width: 0; }
   .ws-item-title {
@@ -357,7 +357,7 @@ html, body {
   }
   .wr-hero { background: var(--hero-bg); padding: 24px 48px 20px; }
   .wr-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
-  .wr-hero-title { font-family: var(--font-reader); font-size: 24px; color: var(--white); line-height: 1.45; max-width: 640px; }
+  .wr-hero-title { font-family: var(--font-reader); font-size: 24px; color: #fff; line-height: 1.45; max-width: 640px; }
   .wr-body { padding: 24px 48px 40px; max-width: 720px; }
 
   /* Reader nav bar */
@@ -666,7 +666,7 @@ html, body {
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 11.5px; font-weight: 500; cursor: pointer; color: var(--muted); border: 1.5px solid transparent; transition: all 0.15s; position: relative; -webkit-tap-highlight-color: transparent; background: transparent; }
 .cal-cell:hover:not(:disabled) { color: var(--primary); border-color: var(--border); }
-.cal-cell.today { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
+.cal-cell.today { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); box-shadow: 0 0 0 2px var(--accent); }
 .cal-cell.read { color: var(--accent); border-color: var(--accent); }
 .cal-cell.read::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--accent); }
 .cal-cell.appendix { font-size: 10px; color: var(--border); border-color: var(--border-light); cursor: default; }
@@ -692,13 +692,13 @@ html, body {
 .hero-card:active { transform: scale(0.99); }
 .hero-card-header { background: var(--hero-bg); padding: 16px 18px 14px; }
 .hero-day-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
-.hero-day-num { font-family: var(--font-reader); font-size: 34px; color: var(--white); line-height: 1; margin-bottom: 6px; }
+.hero-day-num { font-family: var(--font-reader); font-size: 34px; color: #fff; line-height: 1; margin-bottom: 6px; }
 .hero-ordinal { font-family: var(--font-reader); font-size: 13px; color: rgba(255,255,255,0.7); font-style: italic; }
 .hero-card-body { padding: 16px 18px; }
 .hero-title { font-family: var(--font-reader); font-size: 16px; color: var(--ink); line-height: 1.5; margin-bottom: 10px; }
 .hero-excerpt { font-family: var(--font-reader); font-size: 14px; color: var(--muted); line-height: 1.65; font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px; }
 .hero-cta { display: flex; align-items: center; justify-content: space-between; }
-.hero-read-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-ui); transition: background 0.15s; }
+.hero-read-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--hero-bg); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-ui); transition: background 0.15s; }
 .hero-read-btn:hover { background: var(--primary-light); }
 .hero-nav-btns { display: flex; gap: 6px; }
 .hero-nav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
@@ -783,7 +783,7 @@ h1, h2, h3, h4 {
 .list-card { display: flex; align-items: center; gap: 12px; background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; -webkit-tap-highlight-color: transparent; }
 .list-card:hover { border-color: var(--primary); background: var(--ivory-deep); }
 .list-day-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; border: 1.5px solid var(--border); color: var(--muted); background: var(--ivory); }
-.list-day-circle.today-circle { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
+.list-day-circle.today-circle { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); box-shadow: 0 0 0 2px var(--accent); }
 .list-day-circle.read-circle { background: var(--accent); color: var(--white); border-color: var(--accent); }
 .list-info { flex: 1; min-width: 0; }
 .list-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -803,7 +803,7 @@ h1, h2, h3, h4 {
 .reader-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .reader-hero { background: var(--hero-bg); padding: 20px 20px 18px; }
 .reader-hero-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
-.reader-hero-title { font-family: var(--font-reader); font-size: 19px; color: var(--white); line-height: 1.45; }
+.reader-hero-title { font-family: var(--font-reader); font-size: 19px; color: #fff; line-height: 1.45; }
 .reader-body { padding: 0 20px 20px; }
 .reader-nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 6px; flex-shrink: 0; border-top: 0.5px solid var(--border); }
 .reader-nav-btn { display: flex; align-items: center; gap: 5px; padding: 8px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; font-size: 12.5px; font-family: var(--font-ui); transition: all 0.15s; max-width: 45%; }
@@ -847,7 +847,18 @@ h1, h2, h3, h4 {
 .fav-card.hl-card .fav-card-day { color: var(--muted); }
 .stat-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
 .stat-num { font-size: 26px; font-weight: 500; line-height: 1; }
-.stat-num.blue { color: var(--primary); } .stat-num.gold { color: var(--accent-fg); } .stat-num.green { color: #27AE60; }
+/* #27AE60 measured 2.87:1 on the white stat-card -- fails AA even in light
+   mode, pre-existing and unrelated to theme. #1C7A43 is the same hue darkened
+   to 5.37:1. */
+.stat-num.blue { color: var(--primary); } .stat-num.gold { color: var(--accent-fg); } .stat-num.green { color: #1C7A43; }
+/* --primary is deliberately a light blue in dark mode (tuned to read as TEXT
+   on the dark ivory), so it only reaches 3.85:1 as a stat number on the
+   slightly-lighter stat-card surface -- fails AA. --primary-light is already
+   the dark-mode variant meant for this brighter role (5.11:1 here). The
+   green is retuned lighter too, matching the same lighten-for-dark-surfaces
+   principle already applied to --accent/--highlight-accent above. */
+[data-theme="dark"] .stat-num.blue  { color: var(--primary-light); }
+[data-theme="dark"] .stat-num.green { color: #52C288; }
 .stat-label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
 .espace-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 16px 0 10px; }
 .fav-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 13px 15px; margin-bottom: 7px; cursor: pointer; transition: border-color 0.15s; }
@@ -892,7 +903,7 @@ h1, h2, h3, h4 {
 .modal-btn { flex: 1; padding: 11px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); font-size: 14px; font-family: var(--font-ui); cursor: pointer; transition: all 0.15s; }
 .modal-btn-cancel { background: transparent; color: var(--muted); }
 .modal-btn-cancel:hover { background: var(--ivory-deep); }
-.modal-btn-save { background: var(--primary); color: var(--white); border-color: var(--primary); }
+.modal-btn-save { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); }
 .modal-btn-save:hover { background: var(--primary-light); }
 
 /* Toast */
@@ -905,7 +916,7 @@ h1, h2, h3, h4 {
 
 /* Deferred SW-update banner — shown instead of a forced reload when the
    note modal is open with unsaved text, so a draft is never silently lost. */
-.update-banner { position: fixed; left: 50%; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); transform: translateX(-50%); background: var(--primary); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-family: var(--font-ui); display: flex; align-items: center; gap: 10px; z-index: 200; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.update-banner { position: fixed; left: 50%; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); transform: translateX(-50%); background: var(--hero-bg); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-family: var(--font-ui); display: flex; align-items: center; gap: 10px; z-index: 200; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
 .update-banner button { background: rgba(255,255,255,0.18); color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; }
 .update-banner button:hover { background: rgba(255,255,255,0.28); }
 
@@ -1035,7 +1046,7 @@ h1, h2, h3, h4 {
   display: flex; flex-direction: column; overflow: hidden;
 }
 #onboard-head {
-  background: var(--primary); color: var(--white);
+  background: var(--hero-bg); color: #fff;
   padding: 22px 24px 20px; flex-shrink: 0; text-align: center;
 }
 #onboard-crown { font-size: 26px; color: var(--accent-light); margin-bottom: 8px; }
@@ -1061,7 +1072,7 @@ h1, h2, h3, h4 {
   cursor: pointer; min-height: 44px;
 }
 #onboard-start-btn {
-  flex: 1; background: var(--primary); color: #fff; border: none;
+  flex: 1; background: var(--hero-bg); color: #fff; border: none;
   border-radius: var(--radius-sm); padding: 11px 16px; font-size: 14px;
   font-family: var(--font-ui); cursor: pointer; min-height: 44px;
 }
@@ -1279,7 +1290,7 @@ h1, h2, h3, h4 {
 #debug-box td:last-child { font-weight: 600; word-break: break-all; }
 #debug-close {
   margin-top: 16px; width: 100%;
-  background: var(--primary); color: #fff;
+  background: var(--hero-bg); color: #fff;
   border: none; border-radius: 8px;
   padding: 9px; font-size: 13px; cursor: pointer;
 }
@@ -1302,7 +1313,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.1</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.2</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1424,7 +1435,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.1</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.2</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1710,7 +1721,7 @@ const currentThemeMode = () => {
   return (saved === 'dark' || saved === 'light') ? saved : 'system';
 };
 
-const APP_VERSION = '2.9.1';
+const APP_VERSION = '2.9.2';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -2402,7 +2413,7 @@ const App = {
           <div style="font-size:32px;margin-bottom:16px">✦</div>
           <div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Erreur de chargement</div>
           <div style="font-size:14px;margin-bottom:24px">Vérifiez votre connexion et réessayez.</div>
-          <button onclick="window.location.reload()" style="padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button>
+          <button onclick="window.location.reload()" style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button>
         </div>`;
       document.getElementById('screen-loading').classList.add('active');
       document.getElementById('wide-welcome').querySelector('.ww-text').textContent = 'Erreur de chargement. Actualisez la page.';
@@ -4091,7 +4102,7 @@ const App = {
         </div>
 
         <div class="help-item">
-          <div class="help-icon" style="background:var(--primary);color:#fff;font-size:12px">15</div>
+          <div class="help-icon" style="background:var(--hero-bg);color:#fff;font-size:12px">15</div>
           <div class="help-text">
             <div class="help-label">Aujourd’hui</div>
             <div class="help-desc">Le jour calendaire actuel est mis en valeur en bleu Marian avec un halo doré. L’application s’ouvre automatiquement sur ce jour.</div>
