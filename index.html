@@ -992,8 +992,9 @@ h1, h2, h3, h4 {
 .cycle-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 3px; transition: color 0.3s; }
 .cycle-card.ready .cycle-label { color: var(--accent-fg); }
 .cycle-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
-.cycle-btn { flex-shrink: 0; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--border); color: var(--muted); font-size: 12px; font-weight: 700; cursor: not-allowed; white-space: nowrap; transition: all 0.3s; }
-.cycle-card.ready .cycle-btn { border-color: var(--accent); background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
+/* Only ever rendered once the cycle is ready -- the disabled/not-yet state
+   shows no button at all (see renderEspace), so there is no not-ready style. */
+.cycle-btn { flex-shrink: 0; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--accent); background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
 
 .help-section { margin-bottom: 24px; }
 .help-section-title {
@@ -1313,7 +1314,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.2</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.3</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1435,7 +1436,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.2</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.3</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1721,7 +1722,7 @@ const currentThemeMode = () => {
   return (saved === 'dark' || saved === 'light') ? saved : 'system';
 };
 
-const APP_VERSION = '2.9.2';
+const APP_VERSION = '2.9.3';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -4294,7 +4295,7 @@ const App = {
           <div class="help-icon">✶</div>
           <div class="help-text">
             <div class="help-label">Nouveau cycle</div>
-            <div class="help-desc">Dans <strong>Mon Espace</strong>, le bouton « Nouveau cycle » s'allume en or dès que les 31 jours du parcours sont marqués comme lus — que ce soit dans l'application, sur votre mobile ou dans le livre. Les appendices ne comptent pas dans ce total. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos surlignages et vos notes sont toujours conservés.</div>
+            <div class="help-desc"><strong>Mon Espace</strong> affiche votre progression (X / 31 jours accomplis) en bas de l'écran. Le bouton « Nouveau cycle » n'apparaît qu'une fois les 31 jours du parcours marqués comme lus — que ce soit dans l'application, sur votre mobile ou dans le livre ; avant cela, seule la progression est visible. Les appendices ne comptent pas dans ce total. En appuyant, la progression repart à zéro et le jour actif est effacé. Vos surlignages et vos notes sont toujours conservés.</div>
           </div>
         </div>
       </div>
@@ -4385,9 +4386,9 @@ const App = {
             <div class="cycle-label">${cycleReady ? 'Prêt pour un nouveau cycle !' : `${daysRead} / ${dayTotal} jours accomplis`}</div>
             <div class="cycle-desc">${cycleReady
               ? 'Vos surlignages et notes seront conservés.'
-              : 'Disponible lorsque les ' + dayTotal + ' jours seront marqués comme lus.'}</div>
+              : 'Le bouton « Nouveau cycle » apparaîtra ici une fois les ' + dayTotal + ' jours marqués comme lus.'}</div>
           </div>
-          <button class="cycle-btn" ${cycleReady ? 'onclick="App.startNewCycle()"' : 'disabled'}>↺ Nouveau cycle</button>
+          ${cycleReady ? '<button class="cycle-btn" onclick="App.startNewCycle()">↺ Nouveau cycle</button>' : ''}
         </div>
       </div>
     `;
