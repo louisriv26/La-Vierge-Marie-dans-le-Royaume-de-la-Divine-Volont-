@@ -1,5 +1,5 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '2.9.6';
+const VERSION = '2.9.7';
 
 // Three buckets instead of one. Previously a single version-scoped cache meant
 // every code-only deploy evicted the unchanged 416KB corpus and the fonts, so
