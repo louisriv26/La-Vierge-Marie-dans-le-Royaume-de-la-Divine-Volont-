@@ -1340,7 +1340,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.9</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.10</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1462,7 +1462,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.9</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.10</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1641,7 +1641,7 @@ h1, h2, h3, h4 {
         <div class="onb-icon">✎</div>
         <div>
           <div class="onb-label">Surligner et annoter</div>
-          <div class="onb-desc">Chaque paragraphe porte deux petites icônes à droite : ◇ pour surligner, ✎ pour écrire une note. Appuyez sur un losange déjà plein (◆) pour choisir parmi cinq couleurs. Tout est conservé dans <strong>Mon Espace</strong>.</div>
+          <div class="onb-desc">Sur Android : l'icône ◇ à droite d'un paragraphe le surligne. Sur iPhone, iPad et ordinateur : sélectionnez un passage pour le surligner dans la couleur de votre choix. Partout : ✎ pour écrire une note, et un passage déjà surligné se retouche ou se retire d'un appui. Tout est conservé dans <strong>Mon Espace</strong>.</div>
         </div>
       </div>
     </div>
@@ -1749,7 +1749,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.9.9';
+const APP_VERSION = '2.9.10';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
