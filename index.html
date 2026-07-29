@@ -88,7 +88,13 @@ window.APP_BASE = (function() {
   --rail-w: 220px;
 
   --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  --font-reader: 'IM Fell English', 'Crimson Text', Georgia, serif;
+  /* Crimson Text is a book-text serif built for extended reading and was
+     already being loaded (see the Google Fonts <link> below) as a fallback
+     that never activated, since IM Fell English -- a historical
+     letterpress-revival face with irregular, low-legibility strokes --
+     loads successfully and took priority. Promoted ahead of it: same fonts
+     fetched, no new network cost, meaningfully more legible reading. */
+  --font-reader: 'Crimson Text', 'IM Fell English', Georgia, serif;
   --reader-size: 17px;
   --reader-lh: 1.82;
   --nav-h: 60px;
@@ -460,9 +466,15 @@ html, body {
 }
 .section-label::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
 
+/* Not italic: soul_intro/soul_response average 360-510 characters -- a real
+   paragraph, not a caption -- and italics measurably slow extended reading
+   regardless of typeface. The lavender background + left border already
+   distinguish this as the reader's own address, without the legibility
+   cost. .para-prayer stays italic -- ~98 characters average, a single short
+   line, where the convention is cheap. */
 .para-soul {
   font-family: var(--font-reader); font-size: var(--reader-size); color: var(--ink);
-  line-height: var(--reader-lh); font-style: italic; margin-bottom: 1.1em;
+  line-height: var(--reader-lh); margin-bottom: 1.1em;
   background: var(--soul-bg); padding: 12px 15px; border-radius: var(--radius-sm);
   border-left: 2.5px solid var(--border); position: relative;
 }
@@ -1340,7 +1352,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.10</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.11</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1462,7 +1474,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.10</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.11</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1749,7 +1761,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.9.10';
+const APP_VERSION = '2.9.11';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
