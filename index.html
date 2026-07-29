@@ -1340,7 +1340,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.7</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.8</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1462,7 +1462,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.7</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.8</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1749,7 +1749,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.9.7';
+const APP_VERSION = '2.9.8';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -3255,12 +3255,27 @@ const App = {
 
     // The ◇/◆ control: tap to whole-para highlight, tap again for the picker.
     // Its state reflects whether the paragraph has ANY highlight.
+    //
+    // Where text selection is available (iPhone/iPad/desktop), creating a
+    // NEW highlight this way is redundant with selecting text, and the two
+    // conflicted: once any range highlight existed, hlRecords(pid).length
+    // was already truthy, so tapping ◇ went straight to the picker instead
+    // of ever adding a whole-paragraph tint — there was no way to reach it.
+    // Rather than build a "recolour ranges vs. add a whole-paragraph tint"
+    // choice into the picker, the ◇ (create) state is simply not offered
+    // there — select text instead. ◆ (an existing highlight, of either
+    // kind, from before this change or from Android) still needs to stay
+    // manageable, so it keeps rendering regardless of platform.
+    const offerCreateViaTap = anyHl || !this.rangeHighlightSupported();
     const hlLabel = anyHl
       ? 'Surlignage ' + HL_COLORS[hlColorOf(pid)].label.toLowerCase() + ' — changer la couleur ou retirer'
       : 'Surligner ce paragraphe';
+    const hlBtn = offerCreateViaTap
+      ? `<button class="para-hl-btn${anyHl?' active':''}" onclick="App.onHighlightBtn('${pid}')" title="${anyHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${anyHl?'true':'false'}">${anyHl?'◆':'◇'}</button>`
+      : '';
 
     return `<p class="${cls}${wholeCls}" data-pid="${pid}">${inner}`
-      + `<button class="para-hl-btn${anyHl?' active':''}" onclick="App.onHighlightBtn('${pid}')" title="${anyHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${anyHl?'true':'false'}">${anyHl?'◆':'◇'}</button>`
+      + hlBtn
       + `<button class="para-note-btn" onclick="App.openNoteModal('${pid}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
   },
 
@@ -3746,8 +3761,12 @@ const App = {
   //   not highlighted → highlight immediately in the last-used colour
   //   highlighted     → open the picker to recolour or remove
   onHighlightBtn(pid) {
-    if (hlRecords(pid).length) this.openHlPicker(pid);
-    else this.applyHighlight(pid, State.lastHlColor);
+    if (hlRecords(pid).length) { this.openHlPicker(pid); return; }
+    // The button rendering this is never shown in this state where selection
+    // is available (see paragraphMarkup) -- guard here too in case of stale
+    // cached markup from before this change.
+    if (this.rangeHighlightSupported()) return;
+    this.applyHighlight(pid, State.lastHlColor);
   },
 
   // Writes the store, persists, re-renders just the affected paragraph, and
@@ -3987,19 +4006,31 @@ const App = {
     if (!picker) return;
     const pw = picker.offsetWidth, ph = picker.offsetHeight;
     const M = 10;
+    // iOS Safari: window.innerWidth/innerHeight report the full LAYOUT
+    // viewport, which can include area currently hidden behind the dynamic
+    // toolbar or covered by the keyboard. visualViewport reports what's
+    // actually on screen right now, so clamping against it (when available)
+    // keeps the popover from landing partly off the visible area — the same
+    // distinction startKeyboardTracking() already relies on for the note
+    // editor.
+    const vv = window.visualViewport;
+    const vLeft = vv ? vv.offsetLeft : 0;
+    const vTop = vv ? vv.offsetTop : 0;
+    const vWidth = vv ? vv.width : window.innerWidth;
+    const vHeight = vv ? vv.height : window.innerHeight;
     if (!anchorEl) { // no anchor (shouldn't happen) — centre it
-      picker.style.left = Math.max(M, (window.innerWidth - pw) / 2) + 'px';
-      picker.style.top  = Math.max(M, (window.innerHeight - ph) / 2) + 'px';
+      picker.style.left = Math.max(vLeft + M, vLeft + (vWidth - pw) / 2) + 'px';
+      picker.style.top  = Math.max(vTop + M, vTop + (vHeight - ph) / 2) + 'px';
       return;
     }
     // Accepts either a live element or a pre-captured rect (needed when the
     // real anchor, e.g. the selection toolbar, is about to be hidden).
     const r = anchorEl.getBoundingClientRect ? anchorEl.getBoundingClientRect() : anchorEl;
     let left = r.left + r.width / 2 - pw / 2;
-    left = Math.min(Math.max(M, left), window.innerWidth - pw - M);
+    left = Math.min(Math.max(vLeft + M, left), vLeft + vWidth - pw - M);
     let top = r.bottom + 8;
-    if (top + ph > window.innerHeight - M) top = r.top - ph - 8;  // flip above
-    top = Math.min(Math.max(M, top), window.innerHeight - ph - M);
+    if (top + ph > vTop + vHeight - M) top = r.top - ph - 8;  // flip above
+    top = Math.min(Math.max(vTop + M, top), vTop + vHeight - ph - M);
     picker.style.left = Math.round(left) + 'px';
     picker.style.top  = Math.round(top) + 'px';
   },
@@ -4351,7 +4382,7 @@ const App = {
           <div class="help-icon">◇</div>
           <div class="help-text">
             <div class="help-label">Surligner un paragraphe entier</div>
-            <div class="help-desc">Chaque paragraphe porte une icône losange à droite. Appuyez une fois pour le surligner dans votre dernière couleur utilisée. Le losange devient plein (◆) et le passage est conservé dans <strong>Mon Espace</strong>. Disponible sur tous les appareils.</div>
+            <div class="help-desc">Sur Android et Samsung, chaque paragraphe porte une icône losange à droite : appuyez une fois pour le surligner dans votre dernière couleur utilisée, et le losange devient plein (◆). Sur iPhone, iPad et ordinateur, où l'on peut sélectionner un passage précis (voir ci-dessous), ce losange n'apparaît que sur un paragraphe déjà surligné — il sert alors à changer la couleur ou à retirer le surlignage, pas à en créer un nouveau. Le passage est conservé dans <strong>Mon Espace</strong>.</div>
           </div>
         </div>
 
