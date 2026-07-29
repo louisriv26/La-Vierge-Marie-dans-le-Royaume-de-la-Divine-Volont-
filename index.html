@@ -1340,7 +1340,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.8</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.9.9</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1462,7 +1462,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.8</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.9</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1749,7 +1749,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.9.8';
+const APP_VERSION = '2.9.9';
 
 // ── Config ────────────────────────────────────────────────────────────
 // These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
@@ -2592,8 +2592,26 @@ const App = {
     this.maybeShowOnboarding();
   },
 
+  // Browsers only check for a new service worker automatically on
+  // navigation, throttled to roughly once per 24h — but reopening an
+  // installed PWA from the home screen (iOS/iPadOS especially) typically
+  // RESUMES the existing page rather than performing a fresh navigation, so
+  // that automatic check can go a very long time without ever firing. This
+  // was why the update banner never appeared for an app left open/resumed
+  // rather than fully closed and relaunched. Forcing registration.update()
+  // ourselves — right after registering, and again every time the app
+  // becomes visible — closes that gap regardless of what the browser's own
+  // throttled check would have done.
   registerSW() {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.APP_BASE + 'sw.js', { scope: window.APP_BASE }).catch(() => {});
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register(window.APP_BASE + 'sw.js', { scope: window.APP_BASE })
+      .then(reg => {
+        reg.update().catch(() => {});
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+      })
+      .catch(() => {});
   },
 
   // ── Date rollover ───────────────────────────────────────────
