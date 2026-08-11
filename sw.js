@@ -1,5 +1,5 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '2.9.11';
+const VERSION = '2.17.3';
 
 // Three buckets instead of one. Previously a single version-scoped cache meant
 // every code-only deploy evicted the unchanged 416KB corpus and the fonts, so
@@ -14,10 +14,13 @@ const ALL_CACHES = [SHELL_CACHE, CONTENT_CACHE, FONT_CACHE];
 
 // Icons are precached too: without them a first-run-offline install showed
 // broken icons until one online visit populated the cache opportunistically.
-const SHELL_ASSETS = [
+const REQUIRED_SHELL_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+];
+
+const OPTIONAL_SHELL_ASSETS = [
   './icons/icon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -35,23 +38,82 @@ const FONT_URL = 'https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@
 // Without this, a "lie-fi" connection left the app on the loading screen for
 // the full request timeout even though a perfectly good cached copy existed.
 const NET_TIMEOUT_MS = 3500;
+const FONT_TIMEOUT_MS = 2500;
+
+// Install-time requests bypass the browser HTTP cache. This prevents a new
+// service-worker version from seeding its versioned shell cache with stale
+// bytes that happen to be fresh in the normal HTTP cache. Required reader
+// assets are atomic: if one cannot be obtained, this worker does not activate
+// and the previous working service worker remains in control.
+function scopedRequest(url, cacheMode = 'reload') {
+  return new Request(new URL(url, self.registration.scope).href, { cache: cacheMode });
+}
+
+async function fetchRequired(url) {
+  const req = scopedRequest(url, 'reload');
+  const res = await fetch(req);
+  if (!res || !res.ok) throw new Error('required precache failed: ' + req.url);
+  return { req, res };
+}
+
+async function putRequired(cache, url) {
+  const { req, res } = await fetchRequired(url);
+  await cache.put(req, res.clone());
+}
+
+async function putOptionalReload(cache, url) {
+  try {
+    const { req, res } = await fetchRequired(url);
+    await cache.put(req, res.clone());
+  } catch (_) { /* cosmetic asset: fallback UI remains usable */ }
+}
+
+async function ensureContent(cache, url) {
+  const req = scopedRequest(url, 'reload');
+  if (await cache.match(req)) return;
+  const res = await fetch(req);
+  if (!res || !res.ok) throw new Error('required content precache failed: ' + req.url);
+  await cache.put(req, res.clone());
+}
+
+async function fetchOptionalFont(request) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FONT_TIMEOUT_MS);
+  try { return await fetch(request, { signal: controller.signal }); }
+  finally { clearTimeout(timer); }
+}
+
+async function warmFontCache() {
+  // Fonts remain an optional enhancement. The reader's local Georgia/serif
+  // fallback is always usable; when Google Fonts is reachable, cache both its
+  // stylesheet and every referenced WOFF/WOFF2 resource for later offline use.
+  const fonts = await caches.open(FONT_CACHE);
+  const cssReq = new Request(FONT_URL, { cache: 'reload', mode: 'cors' });
+  const cssRes = await fetchOptionalFont(cssReq);
+  if (!cssRes || !cssRes.ok) return;
+  const cssText = await cssRes.clone().text();
+  await fonts.put(cssReq, cssRes.clone());
+  const urls = [...new Set(Array.from(cssText.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g), m => m[1]))];
+  await Promise.all(urls.map(async url => {
+    try {
+      const req = new Request(url, { cache: 'reload', mode: 'cors' });
+      if (await fonts.match(req)) return;
+      const res = await fetchOptionalFont(req);
+      if (res && (res.ok || res.type === 'opaque')) await fonts.put(req, res.clone());
+    } catch (_) { /* font enhancement is deliberately non-fatal */ }
+  }));
+}
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const shell = await caches.open(SHELL_CACHE);
-    // Individually so one 404 can't fail the whole install
-    await Promise.all(SHELL_ASSETS.map(u => shell.add(u).catch(() => {})));
+    for (const u of REQUIRED_SHELL_ASSETS) await putRequired(shell, u);
+    await Promise.all(OPTIONAL_SHELL_ASSETS.map(u => putOptionalReload(shell, u)));
 
     const content = await caches.open(CONTENT_CACHE);
-    await Promise.all(CONTENT_ASSETS.map(async u => {
-      // Don't refetch corpus that a previous version already cached
-      if (await content.match(u)) return;
-      return content.add(u).catch(() => {});
-    }));
+    for (const u of CONTENT_ASSETS) await ensureContent(content, u);
 
-    const fonts = await caches.open(FONT_CACHE);
-    if (!(await fonts.match(FONT_URL))) await fonts.add(FONT_URL).catch(() => {});
-
+    await warmFontCache().catch(() => {});
     await self.skipWaiting();
   })());
 });
@@ -89,12 +151,29 @@ async function staleWhileRevalidate(request, cacheName) {
 // Prefer the network so a new deployment is picked up, but never let a slow
 // connection block startup: whichever resolves first within the timeout wins,
 // and the cached copy is the fallback.
+function shellCacheKey(request) {
+  // Deep links are query-string routes served by the same app shell. The
+  // install cache contains only './' and './index.html'; matching the full
+  // navigation URL would therefore fail offline for ?open=unit/search routes.
+  // Canonicalise only shell navigations, while preserving the browser's real
+  // URL so startup routing still sees window.location.search.
+  const url = new URL(request.url);
+  if (url.origin === self.location.origin &&
+      (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html'))) {
+    url.search = '';
+    url.hash = '';
+    return new Request(url.href, { method: 'GET' });
+  }
+  return request;
+}
+
 async function networkFirstWithTimeout(request, cacheName) {
   const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
+  const cacheKey = shellCacheKey(request);
+  const cached = await cache.match(cacheKey);
 
-  const network = fetch(request).then(res => {
-    if (res && res.status === 200) cache.put(request, res.clone());
+  const network = fetch(request, { cache: 'no-store' }).then(res => {
+    if (res && res.status === 200) cache.put(cacheKey, res.clone());
     return res;
   });
 

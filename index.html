@@ -83,6 +83,7 @@ window.APP_BASE = (function() {
   --prayer-bg: #F8F6FC;
   --note-bg: #FFFBE8;
   --note-border: #C9A84C;
+  --prayer-text: #2C4A7C;
   --danger: #C0392B;
   --sidebar-w: 300px;
   --rail-w: 220px;
@@ -95,8 +96,8 @@ window.APP_BASE = (function() {
      loads successfully and took priority. Promoted ahead of it: same fonts
      fetched, no new network cost, meaningfully more legible reading. */
   --font-reader: 'Crimson Text', 'IM Fell English', Georgia, serif;
-  --reader-size: 17px;
-  --reader-lh: 1.82;
+  --reader-size: 19px;
+  --reader-lh: 1.84;
   --nav-h: 60px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -107,7 +108,7 @@ window.APP_BASE = (function() {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --primary: #4A7CB8; --primary-light: #5E92CC;
+    --primary: #5E92CC; --primary-light: #78A8DE;
     --accent: #D4A843; --accent-light: #E8C45A;
     /* On the dark ivory (#1A1720) the gold is already legible, so the
        foreground variant is the lighter tone rather than a darker one. */
@@ -120,10 +121,11 @@ window.APP_BASE = (function() {
     --soul-bg: #1E1B2C; --mary-bg: #1A1F30;
     --practice-bg: #1E1C12; --prayer-bg: #1A1720;
     --note-bg: #1C1A0C; --note-border: #C9A84C;
+    --prayer-text: #78A8DE;
   }
 }
 [data-theme="dark"] {
-    --primary: #4A7CB8; --primary-light: #5E92CC;
+    --primary: #5E92CC; --primary-light: #78A8DE;
     --accent: #D4A843; --accent-light: #E8C45A;
     /* On the dark ivory (#1A1720) the gold is already legible, so the
        foreground variant is the lighter tone rather than a darker one. */
@@ -136,6 +138,7 @@ window.APP_BASE = (function() {
     --soul-bg: #1E1B2C; --mary-bg: #1A1F30;
     --practice-bg: #1E1C12; --prayer-bg: #1A1720;
     --note-bg: #1C1A0C; --note-border: #C9A84C;
+    --prayer-text: #78A8DE;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -218,6 +221,7 @@ html, body {
     margin-left: 20px;
   }
   .wt-nav-btn {
+    min-height: 44px;
     padding: 6px 14px;
     border-radius: var(--radius-sm);
     border: none;
@@ -231,6 +235,9 @@ html, body {
     align-items: center;
     gap: 6px;
   }
+  .wt-nav-btn[aria-label="Taille du texte"],
+  .wt-nav-btn[aria-label="Aide"],
+  .wt-nav-btn[aria-label^="Thème"] { min-width: 44px; justify-content: center; padding-left: 10px; padding-right: 10px; }
   .wt-nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
   .wt-nav-btn.active { background: rgba(255,255,255,0.18); color: #fff; }
   .wt-nav-icon { font-size: 16px; }
@@ -285,8 +292,8 @@ html, body {
   .ws-progress-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
 
   /* Sidebar calendar strip */
-  .ws-cal-wrap { padding: 10px 14px 6px; flex-shrink: 0; border-bottom: 0.5px solid var(--border); }
-  .ws-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .ws-cal-wrap { padding: 10px 9px 6px; flex-shrink: 0; border-bottom: 0.5px solid var(--border); }
+  .ws-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
   .ws-cal-cell {
     aspect-ratio: 1;
     display: flex; align-items: center; justify-content: center;
@@ -362,6 +369,7 @@ html, body {
   .wrt-title { font-family: var(--font-reader); font-size: 15px; color: var(--ink); flex: 1; }
   .wrt-actions { display: flex; gap: 6px; }
   .wrt-btn {
+    min-height: 44px;
     padding: 6px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm);
     background: transparent; color: var(--muted); cursor: pointer; font-size: 12px;
     font-family: var(--font-ui); transition: all 0.15s; display: flex; align-items: center; gap: 5px;
@@ -388,6 +396,7 @@ html, body {
     background: var(--ivory); flex-shrink: 0;
   }
   .wrn-btn {
+    min-height: 44px;
     display: flex; align-items: center; gap: 6px; padding: 7px 14px;
     border: 0.5px solid var(--border); border-radius: var(--radius-sm);
     background: transparent; color: var(--muted); cursor: pointer; font-size: 13px;
@@ -419,7 +428,7 @@ html, body {
     position: absolute;
     top: 52px; right: 12px;
     background: var(--white); border: 0.5px solid var(--border);
-    border-radius: var(--radius-md); padding: 14px 18px; width: 260px;
+    border-radius: var(--radius-md); padding: 14px 16px; width: 340px; max-width: calc(100vw - 24px);
     box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 60;
   }
   #wide-textsize-panel.open { display: block; }
@@ -489,7 +498,7 @@ html, body {
   border-radius: var(--radius-sm); padding: 12px 15px; position: relative;
 }
 .para-prayer {
-  font-family: var(--font-reader); font-size: calc(var(--reader-size) - 1px); color: var(--primary);
+  font-family: var(--font-reader); font-size: calc(var(--reader-size) - 1px); color: var(--prayer-text);
   line-height: var(--reader-lh); font-style: italic; text-align: center;
   background: var(--prayer-bg); border: 0.5px solid var(--border);
   border-radius: var(--radius-md); padding: 16px 20px; margin: 4px 0 12px; position: relative;
@@ -498,26 +507,28 @@ html, body {
    They were 22x22 (under the 24px WCAG 2.2 AA minimum), only 24px apart, and
    pinned at top:6px where they sat directly over the first line of text —
    which made long-press text selection near the top-right unreliable.
-   Now 34x34 with 12px of clear space, lifted into the gutter above the
-   paragraph so they no longer overlap the text. The reading column keeps its
-   full width (reserving horizontal space instead would have narrowed it by
-   ~20% on a phone). */
-.para-hl-btn, .para-note-btn {
-  position: absolute; top: -14px;
-  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+   MJV-H raises them to the 44x44 touch-primary target while keeping 12px of
+   clear space and lifting them into the gutter above the paragraph. The reading
+   column keeps its full width (reserving horizontal space instead would have
+   narrowed it by ~20% on a phone). */
+.para-hl-btn, .para-note-btn, .para-report-btn {
+  position: absolute; top: -19px;
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; border-radius: 50%;
   color: var(--muted); font-size: 13px; cursor: pointer; transition: color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.para-hl-btn { right: 46px; }
+.para-hl-btn { right: 56px; }
 .para-note-btn { right: 0; }
+.para-report-btn { left: 0; }
 .para-hl-btn:hover, .para-hl-btn:active,
-.para-note-btn:hover, .para-note-btn:active { color: var(--accent-fg); background: var(--practice-bg); }
+.para-note-btn:hover, .para-note-btn:active,
+.para-report-btn:hover, .para-report-btn:active { color: var(--accent-fg); background: var(--practice-bg); }
 .para-hl-btn.active { color: var(--accent-fg); }
-/* The boxed section types already have inner padding, so their controls sit
-   inside the box rather than above it. */
-.para-practice .para-hl-btn, .para-practice .para-note-btn,
-.para-prayer .para-hl-btn, .para-prayer .para-note-btn { top: 4px; }
+/* Keep the 44px controls in the same gutter for boxed section types too.
+   This avoids covering prayer/practice text while preserving the paragraph box. */
+.para-practice .para-hl-btn, .para-practice .para-note-btn, .para-practice .para-report-btn,
+.para-prayer .para-hl-btn, .para-prayer .para-note-btn, .para-prayer .para-report-btn { top: -19px; }
 /* ══ Highlight colours ══
    Five tints, each with a dark-mode variant. Alphas are deliberately low so the
    body text keeps a high contrast ratio on top of them (verified >10:1 in both
@@ -611,7 +622,7 @@ html, body {
 #hl-picker.open { display: block; }
 .hlp-row { display: flex; gap: 8px; align-items: center; }
 .hlp-swatch {
-  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
   border: 2px solid var(--border); padding: 0;
   -webkit-tap-highlight-color: transparent; transition: transform 0.12s, border-color 0.12s;
 }
@@ -623,7 +634,7 @@ html, body {
 .hlp-swatch.sw-purple { background: #6B57C4; }
 .hlp-swatch.sw-rose   { background: #C0396E; }
 .hlp-remove {
-  margin-top: 9px; width: 100%; min-height: 40px;
+  margin-top: 9px; width: 100%; min-height: 44px;
   background: transparent; border: 0.5px solid var(--border);
   border-radius: var(--radius-sm); color: var(--muted);
   font-size: 13px; font-family: var(--font-ui); cursor: pointer;
@@ -666,7 +677,7 @@ html, body {
 }
 .para-note-icon { color: var(--accent-fg); font-size: 13px; flex-shrink: 0; margin-top: 1px; }
 .para-note-text { font-family: var(--font-ui); font-size: 13px; color: var(--ink); line-height: 1.55; flex: 1; white-space: pre-wrap; word-break: break-word; }
-.para-note-del { color: var(--muted); font-size: 14px; cursor: pointer; padding: 8px 10px; margin: -8px -8px -8px 0; background: transparent; border: none; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
+.para-note-del { color: var(--muted); font-size: 14px; cursor: pointer; min-width: 44px; min-height: 44px; padding: 8px 10px; margin: -8px -8px -8px 0; background: transparent; border: none; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
 .para-note-del:hover { color: var(--danger); }
 
 /* ════════════════════════════════════════════════
@@ -685,7 +696,7 @@ html, body {
 .topbar-title { font-family: var(--font-reader); font-size: 17px; color: var(--ink); font-style: italic; }
 .topbar-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
 .topbar-actions { display: flex; gap: 6px; }
-.topbar-action { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 17px; transition: color 0.15s, background 0.15s; }
+.topbar-action { width: 44px; min-width: 44px; height: 44px; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 17px; transition: color 0.15s, background 0.15s; }
 .topbar-action:hover { background: var(--ivory-deep); color: var(--primary); }
 
 .calendar-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
@@ -708,7 +719,7 @@ html, body {
 /* border matches .cal-cell's 1.5px exactly -- at 1px the read/active ring
    read as noticeably fainter than the calendar days' despite using the same
    colour, since a thinner ring is less visually prominent at this size. */
-.app-circle { position: relative; width: 26px; height: 26px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
+.app-circle { position: relative; width: 28px; height: 28px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
 /* Matches .cal-cell.read exactly (ring + small dot, not a filled background)
    so a read appendix and a read day communicate the same thing the same way. */
 .app-circle.read { color: var(--accent); border-color: var(--accent); background: transparent; }
@@ -731,21 +742,21 @@ html, body {
 .hero-title { font-family: var(--font-reader); font-size: 16px; color: var(--ink); line-height: 1.5; margin-bottom: 10px; }
 .hero-excerpt { font-family: var(--font-reader); font-size: 14px; color: var(--muted); line-height: 1.65; font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px; }
 .hero-cta { display: flex; align-items: center; justify-content: space-between; }
-.hero-read-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--hero-bg); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-ui); transition: background 0.15s; }
+.hero-read-btn { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; background: var(--hero-bg); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-ui); transition: background 0.15s; }
 .hero-read-btn:hover { background: var(--primary-light); }
 .hero-nav-btns { display: flex; gap: 6px; }
-.hero-nav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
+.hero-nav-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
 .hero-nav-btn:hover { color: var(--primary); border-color: var(--primary); }
 .hero-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .list-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 14px 0 8px; }
 
 /* Search bar */
 .search-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
-.search-row { display: flex; align-items: center; gap: 6px; background: var(--ivory-deep); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; }
+.search-row { display: flex; align-items: center; gap: 6px; background: var(--ivory-deep); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 0 10px; min-height: 44px; }
 .search-icon { color: var(--muted); font-size: 13px; flex-shrink: 0; }
-.search-input { flex: 1; border: none; background: transparent; color: var(--ink); font-size: 13px; font-family: var(--font-ui); outline: none; }
+.search-input { flex: 1; min-width: 0; min-height: 44px; border: none; background: transparent; color: var(--ink); font-size: 16px; font-family: var(--font-ui); outline: none; }
 .search-input::placeholder { color: var(--muted); }
-.search-clear { color: var(--muted); font-size: 14px; cursor: pointer; padding: 9px 11px; margin: -9px -6px -9px 0; display: none; background: transparent; border: none; line-height: 1; }
+.search-clear { color: var(--muted); font-size: 14px; cursor: pointer; min-width: 44px; min-height: 44px; padding: 9px 11px; margin: -9px -6px -9px 0; display: none; background: transparent; border: none; line-height: 1; }
 .search-clear.visible { display: block; }
 .search-empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; font-style: italic; }
 
@@ -825,13 +836,13 @@ h1, h2, h3, h4 {
 
 #screen-reader { background: var(--ivory); }
 .reader-topbar { display: flex; align-items: center; gap: 10px; padding: max(8px, env(safe-area-inset-top, 0px)) 16px 8px; background: var(--ivory); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
-.reader-back { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0; }
+.reader-back { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 18px; flex-shrink: 0; }
 .reader-back:hover { color: var(--primary); border-color: var(--primary); }
 .reader-topbar-info { flex: 1; min-width: 0; }
 .reader-topbar-day { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-fg); font-weight: 600; }
 .reader-topbar-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .reader-topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.reader-icon-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
+.reader-icon-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
 .reader-icon-btn:hover, .reader-icon-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
 .reader-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .reader-hero { background: var(--hero-bg); padding: 20px 20px 18px; }
@@ -839,26 +850,73 @@ h1, h2, h3, h4 {
 .reader-hero-title { font-family: var(--font-reader); font-size: 19px; color: #fff; line-height: 1.45; }
 .reader-body { padding: 0 20px 20px; }
 .reader-nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 6px; flex-shrink: 0; border-top: 0.5px solid var(--border); }
-.reader-nav-btn { display: flex; align-items: center; gap: 5px; padding: 8px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; font-size: 12.5px; font-family: var(--font-ui); transition: all 0.15s; max-width: 45%; }
+.reader-nav-btn { min-height: 44px; display: flex; align-items: center; gap: 5px; padding: 8px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; font-size: 12.5px; font-family: var(--font-ui); transition: all 0.15s; max-width: 45%; }
 .reader-nav-btn:hover { color: var(--primary); border-color: var(--primary); }
 .reader-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .reader-nav-btn .nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
 .reader-nav-center { font-size: 11px; color: var(--muted); text-align: center; }
 .reader-actionbar { display: flex; align-items: center; padding: 10px 16px calc(10px + var(--safe-bottom)); background: var(--ivory); border-top: 0.5px solid var(--border); gap: 8px; flex-shrink: 0; }
+@media (max-width: 240px) {
+  /* MJV-H.1 deep reflow hardening: at a 200%-equivalent phone viewport the
+     seven-column calendar cannot simultaneously preserve 44px touch targets
+     and reflow without clipping. Switch only this extreme-width layout to a
+     three-column calendar and let the appendix row wrap. */
+  .calendar-wrap { padding-left: 12px; padding-right: 12px; }
+  .calendar-grid { grid-template-columns: repeat(3, 44px); justify-content: space-between; gap: 6px 4px; }
+  .cal-cell { width: 44px; height: 44px; aspect-ratio: auto; justify-self: center; }
+  .appendix-row { flex-wrap: wrap; }
+  .appendix-label { flex: 1 0 100%; margin-right: 0; }
+  .hero-cta { flex-direction: column; align-items: stretch; gap: 8px; }
+  .hero-read-btn { width: 100%; justify-content: center; }
+  .hero-nav-btns { width: 100%; justify-content: space-between; }
+
+  .reader-topbar-info { display: none; }
+  .reader-topbar { gap: 8px; padding-left: 8px; padding-right: 8px; }
+  .reader-actionbar { flex-wrap: wrap; }
+  .reader-actionbar .action-btn { flex: 1 1 calc(50% - 4px); min-width: 0; }
+  .reader-nav { padding-left: 8px; padding-right: 8px; gap: 6px; }
+  .reader-nav-btn { flex: 0 0 44px; min-width: 44px; max-width: 44px; padding-left: 8px; padding-right: 8px; justify-content: center; }
+  .reader-nav-center { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .reader-nav-btn .nav-label { display: none; }
+
+  /* Dialogs and support surfaces must reflow too, not just the reader. */
+  #today-modal, #onboard-modal { padding: 8px; }
+  #today-modal-header { padding: 10px 12px; flex-wrap: wrap; gap: 6px; }
+  #today-modal-close { flex: 1 0 100%; }
+  #today-modal-body { padding: 14px 12px 18px; }
+  #onboard-head { padding: 16px 12px 14px; }
+  #onboard-body { padding: 14px 12px 6px; }
+  #onboard-foot { padding: 10px 12px calc(12px + var(--safe-bottom)); flex-direction: column; align-items: stretch; }
+  #onboard-aide-btn, #onboard-start-btn { width: 100%; }
+  .onb-item { gap: 8px; }
+  .onb-label, .onb-desc, .help-label, .help-desc, .help-tip { overflow-wrap: anywhere; }
+
+  .modal-header, .modal-body, .modal-footer { padding-left: 12px; padding-right: 12px; }
+  .modal-subtitle { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+  .restore-row { flex-direction: column; gap: 2px; }
+  .restore-row strong { text-align: left; overflow-wrap: anywhere; }
+
+  /* The diagnostic sheet is user-reachable by triple-tapping the version. */
+  #debug-box { min-width: 0; width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 14px 12px; }
+  #debug-box td:first-child { white-space: normal; padding-right: 8px; }
+  #debug-box > button:not(#debug-close) { width: 100%; margin-right: 0 !important; margin-top: 12px; }
+
+  .toast { max-width: calc(100vw - 16px); white-space: normal; text-align: center; }
+  .toast.with-action { flex-wrap: wrap; justify-content: center; padding-right: 18px; }
+}
 .action-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-family: var(--font-ui); transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
 .action-btn .action-icon { font-size: 18px; }
 .action-btn:hover, .action-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
 .action-btn.complete-btn.done { color: var(--accent); border-color: var(--accent); background: var(--practice-bg); }
 
-/* Text size panel (mobile) */
-.textsize-panel { display: none; position: absolute; bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px); left: 50%; transform: translateX(-50%); background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 14px 18px; width: 260px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 50; }
+/* Text size panel (mobile + wide): four semantic levels shared with the reader. */
+.textsize-panel { display: none; position: absolute; bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px); left: 50%; transform: translateX(-50%); background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; width: 340px; max-width: calc(100vw - 24px); box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 50; }
 .textsize-panel.open { display: block; }
 .textsize-panel-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; }
-.textsize-row { display: flex; align-items: center; gap: 10px; }
-.textsize-small { font-size: 13px; color: var(--muted); font-family: var(--font-reader); }
-.textsize-large { font-size: 19px; color: var(--muted); font-family: var(--font-reader); }
-.textsize-slider { flex: 1; accent-color: var(--primary); cursor: pointer; }
-.textsize-value { font-size: 12px; color: var(--primary); font-weight: 500; min-width: 30px; text-align: right; }
+.textsize-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.textsize-option { min-height: 44px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--ivory); color: var(--ink); font: 600 13px var(--font-ui); cursor: pointer; padding: 8px 10px; }
+.textsize-option[aria-pressed="true"] { background: var(--hero-bg); border-color: var(--hero-bg); color: #fff; }
+.textsize-option:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .textsize-preview { margin-top: 12px; padding: 10px 12px; background: var(--ivory); border-radius: var(--radius-sm); font-family: var(--font-reader); font-size: var(--reader-size); color: var(--ink); line-height: var(--reader-lh); font-style: italic; }
 
 /* Bottom nav (mobile) */
@@ -878,6 +936,12 @@ h1, h2, h3, h4 {
 .fav-card.hl-card.hl-purple { border-left-color: #6B57C4; }
 .fav-card.hl-card.hl-rose   { border-left-color: #C0396E; }
 .fav-card.hl-card .fav-card-day { color: var(--muted); }
+.stale-hl-wrap { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:stretch; margin-bottom:7px; }
+.stale-hl-wrap .fav-card { margin-bottom:0; cursor:default; }
+.stale-hl-card { border-left:3px solid var(--danger) !important; background:var(--ivory); }
+.stale-hl-card .fav-card-day { color:var(--danger) !important; }
+.stale-hl-remove { width:44px; min-height:44px; border:0.5px solid var(--border); border-radius:10px; background:var(--ivory); color:var(--danger); cursor:pointer; font-family:var(--font-ui); font-size:13px; font-weight:600; }
+.stale-hl-remove:hover, .stale-hl-remove:focus-visible { border-color:var(--danger); }
 .stat-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
 .stat-num { font-size: 26px; font-weight: 500; line-height: 1; }
 /* #27AE60 measured 2.87:1 on the white stat-card -- fails AA even in light
@@ -898,8 +962,13 @@ h1, h2, h3, h4 {
 .fav-card:hover { border-color: var(--primary); }
 .fav-card-day { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-fg); font-weight: 600; margin-bottom: 4px; }
 .fav-card-text { font-family: var(--font-reader); font-size: 14px; color: var(--ink); line-height: 1.55; font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.note-espace-card { background: var(--note-bg); border: 0.5px solid var(--note-border); border-radius: var(--radius-md); padding: 13px 15px; margin-bottom: 7px; cursor: pointer; }
+.note-espace-wrap { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; align-items: stretch; margin-bottom: 7px; }
+.note-espace-card { background: var(--note-bg); border: 0.5px solid var(--note-border); border-radius: var(--radius-md); padding: 13px 15px; cursor: pointer; text-align: left; min-width: 0; }
 .note-espace-card:hover { border-color: var(--accent); }
+.note-espace-actions { display: flex; gap: 4px; align-items: stretch; }
+.note-espace-action { width: 44px; min-height: 44px; border: 0.5px solid var(--note-border); border-radius: 10px; background: var(--note-bg); color: var(--muted); cursor: pointer; font-family: var(--font-ui); font-size: 14px; }
+.note-espace-action:hover, .note-espace-action:focus-visible { color: var(--primary); border-color: var(--primary); }
+.note-espace-action.delete:hover, .note-espace-action.delete:focus-visible { color: var(--danger); border-color: var(--danger); }
 .note-espace-meta { font-size: 10px; color: var(--accent-fg); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .note-espace-text { font-size: 13px; color: var(--ink); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .espace-empty { text-align: center; padding: 40px 20px; }
@@ -930,10 +999,10 @@ h1, h2, h3, h4 {
 .modal-subtitle { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .modal-body { padding: 14px 18px; flex: 1; overflow-y: auto; }
 .note-excerpt { font-family: var(--font-reader); font-size: 14px; color: var(--muted); font-style: italic; line-height: 1.6; padding: 10px 12px; background: var(--soul-bg); border-radius: var(--radius-sm); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.note-textarea { width: 100%; min-height: 120px; background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px; font-size: 15px; font-family: var(--font-ui); color: var(--ink); line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.15s; }
+.note-textarea { width: 100%; min-height: 120px; background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px; font-size: 16px; font-family: var(--font-ui); color: var(--ink); line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.15s; }
 .note-textarea:focus { border-color: var(--primary); }
 .modal-footer { padding: 12px 18px calc(12px + var(--safe-bottom)); display: flex; gap: 8px; border-top: 0.5px solid var(--border); }
-.modal-btn { flex: 1; padding: 11px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); font-size: 14px; font-family: var(--font-ui); cursor: pointer; transition: all 0.15s; }
+.modal-btn { flex: 1; min-height: 44px; padding: 11px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); font-size: 14px; font-family: var(--font-ui); cursor: pointer; transition: all 0.15s; }
 .modal-btn-cancel { background: transparent; color: var(--muted); }
 .modal-btn-cancel:hover { background: var(--ivory-deep); }
 .modal-btn-save { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); }
@@ -944,13 +1013,13 @@ h1, h2, h3, h4 {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 /* Undo variant — must accept clicks, so it opts out of the base pointer-events:none */
 .toast.with-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding-right: 8px; }
-.toast-undo-btn { background: rgba(255,255,255,0.2); color: var(--ivory); border: none; border-radius: 14px; padding: 5px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; min-height: 30px; }
+.toast-undo-btn { background: rgba(255,255,255,0.2); color: var(--ivory); border: none; border-radius: 14px; padding: 5px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; min-height: 44px; }
 .toast-undo-btn:hover { background: rgba(255,255,255,0.32); }
 
 /* Deferred SW-update banner — shown instead of a forced reload when the
    note modal is open with unsaved text, so a draft is never silently lost. */
 .update-banner { position: fixed; left: 50%; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); transform: translateX(-50%); background: var(--hero-bg); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-family: var(--font-ui); display: flex; align-items: center; gap: 10px; z-index: 200; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-.update-banner button { background: rgba(255,255,255,0.18); color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; }
+.update-banner button { min-height: 44px; background: rgba(255,255,255,0.18); color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; }
 .update-banner button:hover { background: rgba(255,255,255,0.28); }
 
 
@@ -1029,10 +1098,27 @@ h1, h2, h3, h4 {
    splitting reading across two devices/the physical book may never see
    31/31 on this one, so the reset can't be gated on it. Plain outline by
    default; .ready adds the gold "you've actually finished" treatment. */
-.cycle-btn { flex-shrink: 0; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.3s; }
+.cycle-btn { flex-shrink: 0; min-height: 44px; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.3s; }
 .cycle-btn:hover { border-color: var(--primary); color: var(--primary); }
 .cycle-card.ready .cycle-btn { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
 .cycle-card.ready .cycle-btn:hover { color: #fff; }
+
+/* MJV-B — local backup / restore workspace. Kept visually secondary to the
+   devotional content, but every action is a real 44px+ button. */
+.backup-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; }
+.backup-status { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+.backup-status strong { color: var(--ink); font-weight: 600; }
+.backup-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.backup-btn { min-height: 44px; padding: 9px 10px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--ivory); color: var(--ink); font-size: 12px; font-weight: 600; font-family: var(--font-ui); cursor: pointer; line-height: 1.3; }
+.backup-btn:hover, .backup-btn:focus-visible { border-color: var(--primary); color: var(--primary); }
+.backup-btn.primary { background: var(--hero-bg); border-color: var(--hero-bg); color: #fff; }
+.backup-btn.primary:hover, .backup-btn.primary:focus-visible { color: #fff; background: var(--primary-light); }
+.restore-summary { display: grid; gap: 8px; }
+.restore-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); padding-bottom: 7px; border-bottom: 0.5px solid var(--border-light); }
+.restore-row strong { color: var(--ink); font-weight: 600; text-align: right; }
+.restore-warning { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--practice-bg); border: 0.5px solid var(--accent); color: var(--ink); font-size: 12px; line-height: 1.55; }
+.restore-errors { margin-top: 10px; color: var(--danger); font-size: 12px; line-height: 1.5; }
+@media (max-width: 520px) { .backup-actions { grid-template-columns: 1fr; } }
 
 .help-section { margin-bottom: 24px; }
 .help-section-title {
@@ -1056,6 +1142,8 @@ h1, h2, h3, h4 {
   font-family: var(--font-reader); font-size: 13px; color: var(--ink); line-height: 1.65;
   font-style: italic;
 }
+[aria-label="Fermer l’aide"] { min-width: 44px; min-height: 44px; }
+
 /* Today card — clickable hint */
 .today-actions-card,
 .ws-today-card {
@@ -1151,6 +1239,7 @@ h1, h2, h3, h4 {
   font-family: var(--font-reader); font-style: italic;
 }
 #today-modal-close {
+  min-height: 44px; min-width: 44px;
   background: transparent; border: 0.5px solid var(--border);
   border-radius: 8px; padding: 5px 12px;
   color: var(--muted); font-size: 13px; cursor: pointer;
@@ -1327,11 +1416,12 @@ h1, h2, h3, h4 {
 #debug-box td { padding: 4px 0; vertical-align: top; }
 #debug-box td:first-child { color: var(--muted); padding-right: 16px; white-space: nowrap; }
 #debug-box td:last-child { font-weight: 600; word-break: break-all; }
+#debug-box button { min-height: 44px; padding: 9px 12px; font-family: var(--font-ui); cursor: pointer; }
 #debug-close {
-  margin-top: 16px; width: 100%;
+  margin-top: 16px; width: 100%; min-height: 44px;
   background: var(--hero-bg); color: #fff;
   border: none; border-radius: 8px;
-  padding: 9px; font-size: 13px; cursor: pointer;
+  padding: 9px 12px; font-size: 13px; cursor: pointer;
 }
 </style>
 </head>
@@ -1352,11 +1442,11 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.9.11</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.17.3</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
-        <button class="topbar-action" onclick="App.showScreen('list')" aria-label="Voir tous les jours">☰</button>
+        <button class="topbar-action" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
     <div class="calendar-wrap">
@@ -1366,7 +1456,7 @@ h1, h2, h3, h4 {
     </div>
     <div class="progress-wrap">
       <div class="progress-row">
-        <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="37">
+        <div class="progress-bar-track" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="37">
           <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
         </div>
         <div class="progress-label" id="progress-label">0 / 37</div>
@@ -1378,12 +1468,12 @@ h1, h2, h3, h4 {
     <div class="hero-scroll" id="hero-scroll"></div>
   </div>
 
-  <div id="screen-list" class="screen">
+  <div id="screen-list" class="screen" data-list-mode="jours">
     <div class="topbar">
-      <div><h1 class="topbar-title">Les 31 Jours</h1><div class="topbar-sub">Vierge Marie — Luisa Piccarreta</div></div>
-      <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
+      <div><h1 class="topbar-title" id="mobile-list-title">Les 31 Jours</h1><div class="topbar-sub" id="mobile-list-sub">31 méditations · 6 appendices</div></div>
+      <button class="topbar-action" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button>
     </div>
-    <div class="search-wrap">
+    <div class="search-wrap" id="mobile-list-search">
       <div class="search-row">
         <span class="search-icon">⌕</span>
         <input class="search-input" id="search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" oninput="App.onSearch(this.value,'list-scroll','search-clear')">
@@ -1402,9 +1492,10 @@ h1, h2, h3, h4 {
       </div>
       <div class="reader-topbar-actions">
         <button class="reader-icon-btn" id="btn-textsize" onclick="App.toggleTextsizePanel()" aria-label="Taille du texte">Aᵃ</button>
+        <button class="reader-icon-btn" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
-    <div class="reader-scroll" id="reader-scroll">
+    <div class="reader-scroll" id="reader-scroll" role="region" aria-label="Lecture" tabindex="-1">
       <div class="reader-hero">
         <div class="reader-hero-badge" id="reader-hero-badge"></div>
         <h2 class="reader-hero-title" id="reader-hero-title"></h2>
@@ -1412,9 +1503,9 @@ h1, h2, h3, h4 {
       <div class="reader-body" id="reader-body"></div>
     </div>
     <div class="reader-nav">
-      <button class="reader-nav-btn" id="reader-prev" disabled>← <span class="nav-label" id="reader-prev-label">Précédent</span></button>
+      <button class="reader-nav-btn" id="reader-prev" aria-label="Jour précédent" disabled>← <span class="nav-label" id="reader-prev-label">Précédent</span></button>
       <div class="reader-nav-center" id="reader-nav-center"></div>
-      <button class="reader-nav-btn" id="reader-next" disabled><span class="nav-label" id="reader-next-label">Suivant</span> →</button>
+      <button class="reader-nav-btn" id="reader-next" aria-label="Jour suivant" disabled><span class="nav-label" id="reader-next-label">Suivant</span> →</button>
     </div>
     <div class="reader-actionbar">
       <button class="action-btn complete-btn" id="btn-complete" onclick="App.toggleComplete()">
@@ -1427,14 +1518,17 @@ h1, h2, h3, h4 {
       <button class="action-btn" onclick="App.shareDay()">
         <span class="action-icon">↑</span><span>Partager</span>
       </button>
+      <button class="action-btn" onclick="App.copyCurrentLink()" aria-label="Copier le lien de ce passage">
+        <span class="action-icon">↗</span><span>Lien</span>
+      </button>
     </div>
     <div class="textsize-panel" id="textsize-panel">
       <div class="textsize-panel-label">Taille du texte</div>
-      <div class="textsize-row">
-        <span class="textsize-small" aria-hidden="true">A</span>
-        <input type="range" class="textsize-slider" id="textsize-slider" min="14" max="22" step="1" value="17" aria-label="Taille du texte" oninput="App.applyTextSize(this.value)">
-        <span class="textsize-large" aria-hidden="true">A</span>
-        <span class="textsize-value" id="textsize-value">17</span>
+      <div class="textsize-options" role="group" aria-label="Taille du texte">
+        <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" onclick="App.applyTextSize('small')">Petit</button>
+        <button type="button" class="textsize-option" data-text-level="normal" aria-pressed="true" onclick="App.applyTextSize('normal')">Normal</button>
+        <button type="button" class="textsize-option" data-text-level="large" aria-pressed="false" onclick="App.applyTextSize('large')">Grand</button>
+        <button type="button" class="textsize-option" data-text-level="xlarge" aria-pressed="false" onclick="App.applyTextSize('xlarge')">Très grand</button>
       </div>
       <div class="textsize-preview">« Ma fille, écoute-moi… »</div>
     </div>
@@ -1443,6 +1537,7 @@ h1, h2, h3, h4 {
   <div id="screen-espace" class="screen">
     <div class="topbar">
       <div><h1 class="topbar-title">Mon Espace</h1><div class="topbar-sub">Surlignés · Notes · Progression</div></div>
+      <div class="topbar-actions"><button class="topbar-action" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button></div>
     </div>
     <div class="espace-scroll" id="espace-scroll"></div>
   </div>
@@ -1451,7 +1546,7 @@ h1, h2, h3, h4 {
     <div class="topbar">
       <div><h1 class="topbar-title">Aide</h1><div class="topbar-sub">Comment utiliser l'application</div></div>
       <div class="topbar-actions">
-        <button class="topbar-action" onclick="App.showScreen('home')" aria-label="Accueil">⌂</button>
+        <button class="topbar-action" onclick="App.closeHelp()" aria-label="Fermer l’aide">✕</button>
       </div>
     </div>
     <div class="espace-scroll" id="aide-scroll" style="padding:16px"></div>
@@ -1459,9 +1554,9 @@ h1, h2, h3, h4 {
 
   <nav class="bottom-nav" id="bottom-nav" aria-label="Navigation principale">
     <button class="nav-btn active" id="nav-home" onclick="App.showScreen('home')" aria-label="Accueil"><span class="nav-icon">⌂</span>Accueil</button>
-    <button class="nav-btn" id="nav-list" onclick="App.showScreen('list')" aria-label="Jours"><span class="nav-icon">◎</span>Jours</button>
+    <button class="nav-btn" id="nav-list" onclick="App.openJours()" aria-label="Jours"><span class="nav-icon">◎</span>Jours</button>
+    <button class="nav-btn" id="nav-search" onclick="App.openSearchNav()" aria-label="Recherche"><span class="nav-icon">⌕</span>Recherche</button>
     <button class="nav-btn" id="nav-espace" onclick="App.showScreen('espace')" aria-label="Mon Espace"><span class="nav-icon">♡</span>Mon Espace</button>
-    <button class="nav-btn" id="nav-aide" onclick="App.showScreen('aide')" aria-label="Aide"><span class="nav-icon">?</span>Aide</button>
   </nav>
 </div>
 
@@ -1474,20 +1569,19 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.9.11</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.17.3</span>
     <nav class="wt-nav" aria-label="Navigation principale">
-      <button class="wt-nav-btn active" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
+      <button class="wt-nav-btn active" data-primary-nav="true" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
       </button>
-      <button class="wt-nav-btn" id="wnav-espace" onclick="App.wideNav('espace')" aria-label="Mon Espace" aria-pressed="false">
+      <button class="wt-nav-btn" data-primary-nav="true" id="wnav-search" onclick="App.wideNav('search')" aria-label="Recherche" aria-pressed="false">
+        <span class="wt-nav-icon">⌕</span> Recherche
+      </button>
+      <button class="wt-nav-btn" data-primary-nav="true" id="wnav-espace" onclick="App.wideNav('espace')" aria-label="Mon Espace" aria-pressed="false">
         <span class="wt-nav-icon">♡</span> Mon Espace
       </button>
-      <button class="wt-nav-btn" id="wnav-textsize" onclick="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">
-        Aᵃ
-      </button>
-      <button class="wt-nav-btn" id="wnav-aide" onclick="App.wideNav('aide')" aria-label="Aide" aria-pressed="false">
-        <span class="wt-nav-icon">?</span> Aide
-      </button>
+      <button class="wt-nav-btn" id="wnav-textsize" onclick="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">Aᵃ</button>
+      <button class="wt-nav-btn" id="wnav-aide" onclick="App.openHelp()" aria-label="Aide" title="Aide"><span class="wt-nav-icon">?</span></button>
       <button class="wt-nav-btn" id="wnav-dark" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
     </nav>
   </div>
@@ -1501,16 +1595,16 @@ h1, h2, h3, h4 {
   <!-- Text size panel (wide) -->
   <div id="wide-textsize-panel">
     <div class="textsize-panel-label">Taille du texte</div>
-    <div class="textsize-row">
-      <span class="textsize-small" aria-hidden="true">A</span>
-      <input type="range" class="textsize-slider" id="wide-textsize-slider" min="14" max="22" step="1" value="17" aria-label="Taille du texte" oninput="App.applyTextSize(this.value)">
-      <span class="textsize-large" aria-hidden="true">A</span>
-      <span class="textsize-value" id="wide-textsize-value">17</span>
+    <div class="textsize-options" role="group" aria-label="Taille du texte">
+      <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" onclick="App.applyTextSize('small')">Petit</button>
+      <button type="button" class="textsize-option" data-text-level="normal" aria-pressed="true" onclick="App.applyTextSize('normal')">Normal</button>
+      <button type="button" class="textsize-option" data-text-level="large" aria-pressed="false" onclick="App.applyTextSize('large')">Grand</button>
+      <button type="button" class="textsize-option" data-text-level="xlarge" aria-pressed="false" onclick="App.applyTextSize('xlarge')">Très grand</button>
     </div>
     <div class="textsize-preview">« Ma fille, écoute-moi… »</div>
   </div>
 
-  <div id="wide-body">
+  <div id="wide-body" role="main">
 
     <!-- Sidebar -->
     <aside id="wide-sidebar">
@@ -1542,7 +1636,7 @@ h1, h2, h3, h4 {
     </aside>
 
     <!-- Reader panel -->
-    <main id="wide-reader">
+    <div id="wide-reader">
       <!-- Welcome state -->
       <div id="wide-welcome">
         <div class="ww-icon">✦</div>
@@ -1564,10 +1658,11 @@ h1, h2, h3, h4 {
               <span id="wide-activate-icon">✦</span> <span id="wide-activate-label">Activer</span>
             </button>
             <button class="wrt-btn" onclick="App.shareDay()">↑ Partager</button>
+            <button class="wrt-btn" onclick="App.copyCurrentLink()">↗ Lien</button>
           </div>
         </div>
 
-        <div id="wide-reader-scroll">
+        <div id="wide-reader-scroll" role="region" aria-label="Lecture" tabindex="-1">
           <div class="wr-hero">
             <div class="wr-hero-badge" id="wide-hero-badge"></div>
             <div class="wr-hero-title" id="wide-hero-title"></div>
@@ -1585,11 +1680,11 @@ h1, h2, h3, h4 {
       <!-- Aide panel (inside main, replaces reader content) -->
       <div id="wide-aide" style="display:none;flex:1;overflow-y:auto;background:var(--ivory);">
         <div style="position:sticky;top:0;z-index:2;background:var(--ivory);padding:10px 28px 0;display:flex;justify-content:flex-end;">
-          <button onclick="App.wideNav('jours')" style="background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:13px;cursor:pointer;">✕ Fermer</button>
+          <button onclick="App.closeHelp()" style="background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:13px;cursor:pointer;" aria-label="Fermer l’aide">✕ Fermer</button>
         </div>
       </div>
 
-    </main>
+    </div>
 
     <!-- Mon Espace panel -->
     <div id="wide-espace"></div>
@@ -1681,7 +1776,7 @@ h1, h2, h3, h4 {
   <div id="debug-box">
     <h3>⚙ Debug</h3>
     <table id="debug-table"></table>
-    <button id="debug-close" onclick="App.hideDebug()">Fermer</button>
+    <button type="button" onclick="App.copyDiagnostics()" style="margin-right:8px">Copier diagnostics</button><button id="debug-close" onclick="App.hideDebug()">Fermer</button>
   </div>
 </div>
 
@@ -1695,7 +1790,7 @@ h1, h2, h3, h4 {
     </div>
     <div class="modal-body">
       <div class="note-excerpt" id="note-modal-excerpt"></div>
-      <textarea class="note-textarea" id="note-textarea" placeholder="Votre réflexion personnelle…" maxlength="1000" rows="5"></textarea>
+      <textarea class="note-textarea" id="note-textarea" aria-label="Votre réflexion personnelle" placeholder="Votre réflexion personnelle…" maxlength="1000" rows="5"></textarea>
       <div style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px"><span id="note-char-count">0</span> / 1000</div>
     </div>
     <div class="modal-footer">
@@ -1705,8 +1800,29 @@ h1, h2, h3, h4 {
   </div>
 </div>
 
+<input id="backup-file-input" type="file" accept="application/json,.json" hidden onchange="App.handleRestoreFile(event)">
+<div class="modal-overlay" id="restore-modal" role="dialog" aria-modal="true" aria-labelledby="restore-modal-title" onclick="App.closeRestoreModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="restore-modal-title">Restaurer une sauvegarde</div>
+      <div class="modal-subtitle" id="restore-modal-subtitle">Vérifiez avant de remplacer les données de cet appareil.</div>
+    </div>
+    <div class="modal-body">
+      <div class="restore-summary" id="restore-summary"></div>
+      <div class="restore-warning">La restauration utilise le mode <strong>Remplacer</strong> : seules les données couvertes par la sauvegarde seront remplacées. La sauvegarde est validée entièrement avant toute écriture. En cas d’échec d’écriture, l’état précédent est restauré.</div>
+      <div class="restore-errors" id="restore-errors" hidden></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-cancel" onclick="App.closeRestoreModal()">Annuler</button>
+      <button class="modal-btn modal-btn-save" id="restore-confirm-btn" onclick="App.commitRestore()">Remplacer mes données</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', ACTIVE_DAY:'mjv_active_day', ACTIVE_APPENDIX:'mjv_active_appendix', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded', HL_COLOR:'mjv_hl_color', FAV_MIGRATED:'mjv_fav_migrated' };
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', TEXT_SIZE_SCHEMA:'mjv_textsize_schema', ACTIVE_DAY:'mjv_active_day', ACTIVE_APPENDIX:'mjv_active_appendix', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded', HL_COLOR:'mjv_hl_color', FAV_MIGRATED:'mjv_fav_migrated', THEME:'mjv_theme', LAST_BACKUP:'mjv_last_backup', RESTORE_TXN:'mjv_restore_txn' };
+const NOTE_STORAGE_SCHEMA_VERSION = 1;
 
 // Highlight colours. 'gold' is the default and the value every pre-v2.7.0
 // highlight migrates to. Keys are stored, not the CSS values, so the palette can
@@ -1723,26 +1839,35 @@ const HL_DEFAULT = 'gold';
 // ── Highlight records ─────────────────────────────────────────────────
 // A paragraph can hold several independent highlights, so the store is
 //   Map<paragraph_id, HighlightRecord[]>
-// with HighlightRecord = { id, color, range: {start,end}|null, text, ts }.
+// MJV-D record shape:
+//   { id, color, range:{start,end}|null, text, ts,
+//     text_fingerprint, corpus_version, status, recovery }
 //
-//   range: null            → the WHOLE paragraph (the Android mode, and still
-//                            available everywhere via the ◇ button)
-//   range: {start,end}      → a character span of the paragraph's source text,
-//                            offsets against corpus text (immutable), so they
-//                            survive re-render.
+// `text_fingerprint` is the SHA-256 already published on each corpus paragraph:
+// SHA-256 of the exact UTF-8 `para.text` field, never rendered HTML. New records
+// bind to that fingerprint at creation. Legacy records are enriched only after
+// the corpus is loaded and their target is reconciled.
 //
-// Offsets are stored rather than DOM positions because renderReaderBody
-// regenerates the paragraph's innerHTML; anything DOM-anchored would not
-// survive a single state change.
+// status: 'active' | 'recovered' | 'stale'
+// - active: offsets/paragraph binding match the current paragraph.
+// - recovered: the saved phrase had one unique conservative match after a
+//   paragraph-text change (or a whole-paragraph ID remained stable).
+// - stale: the phrase could not be re-anchored uniquely; it is retained and
+//   surfaced in Mon Espace, but NEVER rendered at guessed offsets.
+//
+// range:null remains the Android whole-paragraph mode. Range offsets always use
+// original corpus-text coordinates; BUTTON/gutter text is excluded by the
+// existing TreeWalker and must never enter those coordinates.
 const hlRecords = pid => State.highlights.get(pid) || [];
-const hasWholeParaHl = pid => hlRecords(pid).some(h => !h.range);
-const wholeParaHl = pid => hlRecords(pid).find(h => !h.range) || null;
-const rangeHls = pid => hlRecords(pid).filter(h => h.range);
+const activeHlRecords = pid => hlRecords(pid).filter(h => h && h.status !== 'stale');
+const hasWholeParaHl = pid => activeHlRecords(pid).some(h => !h.range);
+const wholeParaHl = pid => activeHlRecords(pid).find(h => !h.range) || null;
+const rangeHls = pid => activeHlRecords(pid).filter(h => h.range);
 const safeColor = c => (typeof c === 'string' && HL_COLORS[c]) ? c : HL_DEFAULT;
 // Colour shown on the ◇/◆ control: the whole-paragraph highlight's colour if
 // there is one, otherwise the first range highlight's.
 const hlColorOf = pid => {
-  const recs = hlRecords(pid);
+  const recs = activeHlRecords(pid);
   const whole = recs.find(h => !h.range);
   return safeColor((whole || recs[0] || {}).color);
 };
@@ -1761,25 +1886,44 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.9.11';
+const APP_VERSION = '2.17.3';
+
+// MJV-B backup contract. The corpus is read-only in this roadmap, so its exact
+// SHA-256 is a stable identity for this release. A future corpus generation may
+// still restore a v1 backup only after every referenced stable ID reconciles.
+const BACKUP_FORMAT = 'MJV_LOCAL_BACKUP';
+const BACKUP_SCHEMA_VERSION = 4;
+const BACKUP_MAX_BYTES = 2 * 1024 * 1024;
+const CORPUS_ID = 'VM_DV';
+const CORPUS_VERSION = '1.0.0';
+const CORPUS_FINGERPRINT_SHA256 = '63211c89125db278a971dbf1bd658d5fb9b7bd1a2128f130f930ed6783a14364';
+const INITIAL_ROUTE_SEARCH = window.location.search;
+const RESTORE_TARGET_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.NOTES, SK.HIGHLIGHTS, SK.SCROLL, SK.THEME, SK.TEXT_SIZE, SK.TEXT_SIZE_SCHEMA, SK.ONBOARDED, SK.HL_COLOR, SK.FAV_MIGRATED, SK.FAVORITES]);
+
 
 // ── Config ────────────────────────────────────────────────────────────
-// These were scattered as bare literals (31, 37, 14, 22) across loadStorage,
-// applyTextSize, both calendar loops, the progress fallbacks and the cycle gate,
+// These were scattered as bare literals across loadStorage, text sizing,
+// both calendar loops, the progress fallbacks and the cycle gate,
 // so a content change meant hunting each one and missing one meant the calendar,
 // progress bar and cycle button silently disagreed.
 const CFG = {
   DAYS: 31,             // calendar cells / main devotional days
   APPENDICES: 6,        // fixed corpus constant, see constants doc
-  TEXT_MIN: 14,
-  TEXT_MAX: 22,
-  TEXT_DEFAULT: 17,
+  TEXT_DEFAULT: 'normal',
   UNITS_FALLBACK: 37,   // only used before the corpus has loaded
   SCROLL_MIN_SAVE: 40,  // don't persist trivial reading offsets
   NOTE_MAX: 1000,
 };
 
-const clampTextSize = n => Pure.clampTextSize(n, CFG.TEXT_MIN, CFG.TEXT_MAX, CFG.TEXT_DEFAULT);
+const TEXT_SIZE_SCHEMA_VERSION = 'semantic-v1';
+const TEXT_LEVELS = Object.freeze({
+  small:  Object.freeze({ label:'Petit',      px:16, lineHeight:1.82 }),
+  normal: Object.freeze({ label:'Normal',     px:19, lineHeight:1.84 }),
+  large:  Object.freeze({ label:'Grand',      px:22, lineHeight:1.88 }),
+  xlarge: Object.freeze({ label:'Très grand', px:26, lineHeight:1.92 }),
+});
+const TEXT_LEVEL_ORDER = Object.freeze(['small','normal','large','xlarge']);
+const normalizeTextLevel = value => Pure.normalizeTextLevel(value, TEXT_LEVELS, CFG.TEXT_DEFAULT);
 // Total units for progress: always the real corpus length once loaded.
 const totalUnits = () => (State.corpus ? State.corpus.length : CFG.UNITS_FALLBACK);
 // Main devotional days actually read — excludes the 6 appendices, which is what
@@ -1847,9 +1991,101 @@ const Pure = {
     return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   },
 
+  // Common French search key used by titles, corpus paragraphs and queries.
+  // Guarantees equivalence for accents, oe/œ, ae/æ, straight/curly apostrophes,
+  // NBSP/narrow NBSP, case and repeated whitespace. `withMap` additionally
+  // returns a UTF-16 source-index map so snippets can highlight the ORIGINAL
+  // text correctly even when a ligature expands (œ -> oe / æ -> ae).
+  normalizeSearchWithMap(value) {
+    const src=String(value ?? '');
+    let normalized='', map=[], pendingSpace=false, pendingSpaceIndex=0;
+    const apos=/[\u2018\u2019\u02BC\u0060\u00B4]/;
+    let i=0;
+    while (i<src.length) {
+      const cp=src.codePointAt(i), ch=String.fromCodePoint(cp), width=ch.length;
+      let piece=ch.toLowerCase();
+      if (piece==='œ') piece='oe'; else if (piece==='æ') piece='ae';
+      else if (apos.test(piece)) piece="'";
+      else if (/[\s\u00A0\u202F]/.test(piece)) piece=' ';
+      else piece=piece.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      for (const outCh of piece) {
+        if (outCh===' ') { if (normalized && !pendingSpace) { pendingSpace=true; pendingSpaceIndex=i; } }
+        else {
+          if (pendingSpace) { normalized+=' '; map.push(pendingSpaceIndex); pendingSpace=false; }
+          normalized+=outCh; map.push(i);
+        }
+      }
+      i+=width;
+    }
+    return { normalized, map };
+  },
+
+  normalizeSearch(value) { return Pure.normalizeSearchWithMap(value).normalized; },
+
+  normalizeReadingPosition(unitId, raw) {
+    const clamp01=n=>Number.isFinite(n)&&n>=0&&n<=1?n:null;
+    if (typeof raw==='number' && Number.isFinite(raw) && raw>=0) {
+      return {unit_id:unitId,paragraph_id:null,fraction_within_paragraph:null,unit_fraction:null,legacy_px:Math.min(10000000,raw)};
+    }
+    if (!Pure.isPlainObject(raw)) return null;
+    const allowed=['unit_id','paragraph_id','fraction_within_paragraph','unit_fraction','legacy_px'];
+    if (!Pure.exactKeys(raw,allowed) || raw.unit_id!==unitId) return null;
+    const pid=raw.paragraph_id===null?null:(typeof raw.paragraph_id==='string'&&raw.paragraph_id?raw.paragraph_id:null);
+    const frac=raw.fraction_within_paragraph===null?null:clamp01(raw.fraction_within_paragraph);
+    const unitFrac=raw.unit_fraction===null?null:clamp01(raw.unit_fraction);
+    const px=(typeof raw.legacy_px==='number'&&Number.isFinite(raw.legacy_px)&&raw.legacy_px>=0&&raw.legacy_px<=10000000)?raw.legacy_px:null;
+    if ((raw.paragraph_id!==null&&!pid)||(raw.fraction_within_paragraph!==null&&frac===null)||(raw.unit_fraction!==null&&unitFrac===null)||px===null) return null;
+    return {unit_id:unitId,paragraph_id:pid,fraction_within_paragraph:frac,unit_fraction:unitFrac,legacy_px:px};
+  },
+
+  parseDeepLink(search) {
+    try {
+      const p=new URLSearchParams(String(search||'').replace(/^\?/,''));
+      const open=p.get('open');
+      if (!open) return {kind:'none'};
+      if (open==='unit') {
+        const id=p.get('id')||'', pid=p.get('pid');
+        if (!id || id.length>160 || (pid!==null && pid.length>180)) return {kind:'invalid'};
+        return {kind:'unit',unit_id:id,paragraph_id:pid||null};
+      }
+      if (open==='search') {
+        const q=p.get('q')||'';
+        if (q.length>200) return {kind:'invalid'};
+        return {kind:'search',query:q};
+      }
+      return {kind:'invalid'};
+    } catch(e) { return {kind:'invalid'}; }
+  },
+
   clampTextSize(n, min, max, dflt) {
     const v = parseInt(n);
     return (isNaN(v) || v < min || v > max) ? dflt : v;
+  },
+
+  normalizeTextLevel(value, levels, dflt) {
+    return (typeof value === 'string' && levels && levels[value]) ? value : dflt;
+  },
+
+  // Reads both the semantic v2.10+ shape and the historical integer 14–22
+  // shape. Numeric values are mapped once to the nearest semantic pixel size.
+  // Ties keep the smaller level because TEXT_LEVEL_ORDER is ascending.
+  migrateTextLevel(raw, levels, order, dflt) {
+    if (typeof raw === 'string' && levels && levels[raw]) {
+      return { level: raw, migrated: false, legacy: false };
+    }
+    if (raw === null || raw === undefined || raw === '') {
+      return { level: dflt, migrated: false, legacy: false };
+    }
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 14 || n > 22) {
+      return { level: dflt, migrated: true, legacy: true };
+    }
+    let best = order[0], bestDist = Math.abs(levels[best].px - n);
+    order.slice(1).forEach(key => {
+      const d = Math.abs(levels[key].px - n);
+      if (d < bestDist) { best = key; bestDist = d; }
+    });
+    return { level: best, migrated: true, legacy: true };
   },
 
   // Given a corpus-like array and a Set of read unit_ids, how many main
@@ -1868,20 +2104,35 @@ const Pure = {
   // deterministic and testable.
   parseHighlights(raw) {
     const m = new Map();
-    // Synthesises a stable id for records saved before ids existed, derived
-    // from the paragraph + colour + range so it is deterministic across loads.
     let pidSeed = '';
-    const rec = (color, range, text, ts, id) => ({
-      id: id || ('h' + Math.abs(Pure.hashStr(pidSeed + color + JSON.stringify(range || 0))).toString(36)),
-      color: (typeof color === 'string' && HL_COLORS[color]) ? color : HL_DEFAULT,
-      range: Pure.validRange(range),
-      text: typeof text === 'string' ? text : '',
-      ts: typeof ts === 'number' ? ts : 0,
-    });
+    const rec = (color, range, text, ts, id, meta, malformedRange=false) => {
+      const status = meta && ['active','recovered','stale'].includes(meta.status) ? meta.status : (malformedRange ? 'stale' : 'active');
+      const fp = meta && typeof meta.text_fingerprint === 'string' && /^[0-9a-f]{64}$/.test(meta.text_fingerprint) ? meta.text_fingerprint : null;
+      const cv = meta && typeof meta.corpus_version === 'string' && meta.corpus_version ? meta.corpus_version : null;
+      let recovery = null;
+      if (meta && Pure.isPlainObject(meta.recovery)) {
+        const rr = meta.recovery.from_range;
+        recovery = {
+          from_fingerprint: (typeof meta.recovery.from_fingerprint === 'string' && /^[0-9a-f]{64}$/.test(meta.recovery.from_fingerprint)) ? meta.recovery.from_fingerprint : null,
+          from_range: rr === null ? null : Pure.validRange(rr),
+        };
+      }
+      return {
+        id: id || ('h' + Math.abs(Pure.hashStr(pidSeed + color + JSON.stringify(range || 0))).toString(36)),
+        color: (typeof color === 'string' && HL_COLORS[color]) ? color : HL_DEFAULT,
+        range: malformedRange ? null : Pure.validRange(range),
+        text: typeof text === 'string' ? text : '',
+        ts: typeof ts === 'number' && Number.isFinite(ts) && ts >= 0 ? ts : 0,
+        text_fingerprint: fp,
+        corpus_version: cv,
+        status,
+        recovery,
+      };
+    };
 
     if (Array.isArray(raw)) {
       raw.forEach(pid => {
-        if (typeof pid === 'string' && pid) { pidSeed = pid; m.set(pid, [rec(HL_DEFAULT, null)]); }
+        if (typeof pid === 'string' && pid) { pidSeed = pid; m.set(pid, [rec(HL_DEFAULT, null, '', 0, null, null)]); }
       });
       return m;
     }
@@ -1890,18 +2141,84 @@ const Pure = {
     for (const [pid, val] of Object.entries(raw)) {
       if (!pid) continue;
       pidSeed = pid;
-      if (typeof val === 'string') {              // v2.7.0–v2.8.0 shape
-        m.set(pid, [rec(val, null)]);
-      } else if (Array.isArray(val)) {            // v2.9.0+ shape
-        const list = val
-          .filter(h => h && typeof h === 'object')
-          .map(h => rec(h.color, h.range, h.text, h.ts, h.id));
-        // Drop nothing silently: a record with a malformed range degrades to a
-        // whole-paragraph highlight rather than vanishing.
+      if (typeof val === 'string') {
+        m.set(pid, [rec(val, null, '', 0, null, null)]);
+      } else if (Array.isArray(val)) {
+        const list = val.filter(h => h && typeof h === 'object').map(h => {
+          const malformed = h.range !== null && h.range !== undefined && !Pure.validRange(h.range);
+          const meta={text_fingerprint:h.text_fingerprint,corpus_version:h.corpus_version,status:h.status,recovery:h.recovery};
+          return rec(h.color, h.range, h.text, h.ts, h.id, meta, malformed);
+        });
         if (list.length) m.set(pid, Pure.dedupeHls(list));
       }
     }
     return m;
+  },
+
+  // MJV-D — conservative highlight reconciliation. `currentFingerprint` must
+  // identify the exact current paragraph text. The function never guesses:
+  // range recovery succeeds only when the saved phrase occurs exactly once.
+  // A stale record is returned, not discarded.
+  reconcileHighlightRecord(text, currentFingerprint, currentCorpusVersion, record) {
+    const src=String(text||'');
+    const h=Object.assign({},record||{});
+    h.text=typeof h.text==='string'?h.text:'';
+    h.text_fingerprint=(typeof h.text_fingerprint==='string'&&/^[0-9a-f]{64}$/.test(h.text_fingerprint))?h.text_fingerprint:null;
+    h.corpus_version=(typeof h.corpus_version==='string'&&h.corpus_version)?h.corpus_version:null;
+    h.status=['active','recovered','stale'].includes(h.status)?h.status:'active';
+    h.recovery=Pure.isPlainObject(h.recovery)?h.recovery:null;
+    const oldFp=h.text_fingerprint;
+    const oldRange=h.range===null?null:Pure.validRange(h.range);
+
+    const bind=(range,status,recovery,textSnapshot)=>Object.assign({},h,{
+      range,
+      text:typeof textSnapshot==='string'?textSnapshot:h.text,
+      text_fingerprint:currentFingerprint||null,
+      corpus_version:currentCorpusVersion||null,
+      status,
+      recovery:recovery||null,
+    });
+    const stale=()=>Object.assign({},h,{range:oldRange,status:'stale',recovery:h.recovery||null});
+
+    // A malformed historical range is parsed as stale with range:null. It
+    // must never be promoted into a whole-paragraph highlight by accident.
+    if (h.status==='stale' && h.range===null) return stale();
+
+    // Whole-paragraph highlights anchor by stable paragraph ID, not offsets.
+    if (h.range===null) {
+      const changed=!!oldFp && !!currentFingerprint && oldFp!==currentFingerprint;
+      const recovery=changed?{from_fingerprint:oldFp,from_range:null}:h.recovery;
+      return bind(null,changed?'recovered':(h.status==='recovered'?'recovered':'active'),recovery,h.text||src);
+    }
+    if (!oldRange) return stale();
+
+    const inBounds=oldRange.end<=src.length;
+    const slice=inBounds?src.slice(oldRange.start,oldRange.end):'';
+    const snap=h.text;
+    const fpMatches=!!oldFp && !!currentFingerprint && oldFp===currentFingerprint;
+
+    // Exact saved phrase still at the stored offsets: safest possible binding.
+    // For legacy records with an empty snapshot, capture the exact current slice.
+    if (inBounds && ((!snap && slice) || (snap && slice===snap))) {
+      const changed=!!oldFp && !!currentFingerprint && oldFp!==currentFingerprint;
+      const recovery=changed?{from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}}:h.recovery;
+      return bind({start:oldRange.start,end:oldRange.end},changed?'recovered':(h.status==='recovered'?'recovered':'active'),recovery,snap||slice);
+    }
+
+    // Same fingerprint but snapshot mismatch means the saved record itself is
+    // inconsistent; still apply the same unique-match rule rather than trust it.
+    if (!snap) return stale();
+    let first=src.indexOf(snap), second=-1;
+    if (first!==-1) second=src.indexOf(snap,first+1);
+    if (first!==-1 && second===-1) {
+      const recovery={from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}};
+      return bind({start:first,end:first+snap.length},'recovered',recovery,snap);
+    }
+    return stale();
+  },
+
+  reconcileHighlightList(text, currentFingerprint, currentCorpusVersion, records) {
+    return Pure.dedupeHls((records||[]).map(h=>Pure.reconcileHighlightRecord(text,currentFingerprint,currentCorpusVersion,h)));
   },
 
   // A range is only usable if both offsets are non-negative integers and
@@ -1925,10 +2242,12 @@ const Pure = {
   // One whole-paragraph highlight max, and no two range highlights with
   // identical bounds. Later entries win (they were saved more recently).
   dedupeHls(list) {
-    const out = [];
+    const out = [], stale = [];
     let whole = null;
     const seen = new Set();
-    list.forEach(h => {
+    (list || []).forEach(h => {
+      if (!h) return;
+      if (h.status === 'stale') { stale.push(h); return; }
       if (!h.range) { whole = h; return; }
       const key = h.range.start + ':' + h.range.end;
       if (seen.has(key)) {
@@ -1939,7 +2258,9 @@ const Pure = {
       }
     });
     out.sort((a, b) => a.range.start - b.range.start);
-    return whole ? [whole, ...out] : out;
+    // Stale records are deliberately appended without deduplication: even two
+    // records that once shared offsets can carry different saved text/evidence.
+    return [...(whole ? [whole] : []), ...out, ...stale];
   },
 
   // Folds retired Favori entries in as whole-paragraph highlights. Mutates and
@@ -1949,7 +2270,7 @@ const Pure = {
     if (Array.isArray(favs)) {
       favs.forEach(pid => {
         if (typeof pid === 'string' && pid && !map.has(pid)) {
-          map.set(pid, [{ id: 'fav' + Math.abs(Pure.hashStr(pid)).toString(36), color: HL_DEFAULT, range: null, text: '', ts: 0 }]);
+          map.set(pid, [{ id: 'fav' + Math.abs(Pure.hashStr(pid)).toString(36), color: HL_DEFAULT, range: null, text: '', ts: 0, text_fingerprint:null, corpus_version:null, status:'active', recovery:null }]);
         }
       });
     }
@@ -1965,7 +2286,7 @@ const Pure = {
     const len = (text || '').length;
     const out = [];
     (records || [])
-      .filter(h => h && h.range)
+      .filter(h => h && h.range && h.status !== 'stale')
       .map(h => ({ h, start: h.range.start, end: Math.min(h.range.end, len) }))
       .filter(r => r.start < len && r.end > r.start)
       .sort((a, b) => a.start - b.start || a.end - b.end)
@@ -2027,6 +2348,203 @@ const Pure = {
       + (end < text.length ? '…' : '');
   },
 
+  // MJV-B: recursively reject prototype-pollution keys before any untrusted
+  // object is copied or written. JSON.parse itself does not execute them, but
+  // rejecting them at the boundary keeps later refactors safe.
+  hasDangerousKey(value) {
+    if (!value || typeof value !== 'object') return false;
+    if (Array.isArray(value)) return value.some(v => Pure.hasDangerousKey(v));
+    for (const k of Object.keys(value)) {
+      if (k === '__proto__' || k === 'prototype' || k === 'constructor') return true;
+      if (Pure.hasDangerousKey(value[k])) return true;
+    }
+    return false;
+  },
+
+  isPlainObject(value) {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+  },
+
+  exactKeys(obj, allowed) {
+    if (!Pure.isPlainObject(obj)) return false;
+    const keys = Object.keys(obj).sort();
+    const want = [...allowed].sort();
+    return keys.length === want.length && keys.every((k,i) => k === want[i]);
+  },
+
+  // MJV-C note records. The deterministic legacy id makes migration idempotent:
+  // re-reading an old paragraph-keyed note never creates a second record.
+  legacyNoteId(pid) {
+    return 'nlegacy_' + Math.abs(Pure.hashStr(String(pid || ''))).toString(36);
+  },
+
+  noteStoreEnvelope(records) {
+    return { schema_version: NOTE_STORAGE_SCHEMA_VERSION, records: records || {} };
+  },
+
+  // Accepts both the historical { paragraph_id: {text,ts,...} } shape and the
+  // MJV-C {schema_version:1,records:{note_id:record}} shape. Corpus/id
+  // reconciliation happens later, after buildIndexes(), because loadStorage()
+  // intentionally runs before the corpus fetch.
+  parseNotes(raw) {
+    const out={ records:{}, migrated:false, dropped:0 };
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    const isNew = raw.schema_version === NOTE_STORAGE_SCHEMA_VERSION && Pure.isPlainObject(raw.records);
+    if (isNew) {
+      for (const [id,n] of Object.entries(raw.records)) {
+        if (!id || id.length>128 || !Pure.isPlainObject(n)) { out.dropped++; continue; }
+        const keys=['id','paragraph_id','unit_id','text','created_at','updated_at','selected_text','range'];
+        if (!Pure.exactKeys(n,keys) || n.id!==id || typeof n.paragraph_id!=='string' || typeof n.unit_id!=='string' || typeof n.text!=='string' || n.text.length>1000 || typeof n.created_at!=='number' || !Number.isFinite(n.created_at) || n.created_at<0 || typeof n.updated_at!=='number' || !Number.isFinite(n.updated_at) || n.updated_at<0 || n.updated_at<n.created_at || (n.selected_text!==null && typeof n.selected_text!=='string') || (n.range!==null && !Pure.validRange(n.range))) { out.dropped++; continue; }
+        out.records[id]={id,paragraph_id:n.paragraph_id,unit_id:n.unit_id,text:n.text,created_at:n.created_at,updated_at:n.updated_at,selected_text:n.selected_text,range:n.range===null?null:{start:n.range.start,end:n.range.end}};
+      }
+      if (out.dropped) out.migrated=true;
+      return out;
+    }
+    // Historical shape: one note per paragraph. Preserve text byte-for-byte.
+    for (const [pid,n] of Object.entries(raw)) {
+      if (!pid || !Pure.isPlainObject(n) || typeof n.text!=='string' || typeof n.ts!=='number' || !Number.isFinite(n.ts) || n.ts<0) { out.dropped++; continue; }
+      const id=Pure.legacyNoteId(pid);
+      out.records[id]={id,paragraph_id:pid,unit_id:typeof n.unit_id==='string'?n.unit_id:'',text:n.text,created_at:n.ts,updated_at:n.ts,selected_text:null,range:null};
+    }
+    out.migrated=true;
+    return out;
+  },
+
+  validateBackupEnvelope(env, ctx) {
+    const errors = [], warnings = [];
+    const fail = m => errors.push(m);
+    if (!Pure.isPlainObject(env)) return { ok:false, errors:['root:not_object'], warnings:[], normalized:null };
+    if (Pure.hasDangerousKey(env)) fail('root:dangerous_key');
+    if (!Pure.exactKeys(env, ['format','schema_version','app','corpus','exported_at','state'])) fail('root:unexpected_keys');
+    if (env.format !== ctx.format) fail('format:mismatch');
+    if (!Number.isInteger(env.schema_version)) fail('schema:not_integer');
+    else if (env.schema_version > ctx.schemaVersion) fail('schema:future_version');
+    else if (env.schema_version < 1) fail('schema:unsupported_version');
+
+    if (!Pure.isPlainObject(env.app) || !Pure.exactKeys(env.app,['module_id','version'])) fail('app:shape');
+    else {
+      if (env.app.module_id !== 'MJV') fail('app:module_id');
+      if (typeof env.app.version !== 'string' || !env.app.version || env.app.version.length > 40) fail('app:version');
+    }
+
+    if (!Pure.isPlainObject(env.corpus) || !Pure.exactKeys(env.corpus,['id','version','fingerprint_sha256','units','paragraphs'])) fail('corpus:shape');
+    else {
+      if (env.corpus.id !== ctx.corpusId) fail('corpus:id');
+      if (typeof env.corpus.version !== 'string') fail('corpus:version_type');
+      if (typeof env.corpus.fingerprint_sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(env.corpus.fingerprint_sha256)) fail('corpus:fingerprint');
+      if (!Number.isInteger(env.corpus.units) || env.corpus.units < 1) fail('corpus:units');
+      if (!Number.isInteger(env.corpus.paragraphs) || env.corpus.paragraphs < 1) fail('corpus:paragraphs');
+      if (env.corpus.version !== ctx.corpusVersion) warnings.push('corpus:version_differs');
+      if (env.corpus.fingerprint_sha256 !== ctx.corpusFingerprint) warnings.push('corpus:fingerprint_differs');
+    }
+
+    if (typeof env.exported_at !== 'string' || !Number.isFinite(Date.parse(env.exported_at))) fail('exported_at:invalid');
+    const st = env.state;
+    const stateKeys=['read','active_day','active_appendix','notes','highlights','scroll','theme','text_size','onboarded','highlight_color','favorites_migrated'];
+    if (!Pure.isPlainObject(st) || !Pure.exactKeys(st,stateKeys)) fail('state:shape');
+    if (errors.length) return {ok:false, errors, warnings, normalized:null};
+
+    const validUnits = ctx.validUnitIds || new Set();
+    const validParas = ctx.validParaIds || new Set();
+    const paraLengths = ctx.paraLengths || {};
+    const paraUnits = ctx.paraUnits || {};
+    const colors = ctx.colors || new Set();
+    const levels = ctx.textLevels || new Set();
+    const n = { read:[], active_day:null, active_appendix:null, notes:{}, highlights:{}, scroll:{}, theme:'system', text_size:'normal', onboarded:false, highlight_color:'gold', favorites_migrated:true };
+
+    if (!Array.isArray(st.read)) fail('read:not_array');
+    else {
+      const seen=new Set();
+      for (const id of st.read) {
+        if (typeof id !== 'string' || !validUnits.has(id)) { fail('read:unknown_unit'); break; }
+        if (seen.has(id)) { fail('read:duplicate'); break; }
+        seen.add(id); n.read.push(id);
+      }
+    }
+    if (st.active_day !== null && (!Number.isInteger(st.active_day) || st.active_day < 1 || st.active_day > 31)) fail('active_day:invalid'); else n.active_day=st.active_day;
+    if (st.active_appendix !== null && (!Number.isInteger(st.active_appendix) || st.active_appendix < 1 || st.active_appendix > 6)) fail('active_appendix:invalid'); else n.active_appendix=st.active_appendix;
+    if (st.active_day !== null && st.active_appendix !== null) fail('active:mutually_exclusive');
+
+    if (!Pure.isPlainObject(st.notes)) fail('notes:not_object');
+    else if (env.schema_version === 1) {
+      // MJV-B backups stored one paragraph-keyed note. Import them into the
+      // record model deterministically so a v2.11.0 backup remains restorable.
+      for (const [pid,note] of Object.entries(st.notes)) {
+        if (!validParas.has(pid) || !Pure.isPlainObject(note) || !Pure.exactKeys(note,['text','unit_id','pid','ts'])) { fail('notes:v1_shape_or_unknown'); break; }
+        if (note.pid !== pid || note.unit_id !== paraUnits[pid]) { fail('notes:v1_id_mismatch'); break; }
+        if (typeof note.text !== 'string' || note.text.length > 1000 || typeof note.ts !== 'number' || !Number.isFinite(note.ts) || note.ts < 0) { fail('notes:v1_value'); break; }
+        const id=Pure.legacyNoteId(pid);
+        n.notes[id]={id,paragraph_id:pid,unit_id:note.unit_id,text:note.text,created_at:note.ts,updated_at:note.ts,selected_text:null,range:null};
+      }
+    } else {
+      for (const [id,note] of Object.entries(st.notes)) {
+        if (!id || id.length>128 || !Pure.isPlainObject(note) || !Pure.exactKeys(note,['id','paragraph_id','unit_id','text','created_at','updated_at','selected_text','range'])) { fail('notes:v2_record_shape'); break; }
+        const pid=note.paragraph_id;
+        if (note.id!==id || !validParas.has(pid) || note.unit_id!==paraUnits[pid]) { fail('notes:v2_id_mismatch'); break; }
+        if (typeof note.text!=='string' || note.text.length>1000 || typeof note.created_at!=='number' || !Number.isFinite(note.created_at) || note.created_at<0 || typeof note.updated_at!=='number' || !Number.isFinite(note.updated_at) || note.updated_at<note.created_at || (note.selected_text!==null && (typeof note.selected_text!=='string' || note.selected_text.length>(paraLengths[pid]||0)))) { fail('notes:v2_value'); break; }
+        let range=null;
+        if (note.range!==null) {
+          if (!Pure.isPlainObject(note.range) || !Pure.exactKeys(note.range,['start','end']) || !Number.isInteger(note.range.start) || !Number.isInteger(note.range.end) || note.range.start<0 || note.range.end<=note.range.start || note.range.end>(paraLengths[pid]||0)) { fail('notes:v2_range'); break; }
+          range={start:note.range.start,end:note.range.end};
+        }
+        n.notes[id]={id,paragraph_id:pid,unit_id:note.unit_id,text:note.text,created_at:note.created_at,updated_at:note.updated_at,selected_text:note.selected_text,range};
+      }
+    }
+
+    if (!Pure.isPlainObject(st.highlights)) fail('highlights:not_object');
+    else for (const [pid,list] of Object.entries(st.highlights)) {
+      if (!Array.isArray(list) || !list.length) { fail('highlights:shape'); break; }
+      const knownPara=validParas.has(pid);
+      if (!knownPara && !(env.schema_version>=3 && list.every(h=>h&&h.status==='stale'))) { fail('highlights:unknown_paragraph'); break; }
+      const out=[], ids=new Set();
+      for (const h of list) {
+        const legacy=env.schema_version<=2;
+        const keys=legacy?['id','color','range','text','ts']:['id','color','range','text','ts','text_fingerprint','corpus_version','status','recovery'];
+        if (!Pure.isPlainObject(h) || !Pure.exactKeys(h,keys)) { fail('highlights:record_shape'); break; }
+        if (typeof h.id!=='string'||!h.id||h.id.length>128||ids.has(h.id)||!colors.has(h.color)||typeof h.text!=='string'||h.text.length>10000||typeof h.ts!=='number'||!Number.isFinite(h.ts)||h.ts<0) { fail('highlights:record_value'); break; }
+        ids.add(h.id);
+        let range=null;
+        if (h.range!==null) {
+          if (!Pure.isPlainObject(h.range)||!Pure.exactKeys(h.range,['start','end'])||!Number.isInteger(h.range.start)||!Number.isInteger(h.range.end)||h.range.start<0||h.range.end<=h.range.start) { fail('highlights:range_shape'); break; }
+          range={start:h.range.start,end:h.range.end};
+        }
+        let base={id:h.id,color:h.color,range,text:h.text,ts:h.ts,text_fingerprint:null,corpus_version:null,status:'active',recovery:null};
+        if (!legacy) {
+          if (h.text_fingerprint!==null && (typeof h.text_fingerprint!=='string'||!/^[0-9a-f]{64}$/.test(h.text_fingerprint))) { fail('highlights:fingerprint'); break; }
+          if (h.corpus_version!==null && typeof h.corpus_version!=='string') { fail('highlights:corpus_version'); break; }
+          if (!['active','recovered','stale'].includes(h.status)) { fail('highlights:status'); break; }
+          if (h.recovery!==null) {
+            if (!Pure.isPlainObject(h.recovery)||!Pure.exactKeys(h.recovery,['from_fingerprint','from_range'])) { fail('highlights:recovery_shape'); break; }
+            if (h.recovery.from_fingerprint!==null && (typeof h.recovery.from_fingerprint!=='string'||!/^[0-9a-f]{64}$/.test(h.recovery.from_fingerprint))) { fail('highlights:recovery_fingerprint'); break; }
+            if (h.recovery.from_range!==null && (!Pure.isPlainObject(h.recovery.from_range)||!Pure.exactKeys(h.recovery.from_range,['start','end'])||!Pure.validRange(h.recovery.from_range))) { fail('highlights:recovery_range'); break; }
+          }
+          base=Object.assign(base,{text_fingerprint:h.text_fingerprint,corpus_version:h.corpus_version,status:h.status,recovery:h.recovery});
+        }
+        const reconciled=knownPara?Pure.reconcileHighlightRecord((ctx.paraTexts||{})[pid]||'',(ctx.paraFingerprints||{})[pid]||null,ctx.corpusVersion,base):Object.assign({},base,{status:'stale'});
+        out.push(reconciled);
+      }
+      if (errors.length) break;
+      n.highlights[pid]=Pure.dedupeHls(out);
+    }
+
+    if (!Pure.isPlainObject(st.scroll)) fail('scroll:not_object');
+    else for (const [uid,rawPos] of Object.entries(st.scroll)) {
+      if (!validUnits.has(uid)) { fail('scroll:unknown_unit'); break; }
+      const pos=Pure.normalizeReadingPosition(uid,rawPos);
+      if (!pos) { fail('scroll:value'); break; }
+      if (env.schema_version>=4 && (typeof rawPos==='number' || !Pure.isPlainObject(rawPos))) { fail('scroll:v4_shape'); break; }
+      if (pos.paragraph_id && (!validParas.has(pos.paragraph_id) || paraUnits[pos.paragraph_id]!==uid)) { fail('scroll:paragraph'); break; }
+      n.scroll[uid]=pos;
+    }
+    if (!['system','dark','light'].includes(st.theme)) fail('theme:invalid'); else n.theme=st.theme;
+    if (!levels.has(st.text_size)) fail('text_size:invalid'); else n.text_size=st.text_size;
+    if (typeof st.onboarded !== 'boolean') fail('onboarded:invalid'); else n.onboarded=st.onboarded;
+    if (!colors.has(st.highlight_color)) fail('highlight_color:invalid'); else n.highlight_color=st.highlight_color;
+    if (typeof st.favorites_migrated !== 'boolean') fail('favorites_migrated:invalid'); else n.favorites_migrated=st.favorites_migrated;
+
+    return {ok:errors.length===0, errors, warnings, normalized:errors.length?null:n};
+  },
+
   tests() {
     const t = [];
     const eq = (name, actual, expected) => t.push({ name, pass: actual === expected, actual, expected });
@@ -2053,6 +2571,19 @@ const Pure = {
     eq('clampTextSize: null', Pure.clampTextSize(null, 14, 22, 17), 17);
     eq('clampTextSize: boundary low', Pure.clampTextSize(14, 14, 22, 17), 14);
     eq('clampTextSize: boundary high', Pure.clampTextSize(22, 14, 22, 17), 22);
+
+    const levels = { small:{px:16}, normal:{px:19}, large:{px:22}, xlarge:{px:26} };
+    const order = ['small','normal','large','xlarge'];
+    eq('textLevel: semantic kept', Pure.migrateTextLevel('large', levels, order, 'normal').level, 'large');
+    eq('textLevel: semantic is idempotent', Pure.migrateTextLevel('large', levels, order, 'normal').migrated, false);
+    eq('textLevel: fresh default', Pure.migrateTextLevel(null, levels, order, 'normal').level, 'normal');
+    eq('textLevel: legacy 14 -> small', Pure.migrateTextLevel('14', levels, order, 'normal').level, 'small');
+    eq('textLevel: legacy 17 -> small', Pure.migrateTextLevel('17', levels, order, 'normal').level, 'small');
+    eq('textLevel: legacy 18 -> normal', Pure.migrateTextLevel('18', levels, order, 'normal').level, 'normal');
+    eq('textLevel: legacy 21 -> large', Pure.migrateTextLevel('21', levels, order, 'normal').level, 'large');
+    eq('textLevel: legacy 22 -> large', Pure.migrateTextLevel('22', levels, order, 'normal').level, 'large');
+    eq('textLevel: invalid -> default', Pure.migrateTextLevel('nope', levels, order, 'normal').level, 'normal');
+    eq('textLevel: normalize invalid', Pure.normalizeTextLevel('huge', levels, 'normal'), 'normal');
 
     const corpus = [
       { unit_id:'D1', unit_type:'main_day' }, { unit_id:'D2', unit_type:'main_day' },
@@ -2156,6 +2687,73 @@ const Pure = {
     t.push({ name: 'snippet: marks the hit', pass: snip.indexOf('<mark>prosternée</mark>') !== -1, actual: snip, expected: 'contains <mark>prosternée</mark>' });
     t.push({ name: 'snippet: no match falls back', pass: Pure.snippet(txt, Pure.stripAccents(txt), 'zzz', 20, 20).indexOf('<mark>') === -1, actual: '', expected: 'no mark' });
 
+    // MJV-D highlight resilience fixtures.
+    const fpA='a'.repeat(64), fpB='b'.repeat(64);
+    const HR=(range,text,fp=fpA,status='active')=>({id:'hx',color:'blue',range,text,ts:1,text_fingerprint:fp,corpus_version:'1.0.0',status,recovery:null});
+    const same=Pure.reconcileHighlightRecord('0123alpha789',fpA,'1.0.0',HR({start:4,end:9},'alpha'));
+    eq('mjd: matching fingerprint+snapshot stays active', same.status, 'active');
+    eq('mjd: matching range preserved', JSON.stringify(same.range), JSON.stringify({start:4,end:9}));
+    const shifted=Pure.reconcileHighlightRecord('XX0123alpha789',fpB,'2.0.0',HR({start:4,end:9},'alpha'));
+    eq('mjd: changed text unique snapshot recovers', shifted.status, 'recovered');
+    eq('mjd: recovered offset moved conservatively', JSON.stringify(shifted.range), JSON.stringify({start:6,end:11}));
+    eq('mjd: recovery evidence keeps prior range', JSON.stringify(shifted.recovery.from_range), JSON.stringify({start:4,end:9}));
+    const ambiguous=Pure.reconcileHighlightRecord('alpha x alpha',fpB,'2.0.0',HR({start:50,end:55},'alpha'));
+    eq('mjd: ambiguous snapshot becomes stale', ambiguous.status, 'stale');
+    const missing=Pure.reconcileHighlightRecord('nothing here',fpB,'2.0.0',HR({start:50,end:55},'alpha'));
+    eq('mjd: missing snapshot becomes stale', missing.status, 'stale');
+    const wholeChanged=Pure.reconcileHighlightRecord('new paragraph',fpB,'2.0.0',HR(null,'old paragraph'));
+    eq('mjd: stable-id whole paragraph safely recovers', wholeChanged.status, 'recovered');
+    eq('mjd: whole paragraph snapshot refreshed when needed', wholeChanged.text, 'old paragraph');
+    eq('mjd: stale ranges are never rendered', Pure.usableRanges('alpha',[Object.assign({},HR({start:0,end:5},'alpha'),{status:'stale'})]).length, 0);
+    const recoveredRanges=Pure.usableRanges('alpha',[Object.assign({},HR({start:0,end:5},'alpha'),{status:'recovered'})]);
+    eq('mjd: recovered ranges render', recoveredRanges.length, 1);
+
+    // MJV-C note-store + backup validator fixtures. v1 backups remain accepted,
+    // while exports now use schema v2 with note records by note ID.
+    const legacyNotes={P1:{text:'  ancien texte  ',unit_id:'D1',pid:'P1',ts:7}};
+    const parsedLegacy=Pure.parseNotes(legacyNotes);
+    const legacyId=Pure.legacyNoteId('P1');
+    eq('notes: legacy migration deterministic id', Object.keys(parsedLegacy.records)[0], legacyId);
+    eq('notes: legacy migration preserves text byte-identically', parsedLegacy.records[legacyId].text, '  ancien texte  ');
+    eq('notes: new shape idempotent', Pure.parseNotes(Pure.noteStoreEnvelope(parsedLegacy.records)).migrated, false);
+    eq('notes: malformed record is dropped not fatal', Pure.parseNotes({schema_version:1,records:{bad:{id:'bad'}}}).dropped, 1);
+
+    const bctx={format:'MJV_LOCAL_BACKUP',schemaVersion:4,corpusId:'VM_DV',corpusVersion:'1.0.0',corpusFingerprint:'a'.repeat(64),validUnitIds:new Set(['D1']),validParaIds:new Set(['P1']),paraLengths:{P1:20},paraUnits:{P1:'D1'},paraTexts:{P1:'abcdefghijklmnopqrst'},paraFingerprints:{P1:'a'.repeat(64)},colors:new Set(['gold','blue']),textLevels:new Set(['small','normal'])};
+    const noteId='n1';
+    const benv=()=>({format:'MJV_LOCAL_BACKUP',schema_version:4,app:{module_id:'MJV',version:APP_VERSION},corpus:{id:'VM_DV',version:'1.0.0',fingerprint_sha256:'a'.repeat(64),units:1,paragraphs:1},exported_at:'2026-08-10T00:00:00.000Z',state:{read:['D1'],active_day:1,active_appendix:null,notes:{[noteId]:{id:noteId,paragraph_id:'P1',unit_id:'D1',text:'n',created_at:1,updated_at:2,selected_text:null,range:null}},highlights:{P1:[{id:'h1',color:'blue',range:{start:1,end:3},text:'bc',ts:2,text_fingerprint:'a'.repeat(64),corpus_version:'1.0.0',status:'active',recovery:null}]},scroll:{D1:{unit_id:'D1',paragraph_id:'P1',fraction_within_paragraph:0.25,unit_fraction:0.5,legacy_px:50}},theme:'system',text_size:'normal',onboarded:true,highlight_color:'gold',favorites_migrated:true}});
+    const b1=()=>({format:'MJV_LOCAL_BACKUP',schema_version:1,app:{module_id:'MJV',version:'2.11.0'},corpus:{id:'VM_DV',version:'1.0.0',fingerprint_sha256:'a'.repeat(64),units:1,paragraphs:1},exported_at:'2026-08-10T00:00:00.000Z',state:{read:['D1'],active_day:1,active_appendix:null,notes:{P1:{text:'legacy',unit_id:'D1',pid:'P1',ts:3}},highlights:{P1:[{id:'h1',color:'blue',range:{start:1,end:3},text:'xx',ts:2}]},scroll:{D1:50},theme:'system',text_size:'normal',onboarded:true,highlight_color:'gold',favorites_migrated:true}});
+    eq('backup: v4 valid fixture passes', Pure.validateBackupEnvelope(benv(),bctx).ok, true);
+    eq('backup: v1 remains accepted', Pure.validateBackupEnvelope(b1(),bctx).ok, true);
+    eq('backup: v2 legacy highlight shape accepted', (()=>{const x=benv();x.schema_version=2;delete x.state.highlights.P1[0].text_fingerprint;delete x.state.highlights.P1[0].corpus_version;delete x.state.highlights.P1[0].status;delete x.state.highlights.P1[0].recovery;return Pure.validateBackupEnvelope(x,bctx).ok})(), true);
+    eq('backup: v1 note normalized to record', Object.values(Pure.validateBackupEnvelope(b1(),bctx).normalized.notes)[0].text, 'legacy');
+    eq('backup: future schema rejected', (()=>{const x=benv();x.schema_version=5;return Pure.validateBackupEnvelope(x,bctx).errors.includes('schema:future_version')})(), true);
+    eq('backup: wrong module rejected', (()=>{const x=benv();x.app.module_id='X';return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: unknown read unit rejected', (()=>{const x=benv();x.state.read=['NO'];return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: note id mismatch rejected', (()=>{const x=benv();x.state.notes[noteId].id='other';return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: second note same paragraph accepted', (()=>{const x=benv();x.state.notes.n2={...x.state.notes[noteId],id:'n2',text:'second',created_at:3,updated_at:3};return Pure.validateBackupEnvelope(x,bctx).ok})(), true);
+    eq('backup: highlight bad colour rejected', (()=>{const x=benv();x.state.highlights.P1[0].color='red';return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: highlight out-of-range unique snapshot recovers', (()=>{const x=benv();x.state.highlights.P1[0].range.end=99;const r=Pure.validateBackupEnvelope(x,bctx);return r.ok && r.normalized.highlights.P1[0].status==='recovered' && r.normalized.highlights.P1[0].range.start===1 && r.normalized.highlights.P1[0].range.end===3})(), true);
+    eq('backup: active states mutually exclusive', (()=>{const x=benv();x.state.active_appendix=1;return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: unknown state key rejected', (()=>{const x=benv();x.state.extra=1;return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: corpus fingerprint difference warns not fails', (()=>{const x=benv();x.corpus.fingerprint_sha256='b'.repeat(64);const r=Pure.validateBackupEnvelope(x,bctx);return r.ok&&r.warnings.includes('corpus:fingerprint_differs')})(), true);
+    eq('backup: dangerous key detector', Pure.hasDangerousKey(JSON.parse('{"a":{"__proto__":{"x":1}}}')), true);
+    eq('backup: v3 numeric scroll remains accepted', (()=>{const x=benv();x.schema_version=3;x.app.version='2.13.0';x.state.scroll={D1:50};return Pure.validateBackupEnvelope(x,bctx).ok})(), true);
+    eq('backup: v4 numeric scroll rejected', (()=>{const x=benv();x.state.scroll={D1:50};return Pure.validateBackupEnvelope(x,bctx).errors.includes('scroll:v4_shape')})(), true);
+
+    eq('mje: search accent/case', Pure.normalizeSearch('ÉTERNEL'), 'eternel');
+    eq('mje: search oe ligature', Pure.normalizeSearch('cœur'), 'coeur');
+    eq('mje: search ae ligature', Pure.normalizeSearch('ex æquo'), 'ex aequo');
+    eq('mje: search apostrophes', Pure.normalizeSearch("l’âme") , Pure.normalizeSearch("l'âme"));
+    eq('mje: search NBSP/narrow space', Pure.normalizeSearch('Fiat\u00a0 \u202fMarie'), 'fiat marie');
+    eq('mje: search map ligature source index', JSON.stringify(Pure.normalizeSearchWithMap('cœur').map), JSON.stringify([0,1,1,2,3]));
+    eq('mje: legacy pixel position normalized', Pure.normalizeReadingPosition('D1',50).legacy_px, 50);
+    eq('mje: semantic reading position kept', Pure.normalizeReadingPosition('D1',{unit_id:'D1',paragraph_id:'P1',fraction_within_paragraph:.4,unit_fraction:.5,legacy_px:90}).paragraph_id, 'P1');
+    eq('mje: wrong-unit position rejected', Pure.normalizeReadingPosition('D1',{unit_id:'D2',paragraph_id:null,fraction_within_paragraph:null,unit_fraction:.5,legacy_px:90}), null);
+    eq('mje: out-of-range reading fraction rejected', Pure.normalizeReadingPosition('D1',{unit_id:'D1',paragraph_id:'P1',fraction_within_paragraph:1.1,unit_fraction:.5,legacy_px:90}), null);
+    eq('mje: deep link unit parse', Pure.parseDeepLink('?open=unit&id=VM_DV.D01&pid=VM_DV.D01.P001').kind, 'unit');
+    eq('mje: deep link search parse', Pure.parseDeepLink('?open=search&q=Fiat').query, 'Fiat');
+    eq('mje: deep link unknown rejected', Pure.parseDeepLink('?open=javascript').kind, 'invalid');
+
     return t;
   },
 
@@ -2179,7 +2777,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = Pure;
 const State = {
   corpus: null, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
-  read: new Set(), notes: {}, textSize: 17,
+  read: new Set(), notes: {}, textSize: 'normal',
   // Map<paragraph_id, colourKey>. Was a Set of ids before v2.7.0; the loader
   // migrates that shape, and folds in the retired Favori list.
   highlights: new Map(),
@@ -2190,13 +2788,21 @@ const State = {
   themePickerOpen: false,    // is the theme picker popover open?
   pendingSel: null,          // { pid, start, end, text } last usable selection
   forceRangeSupport: undefined, // test hook to override the Android gate
-  noteTargetPid: null, widePanel: 'jours',
+  noteTargetPid: null, noteEditId: null, notesNeedPersist: false, widePanel: 'jours',
+  listMode: 'jours', helpReturnScreen: 'home', helpReturnWidePanel: 'jours',
   activeDay: null,  // devotional day — may differ from calendar day
   activeAppendix: null, // active appendix (A1-A6); mutually exclusive with activeDay
-  scrollPos: {},    // { [unit_id]: scrollTop px } — resume where the reader left off
+  // MJV-E semantic reading positions. Each unit stores a stable paragraph
+  // anchor + within-paragraph fraction, plus unit fraction and legacy pixel
+  // fallback for historical/device-transition resilience.
+  scrollPos: {},
+  searchContext: { query:'', mobileScroll:0, wideScroll:0, returnPending:false },
+  routeTargetPid: null,
   pendingUndo: null,// { label, restore } — last destructive action, restorable via toast
   readerOpen: false,// is a unit currently displayed in the reader? drives reconcileLayout
   lastWide: null,   // last observed layout bucket — reconcile only on a real flip
+  pendingRestore: null, // validated backup waiting for explicit Replace confirmation
+  highlightsNeedPersist: false, // MJV-D legacy metadata enrichment / recovery pending durable write
 };
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -2213,7 +2819,7 @@ const SECTION_LABELS = {
 // Diacritic-insensitive, case-insensitive comparison key. Escapes are used for
 // the combining-marks range because this file is served without a charset
 // header by the dev server (see the JS encoding rule in the constants doc).
-const stripAccents = s => Pure.stripAccents(s);
+const stripAccents = s => Pure.normalizeSearch(s);
 
 // Each key is parsed independently so a single corrupt entry (bad sync, quota
 // truncation, manual edit) resets only that key, not the user's entire saved state.
@@ -2240,7 +2846,34 @@ function migrateFavoritesToHighlights() {
   } catch(e) { /* leave the old key in place and retry next launch */ }
 }
 
+// MJV-B transaction recovery. A restore journal is written before the first
+// user-state key changes. If the browser/tab dies mid-restore, next launch
+// restores the exact pre-import raw values before normal state parsing.
+function restoreRawSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return false;
+  try {
+    for (const key of RESTORE_TARGET_KEYS) {
+      const value = Object.prototype.hasOwnProperty.call(snapshot,key) ? snapshot[key] : null;
+      if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+    }
+    return true;
+  } catch(e) { return false; }
+}
+function recoverInterruptedRestore() {
+  let raw=null;
+  try { raw=localStorage.getItem(SK.RESTORE_TXN); } catch(e) { return false; }
+  if (!raw) return true;
+  try {
+    const tx=JSON.parse(raw);
+    if (!tx || tx.kind!=='MJV_RESTORE_TXN_V1' || !tx.snapshot || Pure.hasDangerousKey(tx)) return false;
+    const ok=restoreRawSnapshot(tx.snapshot);
+    if (ok) localStorage.removeItem(SK.RESTORE_TXN);
+    return ok;
+  } catch(e) { return false; }
+}
+
 function loadStorage() {
+  recoverInterruptedRestore();
   try { State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]')); }
   catch(e) { State.read = new Set(); }
 
@@ -2248,7 +2881,8 @@ function loadStorage() {
   // paragraph_ids with no colour; v2.7.0+ stores { paragraph_id: colourKey }.
   try {
     State.highlights = Pure.parseHighlights(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '{}'));
-  } catch(e) { State.highlights = new Map(); }
+    State.highlightsNeedPersist = false;
+  } catch(e) { State.highlights = new Map(); State.highlightsNeedPersist = false; }
 
   try {
     const c = localStorage.getItem(SK.HL_COLOR);
@@ -2259,21 +2893,28 @@ function loadStorage() {
 
   try {
     const parsed = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
-    // Drop any entry that isn't a well-formed {text, ts} note — a malformed
-    // single entry must not crash renderEspace's sort-by-ts later.
-    State.notes = {};
-    if (parsed && typeof parsed === 'object') {
-      for (const [pid, note] of Object.entries(parsed)) {
-        if (note && typeof note === 'object' && typeof note.text === 'string' && typeof note.ts === 'number') {
-          State.notes[pid] = note;
-        }
-      }
-    }
-  } catch(e) { State.notes = {}; }
+    const nr = Pure.parseNotes(parsed);
+    State.notes = nr.records;
+    State.notesNeedPersist = nr.migrated;
+  } catch(e) { State.notes = {}; State.notesNeedPersist = false; }
 
   try {
-    State.textSize = clampTextSize(localStorage.getItem(SK.TEXT_SIZE));
-  } catch(e) { State.textSize = 17; }
+    const rawTextSize = localStorage.getItem(SK.TEXT_SIZE);
+    const m = Pure.migrateTextLevel(rawTextSize, TEXT_LEVELS, TEXT_LEVEL_ORDER, CFG.TEXT_DEFAULT);
+    State.textSize = m.level;
+    // A legacy integer or malformed historical value is rewritten once into
+    // the semantic shape. Persistence is deliberately isolated from parsing:
+    // if a quota/private-mode write fails after the in-memory migration, the
+    // current session keeps the correctly mapped level and the missing marker
+    // makes the migration retry on the next launch. The marker is written last.
+    const schema = localStorage.getItem(SK.TEXT_SIZE_SCHEMA);
+    if (m.migrated || (rawTextSize !== null && schema !== TEXT_SIZE_SCHEMA_VERSION)) {
+      try {
+        localStorage.setItem(SK.TEXT_SIZE, State.textSize);
+        localStorage.setItem(SK.TEXT_SIZE_SCHEMA, TEXT_SIZE_SCHEMA_VERSION);
+      } catch(e) { /* keep mapped State.textSize; retry persistence next launch */ }
+    }
+  } catch(e) { State.textSize = CFG.TEXT_DEFAULT; }
 
   try {
     const ad = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0');
@@ -2289,8 +2930,9 @@ function loadStorage() {
     const sp = JSON.parse(localStorage.getItem(SK.SCROLL) || '{}');
     State.scrollPos = {};
     if (sp && typeof sp === 'object') {
-      for (const [uid, off] of Object.entries(sp)) {
-        if (typeof off === 'number' && off > 0) State.scrollPos[uid] = off;
+      for (const [uid, raw] of Object.entries(sp)) {
+        const pos=Pure.normalizeReadingPosition(uid,raw);
+        if (pos && (pos.legacy_px > 0 || pos.paragraph_id || pos.unit_fraction > 0)) State.scrollPos[uid]=pos;
       }
     }
   } catch(e) { State.scrollPos = {}; }
@@ -2302,11 +2944,12 @@ const saveRead       = () => { try { localStorage.setItem(SK.READ, JSON.stringif
 // Persisted as an object { paragraph_id: colourKey } from v2.7.0 on.
 const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify(Object.fromEntries(State.highlights))); return true; } catch(e){ return false; } };
 const saveHlColor    = () => { try { localStorage.setItem(SK.HL_COLOR, State.lastHlColor); return true; } catch(e){ return false; } };
-const saveNotes      = () => { try { localStorage.setItem(SK.NOTES, JSON.stringify(State.notes)); return true; } catch(e){ return false; } };
-const saveTextSize   = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); return true; } catch(e){ return false; } };
+const saveNotes      = (records=State.notes) => { try { localStorage.setItem(SK.NOTES, JSON.stringify(Pure.noteStoreEnvelope(records))); return true; } catch(e){ return false; } };
+const saveTextSize   = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); localStorage.setItem(SK.TEXT_SIZE_SCHEMA, TEXT_SIZE_SCHEMA_VERSION); return true; } catch(e){ return false; } };
 const saveActiveDay  = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
 const saveActiveAppendix = () => { try { localStorage.setItem(SK.ACTIVE_APPENDIX, State.activeAppendix || ''); return true; } catch(e){ return false; } };
 const saveScrollPos  = () => { try { localStorage.setItem(SK.SCROLL, JSON.stringify(State.scrollPos)); return true; } catch(e){ return false; } };
+const saveLastBackup = iso => { try { localStorage.setItem(SK.LAST_BACKUP, iso); return true; } catch(e){ return false; } };
 
 // Scroll fires rapidly — record into State immediately (cheap) but debounce the
 // localStorage write so reading never causes a write storm.
@@ -2326,6 +2969,17 @@ function isStorageAvailable() {
     localStorage.removeItem(k);
     return true;
   } catch(e) { return false; }
+}
+
+
+// A note draft is unsaved when the open editor differs from the exact value
+// that was loaded into it. Do not use trim()/non-empty as the guard: clearing
+// an existing note to delete it, or typing whitespace in a new note, is still
+// an unsaved user action that must not be lost to a service-worker reload.
+function noteDraftIsDirty() {
+  const modal = document.getElementById('note-modal');
+  const ta = document.getElementById('note-textarea');
+  return !!(modal?.classList.contains('open') && ta && ta.dataset.dirty === '1');
 }
 
 // Top-level SW update listener — must be outside DOMContentLoaded so it fires
@@ -2349,16 +3003,17 @@ if ('serviceWorker' in navigator) {
 
     // Don't yank the page out from under an unsaved note draft — defer to a
     // dismissible banner instead of forcing the reload.
-    const ta = document.getElementById('note-textarea');
-    const noteOpen = document.getElementById('note-modal')?.classList.contains('open') && ta && ta.value.trim().length > 0;
-    if (noteOpen) {
+    if (noteDraftIsDirty()) {
       window.__mjvPendingReload = applyReload;
-      const banner = document.createElement('div');
-      banner.className = 'update-banner';
-      banner.id = 'update-banner';
-      banner.innerHTML = '<span>Nouvelle version disponible</span><button type="button">Actualiser</button>';
-      banner.querySelector('button').onclick = applyReload;
-      document.body.appendChild(banner);
+      let banner = document.getElementById('update-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.className = 'update-banner';
+        banner.id = 'update-banner';
+        banner.innerHTML = '<span>Nouvelle version disponible</span><button type="button">Actualiser</button>';
+        banner.querySelector('button').onclick = applyReload;
+        document.body.appendChild(banner);
+      }
       return;
     }
     applyReload();
@@ -2421,20 +3076,53 @@ const App = {
     const cleanRead = new Set([...State.read].filter(id => validUnitIds.has(id)));
     if (cleanRead.size !== State.read.size) { State.read = cleanRead; saveRead(); }
 
-    const cleanHl = new Map([...State.highlights].filter(([pid]) => validParaIds.has(pid)));
-    if (cleanHl.size !== State.highlights.size) { State.highlights = cleanHl; saveHighlights(); }
+    const cleanHl = new Map();
+    let highlightsChanged=!!State.highlightsNeedPersist;
+    State.highlights.forEach((records,pid)=>{
+      if (!validParaIds.has(pid)) {
+        // Stable paragraph IDs are an invariant in this app. If a future corpus
+        // violates it, do not silently delete the user's saved text. Retain it
+        // as stale/orphan evidence so Mon Espace and backup can still surface it.
+        const stale=(records||[]).map(h=>Object.assign({},h,{status:'stale'}));
+        cleanHl.set(pid,stale); if (JSON.stringify(stale)!==JSON.stringify(records)) highlightsChanged=true;
+        return;
+      }
+      const hit=findPara(pid), para=hit&&hit.para;
+      const fp=para&&typeof para.fingerprint_sha256==='string'?para.fingerprint_sha256:null;
+      const next=Pure.reconcileHighlightList(para?para.text:'',fp,CORPUS_VERSION,records||[]);
+      cleanHl.set(pid,next);
+      if (JSON.stringify(next)!==JSON.stringify(records)) highlightsChanged=true;
+    });
+    State.highlights=cleanHl;
+    if (highlightsChanged) {
+      if (saveHighlights()) State.highlightsNeedPersist=false;
+      else State.highlightsNeedPersist=true;
+    }
 
     const cleanNotes = {};
-    let notesChanged = false;
-    for (const [pid, note] of Object.entries(State.notes)) {
-      if (validParaIds.has(pid)) cleanNotes[pid] = note; else notesChanged = true;
+    let notesChanged = !!State.notesNeedPersist;
+    for (const [id, note] of Object.entries(State.notes)) {
+      if (!note || note.id!==id || !validParaIds.has(note.paragraph_id)) { notesChanged = true; continue; }
+      const hit=findPara(note.paragraph_id);
+      if (!hit) { notesChanged=true; continue; }
+      const unitId=hit.unit.unit_id;
+      const next = note.unit_id===unitId ? note : {...note,unit_id:unitId};
+      if (next!==note) notesChanged=true;
+      cleanNotes[id]=next;
     }
-    if (notesChanged) { State.notes = cleanNotes; saveNotes(); }
+    if (notesChanged) {
+      if (saveNotes(cleanNotes)) { State.notes = cleanNotes; State.notesNeedPersist=false; }
+      else { State.notes = cleanNotes; State.notesNeedPersist=true; }
+    }
 
     const cleanScroll = {};
     let scrollChanged = false;
-    for (const [uid, off] of Object.entries(State.scrollPos)) {
-      if (validUnitIds.has(uid)) cleanScroll[uid] = off; else scrollChanged = true;
+    for (const [uid, raw] of Object.entries(State.scrollPos)) {
+      const pos=Pure.normalizeReadingPosition(uid,raw);
+      if (!validUnitIds.has(uid) || !pos) { scrollChanged=true; continue; }
+      if (pos.paragraph_id && !validParaIds.has(pos.paragraph_id)) {
+        cleanScroll[uid]={...pos,paragraph_id:null,fraction_within_paragraph:null}; scrollChanged=true;
+      } else cleanScroll[uid]=pos;
     }
     if (scrollChanged) { State.scrollPos = cleanScroll; saveScrollPos(); }
   },
@@ -2534,6 +3222,13 @@ const App = {
     // Remember reading position in both layouts
     document.getElementById('reader-scroll')?.addEventListener('scroll', () => this.recordScroll('reader-scroll'), { passive: true });
     document.getElementById('wide-reader-scroll')?.addEventListener('scroll', () => this.recordScroll('wide-reader-scroll'), { passive: true });
+    // A delayed semantic-position restore must never fight a user's first
+    // touch/wheel gesture. Explicit interaction cancels any pending restore;
+    // scroll events caused by the restore itself are ignored until it settles.
+    ['reader-scroll','wide-reader-scroll'].forEach(id => {
+      const el=document.getElementById(id);
+      ['pointerdown','touchstart','wheel'].forEach(type => el?.addEventListener(type, () => this.cancelReadingRestore(id), { passive: true }));
+    });
     // Flush any pending offset if the app is backgrounded or closed mid-read
     window.addEventListener('pagehide', saveScrollPos);
     document.addEventListener('visibilitychange', () => {
@@ -2599,6 +3294,11 @@ const App = {
       ), 900);
       State.favMigratedCount = 0;
     }
+
+    // Deep-link routing runs after indexes/layout/listeners exist. The original
+    // query string was captured before init so the wide-layout today auto-open
+    // cannot erase an incoming route.
+    this.applyStartupRoute(INITIAL_ROUTE_SEARCH);
 
     // Last, so the welcome overlay sits above a fully-rendered app
     this.maybeShowOnboarding();
@@ -2675,6 +3375,12 @@ const App = {
   checkLayoutBucket() {
     const nowWide = isWide();
     if (nowWide === State.lastWide) return;
+    // Do not sample the old layout's scroll container here. By the time the
+    // media-query/resize callback runs, CSS may already have hidden that shell
+    // and browsers report its scrollTop as 0, which used to erase the semantic
+    // position immediately before rotation/Split View restoration. The scroll
+    // listener keeps State.scrollPos current during reading, so that stable
+    // semantic record is the authoritative hand-off between layout buckets.
     State.lastWide = nowWide;
     this.reconcileLayout();
   },
@@ -2707,55 +3413,119 @@ const App = {
   },
 
   // ── Mobile navigation ────────────────────────────────────────
+  syncMobileListMode() {
+    const searchMode=State.listMode==='search';
+    const screen=document.getElementById('screen-list');
+    if(screen) screen.dataset.listMode=searchMode?'search':'jours';
+    setText('mobile-list-title',searchMode?'Recherche':'Les 31 Jours');
+    setText('mobile-list-sub',searchMode?'Dans les 37 unités':'31 méditations · 6 appendices');
+    const wrap=document.getElementById('mobile-list-search'); if(wrap) wrap.style.display=searchMode?'':'none';
+  },
+
+  renderSearchLanding(scrollId) {
+    const el=document.getElementById(scrollId); if(!el)return;
+    el.innerHTML='<div class="search-empty" role="status">Recherchez un mot ou une expression dans les titres et les 753 paragraphes.</div>';
+  },
+
+  openJours() {
+    State.listMode='jours';
+    this.showScreen('list');
+    this.syncMobileListMode();
+    this.buildList();
+    this.replaceRoute(null);
+  },
+
+  openSearchNav(focus=true) {
+    State.listMode='search';
+    this.showScreen('list');
+    this.syncMobileListMode();
+    const input=document.getElementById('search-input');
+    if(input) input.value=State.searchContext.query||'';
+    if(State.searchContext.query) this.renderSearchResults(State.searchContext.query,'list-scroll','search-clear');
+    else { this.renderSearchLanding('list-scroll'); document.getElementById('search-clear')?.classList.remove('visible'); }
+    this.replaceRoute({open:'search',q:State.searchContext.query||''});
+    if(focus) requestAnimationFrame(()=>{ if(State.listMode==='search' && !State.searchContext.returnPending) input?.focus(); });
+  },
+
+  currentMobileScreen() {
+    if(document.getElementById('screen-reader')?.classList.contains('active'))return 'reader';
+    if(document.getElementById('screen-espace')?.classList.contains('active'))return 'espace';
+    if(document.getElementById('screen-list')?.classList.contains('active'))return State.listMode==='search'?'search':'list';
+    return 'home';
+  },
+
+  openHelp() {
+    if(isWide()) {
+      State.helpReturnWidePanel=(State.widePanel && State.widePanel!=='aide')?State.widePanel:'jours';
+      this.wideNav('aide');
+      return;
+    }
+    State.helpReturnScreen=this.currentMobileScreen();
+    this.showScreen('aide');
+  },
+
+  closeHelp() {
+    if(isWide()) { this.wideNav(State.helpReturnWidePanel||'jours'); return; }
+    const target=State.helpReturnScreen||'home';
+    if(target==='search') this.openSearchNav(false);
+    else if(target==='list') this.openJours();
+    else if(target==='reader' && currentUnit()) this.openUnit(currentUnit().unit_id,State.routeTargetPid||null);
+    else this.showScreen(target==='espace'?'espace':'home');
+  },
+
   showScreen(name, initial = false) {
     ['loading','home','list','reader','espace','aide'].forEach(s => {
       document.getElementById('screen-' + s)?.classList.toggle('active', s === name);
     });
-    document.getElementById('bottom-nav').style.display = name === 'reader' ? 'none' : '';
+    document.getElementById('bottom-nav').style.display = name === 'reader' || name === 'aide' ? 'none' : '';
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    const map = { home:'nav-home', list:'nav-list', espace:'nav-espace', aide:'nav-aide' };
+    const map = { home:'nav-home', list:(State.listMode==='search'?'nav-search':'nav-list'), espace:'nav-espace' };
     if (map[name]) document.getElementById(map[name])?.classList.add('active');
-    if (!initial && name !== 'reader') State.prevScreen = name;
-    // Leaving the reader means a rotation should no longer force it back open
-    if (name !== 'reader') State.readerOpen = false;
+    if (!initial && name !== 'reader' && name !== 'aide') State.prevScreen = name;
+    if (name !== 'reader' && name !== 'aide') State.readerOpen = false;
+    if (name === 'list') this.syncMobileListMode();
     if (name === 'espace') this.renderEspace('espace-scroll');
     if (name === 'aide') this.renderHelp('aide-scroll');
     if (name === 'home') this.updateCalendar();
     if (name !== 'reader') document.getElementById('textsize-panel').classList.remove('open');
+    if (!initial && name !== 'reader' && name !== 'aide') {
+      if (name==='list' && State.listMode==='search') this.replaceRoute({open:'search',q:State.searchContext.query||''});
+      else this.replaceRoute(null);
+    }
   },
 
   // ── Wide navigation ──────────────────────────────────────────
   wideNav(panel) {
     State.widePanel = panel;
-    document.querySelectorAll('.wt-nav-btn[aria-pressed]').forEach(b => b.setAttribute('aria-pressed', 'false'));
-    document.querySelectorAll('.wt-nav-btn').forEach(b => b.classList.remove('active'));
-    const activeBtn = document.getElementById('wnav-' + panel);
-    if (activeBtn) { activeBtn.classList.add('active'); activeBtn.setAttribute('aria-pressed', 'true'); }
+    document.querySelectorAll('.wt-nav-btn[data-primary-nav="true"]').forEach(b=>{b.setAttribute('aria-pressed','false');b.classList.remove('active');});
+    const primary=(panel==='search'||panel==='espace'||panel==='jours')?document.getElementById('wnav-'+panel):null;
+    if(primary){primary.classList.add('active');primary.setAttribute('aria-pressed','true');}
     const reader = document.getElementById('wide-reader');
     const readerContent = document.getElementById('wide-reader-content');
     const welcome = document.getElementById('wide-welcome');
     const espace = document.getElementById('wide-espace');
     const aide = document.getElementById('wide-aide');
-    // Hide all panels first
-    espace.classList.remove('active');
-    aide.style.display = 'none';
-    if (panel === 'jours') {
-      reader.style.display = '';
-      const hasOpen = State.currentSeq > 0 && currentUnit();
-      readerContent.style.display = hasOpen ? 'flex' : 'none';
-      welcome.style.display = hasOpen ? 'none' : 'flex';
-      welcome.style.visibility = 'visible';
-      welcome.style.opacity = '1';
-    } else if (panel === 'espace') {
-      reader.style.display = 'none';
-      espace.classList.add('active');
-      this.renderEspace('wide-espace');
-    } else if (panel === 'aide') {
-      reader.style.display = '';
-      readerContent.style.display = 'none';
-      welcome.style.display = 'none';
-      aide.style.display = 'block';
-      this.renderHelp('wide-aide');
+    espace.classList.remove('active'); aide.style.display='none';
+    if(panel==='jours'||panel==='search') {
+      reader.style.display='';
+      const hasOpen=State.currentSeq>0&&currentUnit()&&State.readerOpen;
+      readerContent.style.display=hasOpen?'flex':'none';
+      welcome.style.display=hasOpen?'none':'flex'; welcome.style.visibility='visible'; welcome.style.opacity='1';
+      const input=document.getElementById('wide-search-input');
+      if(panel==='search') {
+        if(input)input.value=State.searchContext.query||'';
+        if(State.searchContext.query)this.renderSearchResults(State.searchContext.query,'wide-list-scroll','wide-search-clear');
+        else {this.renderSearchLanding('wide-list-scroll');document.getElementById('wide-search-clear')?.classList.remove('visible');}
+        requestAnimationFrame(()=>{ if(State.widePanel==='search' && !State.searchContext.returnPending) input?.focus(); });
+      } else {
+        if(input)input.value='';
+        document.getElementById('wide-search-clear')?.classList.remove('visible');
+        this.buildWideList();
+      }
+    } else if(panel==='espace') {
+      reader.style.display='none'; espace.classList.add('active'); this.renderEspace('wide-espace');
+    } else if(panel==='aide') {
+      reader.style.display=''; readerContent.style.display='none'; welcome.style.display='none'; aide.style.display='block'; this.renderHelp('wide-aide');
     }
   },
 
@@ -2990,17 +3760,20 @@ const App = {
   },
 
   buildList() {
+    if(State.listMode==='search') {
+      const q=document.getElementById('search-input')?.value || State.searchContext.query || '';
+      if(q) this.renderSearchResults(q,'list-scroll','search-clear'); else this.renderSearchLanding('list-scroll');
+      return;
+    }
     this.buildUnitList(this.LAYOUT.mobile, this.CARD_STYLE.mobile);
-    // Re-apply any active search query
-    const q = document.getElementById('search-input')?.value || '';
-    if (q) this.renderSearchResults(q, 'list-scroll', 'search-clear');
   },
 
   onSearch(query, scrollId, clearId) {
-    document.getElementById(clearId)?.classList.toggle('visible', query.length > 0);
-    // Full-text search scans 753 paragraphs, so debounce keystrokes.
     clearTimeout(this._searchTimer);
-    this._searchTimer = setTimeout(() => this.renderSearchResults(query, scrollId, clearId), 140);
+    if(scrollId==='list-scroll'){State.listMode='search';State.searchContext.query=query;this.syncMobileListMode();}
+    else {State.searchContext.query=query;if(State.widePanel!=='search')State.widePanel='search';}
+    document.getElementById(clearId)?.classList.toggle('visible', !!query);
+    this._searchTimer = setTimeout(() => query?this.renderSearchResults(query, scrollId, clearId):this.renderSearchLanding(scrollId), 140);
   },
 
   // ── Full-text search index ───────────────────────────────────
@@ -3018,7 +3791,8 @@ const App = {
             unitLabel: u.day_number ? 'Jour ' + u.day_number : 'Appendice ' + u.appendix_number,
             sectionLabel: (SECTION_LABELS[sec.section_type] || '').replace(/^✦\s*/, ''),
             text: p.text || '',
-            stripped: stripAccents(p.text || ''),
+            normalized: Pure.normalizeSearchWithMap(p.text || '').normalized,
+            normMap: Pure.normalizeSearchWithMap(p.text || '').map,
           });
         });
       });
@@ -3027,29 +3801,31 @@ const App = {
     return idx;
   },
 
-  // Extract a readable window of text around the match, with the hit marked.
+  // Extract a readable ORIGINAL-text window around a normalized match.
+  // normMap prevents ligature expansion (œ/æ) from shifting the source slice.
   buildSnippet(entry, q) {
-    const at = entry.stripped.indexOf(q);
-    if (at === -1) return this.esc(entry.text.slice(0, 150)) + '…';
-    const PAD_BEFORE = 60, PAD_AFTER = 110;
-    let start = Math.max(0, at - PAD_BEFORE);
-    let end = Math.min(entry.text.length, at + q.length + PAD_AFTER);
-    // Avoid cutting mid-word
-    if (start > 0) { const sp = entry.text.indexOf(' ', start); if (sp !== -1 && sp < at) start = sp + 1; }
-    if (end < entry.text.length) { const sp = entry.text.lastIndexOf(' ', end); if (sp > at + q.length) end = sp; }
-    const before = entry.text.slice(start, at);
-    const hit    = entry.text.slice(at, at + q.length);
-    const after  = entry.text.slice(at + q.length, end);
-    return (start > 0 ? '…' : '') + this.esc(before) + '<mark>' + this.esc(hit) + '</mark>' + this.esc(after) + (end < entry.text.length ? '…' : '');
+    const at=entry.normalized.indexOf(q);
+    if (at===-1) return this.esc(entry.text.slice(0,150))+'…';
+    const map=entry.normMap||[];
+    const srcAt=map[at]??0;
+    const lastNorm=Math.min(map.length-1,at+Math.max(1,q.length)-1);
+    const srcEnd=Math.max(srcAt+1,(map[lastNorm]??srcAt)+1);
+    const PAD_BEFORE=60,PAD_AFTER=110;
+    let start=Math.max(0,srcAt-PAD_BEFORE), end=Math.min(entry.text.length,srcEnd+PAD_AFTER);
+    if(start>0){const sp=entry.text.indexOf(' ',start);if(sp!==-1&&sp<srcAt)start=sp+1;}
+    if(end<entry.text.length){const sp=entry.text.lastIndexOf(' ',end);if(sp>srcEnd)end=sp;}
+    const before=entry.text.slice(start,srcAt), hit=entry.text.slice(srcAt,srcEnd), after=entry.text.slice(srcEnd,end);
+    return (start>0?'…':'')+this.esc(before)+'<mark>'+this.esc(hit)+'</mark>'+this.esc(after)+(end<entry.text.length?'…':'');
   },
 
   clearSearch(inputId, scrollId, clearId) {
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
+    const input = document.getElementById(inputId); if(input)input.value='';
+    State.searchContext.query='';
     document.getElementById(clearId)?.classList.remove('visible');
-    // Rebuild full list
-    if (scrollId === 'list-scroll') this.buildList();
-    else this.buildWideList();
+    if(scrollId==='list-scroll'&&State.listMode==='search')this.renderSearchLanding(scrollId);
+    else if(scrollId==='wide-list-scroll'&&State.widePanel==='search')this.renderSearchLanding(scrollId);
+    else if(scrollId==='list-scroll')this.buildList(); else this.buildWideList();
+    this.replaceRoute((scrollId==='list-scroll'&&State.listMode==='search')||(scrollId==='wide-list-scroll'&&State.widePanel==='search')?{open:'search',q:''}:null);
   },
 
   // Searches unit titles AND the full text of all 753 paragraphs. Title hits
@@ -3059,22 +3835,22 @@ const App = {
     const el = document.getElementById(scrollId);
     if (!el) return;
     if (!query.trim()) {
-      if (scrollId === 'list-scroll') this.buildList();
-      else this.buildWideList();
+      if ((scrollId==='list-scroll'&&State.listMode==='search')||(scrollId==='wide-list-scroll'&&State.widePanel==='search')) this.renderSearchLanding(scrollId);
+      else if(scrollId==='list-scroll') this.buildList(); else this.buildWideList();
       return;
     }
-    const q = stripAccents(query.trim());
+    const q = Pure.normalizeSearch(query.trim());
     // A single character matches nearly everything — wait for a usable term.
     if (q.length < 2) {
       el.innerHTML = '<div class="search-empty">Saisissez au moins deux lettres…</div>';
       return;
     }
 
-    const titleHits = State.corpus.filter(u => stripAccents(u.title).includes(q));
+    const titleHits = State.corpus.filter(u => Pure.normalizeSearch(u.title).includes(q));
     // Cap passage results: the goal is finding a remembered phrase, not paging
     // through hundreds of loose hits. When capped, the UI says so explicitly.
     const PASSAGE_CAP = 40;
-    const allPassageHits = this.buildSearchIndex().filter(e => e.stripped.includes(q));
+    const allPassageHits = this.buildSearchIndex().filter(e => e.normalized.includes(q));
     const passageHits = allPassageHits.slice(0, PASSAGE_CAP);
 
     if (!titleHits.length && !passageHits.length) {
@@ -3087,7 +3863,7 @@ const App = {
 
     if (titleHits.length) {
       html += '<div class="search-group-label">' + titleHits.length + ' titre' + (titleHits.length > 1 ? 's' : '') + '</div>';
-      html += titleHits.map(u => isMobile ? this.renderListCard(u) : this.wideListItem(u)).join('');
+      html += titleHits.map(u => this.renderUnitCard(u,isMobile?this.CARD_STYLE.mobile:this.CARD_STYLE.wide,`App.openSearchResult('${u.unit_id}',null,'${scrollId}')`)).join('');
     }
 
     if (passageHits.length) {
@@ -3096,7 +3872,7 @@ const App = {
         ? shown + ' premiers passages sur ' + total
         : total + ' passage' + (total > 1 ? 's' : '');
       html += '<div class="search-group-label">' + countLabel + '</div>';
-      html += passageHits.map(e => '<button type="button" class="snippet-card" onclick="App.openUnit(\'' + e.unitId + '\',\'' + e.pid + '\')">'
+      html += passageHits.map(e => '<button type="button" class="snippet-card" onclick="App.openSearchResult(\'' + e.unitId + '\',\'' + e.pid + '\',\'' + scrollId + '\')">'
         + '<div class="snippet-meta">' + this.esc(e.unitLabel) + (e.sectionLabel ? ' \u00b7 ' + this.esc(e.sectionLabel) : '') + '</div>'
         + '<div class="snippet-text">' + this.buildSnippet(e, q) + '</div>'
         + '</button>').join('');
@@ -3105,10 +3881,49 @@ const App = {
     html += '<div style="height:16px"></div>';
     el.innerHTML = html;
 
+    State.searchContext.query=query;
+    this.replaceRoute({open:'search',q:query});
     if (!isMobile) {
       const activeUid = currentUnit()?.unit_id;
       el.querySelectorAll('.ws-list-item').forEach(item => item.classList.toggle('active', item.dataset.uid === activeUid));
     }
+  },
+
+  openSearchResult(unitId, pid, scrollId) {
+    const scroller=document.getElementById(scrollId);
+    const q=(scrollId==='list-scroll'?document.getElementById('search-input'):document.getElementById('wide-search-input'))?.value || State.searchContext.query || '';
+    State.searchContext.query=q;
+    if (scrollId==='list-scroll') State.searchContext.mobileScroll=scroller?.scrollTop||0;
+    else State.searchContext.wideScroll=scroller?.scrollTop||0;
+    State.searchContext.returnPending=true;
+    State.prevScreen='list';
+    const opened=this.openUnit(unitId,pid||null);
+    if (opened) {
+      // Keyboard activation of a <button> completes its default focus action
+      // after the click handler. Defer the destination focus to the next task so
+      // that default action cannot put focus back on the activated result. The
+      // search-input rAF is separately guarded by returnPending, preventing it
+      // from stealing focus during this transition.
+      setTimeout(() => {
+        if (!State.readerOpen || !State.searchContext.returnPending) return;
+        const target=document.getElementById(isWide()?'wide-reader-scroll':'reader-scroll');
+        try { target?.focus({preventScroll:true}); } catch(_) { try { target?.focus(); } catch(__) {} }
+      }, 0);
+    }
+    return opened;
+  },
+
+  returnFromReader() {
+    if (State.searchContext.returnPending && State.searchContext.query) {
+      State.searchContext.returnPending=false;
+      this.openSearchNav(false);
+      const input=document.getElementById('search-input'); if(input) input.value=State.searchContext.query;
+      this.renderSearchResults(State.searchContext.query,'list-scroll','search-clear');
+      requestAnimationFrame(()=>{const sc=document.getElementById('list-scroll');if(sc)sc.scrollTop=State.searchContext.mobileScroll||0;});
+      this.replaceRoute({open:'search',q:State.searchContext.query});
+      return;
+    }
+    this.showScreen(State.prevScreen);
   },
 
   // ── Unit cards (shared) ────────────────────────────────────
@@ -3137,12 +3952,13 @@ const App = {
               today:'today-c',      read:'read-c',      chevron:false, activeCls:true },
   },
 
-  renderUnitCard(u, st) {
+  renderUnitCard(u, st, clickExpr) {
     const d = this.unitCardData(u);
+    const click=clickExpr || `App.openUnit('${u.unit_id}')`;
     const circleState = d.isToday ? st.today : (d.isRead ? st.read : '');
     const activeAttrs = (st.activeCls && d.isActive) ? ' aria-current="true"' : '';
     const activeClass = (st.activeCls && d.isActive) ? ' active' : '';
-    return `<button type="button" class="${st.card}${activeClass}" data-uid="${u.unit_id}" aria-label="${this.esc(d.aria)}"${activeAttrs} onclick="App.openUnit('${u.unit_id}')">
+    return `<button type="button" class="${st.card}${activeClass}" data-uid="${u.unit_id}" aria-label="${this.esc(d.aria)}"${activeAttrs} onclick="${click}">
       <div class="${st.circle} ${circleState}" aria-hidden="true">${d.label}</div>
       <div class="${st.info}">
         <div class="${st.title}">${this.esc(u.title)}${d.badge}</div>
@@ -3155,7 +3971,16 @@ const App = {
   renderListCard(u) { return this.renderUnitCard(u, this.CARD_STYLE.mobile); },
 
   unitNoteCount(u) {
-    return u.sections.reduce((a,s) => a + s.paragraphs.filter(p => State.notes[p.paragraph_id]).length, 0);
+    return Object.values(State.notes).filter(n => n && n.unit_id === u.unit_id).length;
+  },
+
+  notesForParagraph(pid) {
+    return Object.values(State.notes).filter(n => n && n.paragraph_id===pid).sort((a,b)=>(a.created_at||0)-(b.created_at||0));
+  },
+
+  newNoteId() {
+    if (globalThis.crypto && typeof globalThis.crypto.randomUUID==='function') return 'n_'+globalThis.crypto.randomUUID();
+    return 'n_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
   },
 
   // ── Open unit (works for both layouts) ───────────────────────
@@ -3168,7 +3993,11 @@ const App = {
   // position — used by full-text search results to land on the matched passage.
   openUnit(unitId, targetPid) {
     const unit = unitById(unitId);
-    if (!unit) return;
+    if (!unit) return false;
+    const targetHit=targetPid?findPara(targetPid):null;
+    const validTarget=!!(targetHit && targetHit.unit.unit_id===unitId);
+    if (targetPid && !validTarget) targetPid=null;
+    State.routeTargetPid=targetPid||null;
     State.currentSeq = unit.sequence_meditative;
     State.readerOpen = true;
 
@@ -3205,7 +4034,7 @@ const App = {
       document.getElementById('reader-topbar-title').textContent = unit.title;
       document.getElementById('reader-hero-badge').textContent = badge;
       document.getElementById('reader-hero-title').textContent = unit.title;
-      document.getElementById('reader-back-btn').onclick = () => this.showScreen(State.prevScreen);
+      document.getElementById('reader-back-btn').onclick = () => this.returnFromReader();
       this.renderReaderBody(unit, 'reader-body');
       this.updateReaderNav(unit);
       this.updateActionBar(unit);
@@ -3216,11 +4045,15 @@ const App = {
       if (targetPid) this.scrollToParagraph('reader-scroll', targetPid);
       else this.restoreScroll('reader-scroll', unitId);
     }
+    this.replaceRoute({open:'unit',id:unitId,pid:targetPid||null});
+    if (validTarget===false && arguments.length>1) this.showToast('Passage introuvable — ouverture du jour');
+    return true;
   },
 
   // Jump to a specific paragraph (used by full-text search results) and pulse
   // it briefly so the eye lands on the passage that matched.
   scrollToParagraph(scrollId, pid) {
+    this.cancelReadingRestore(scrollId);
     const scroller = document.getElementById(scrollId);
     const target = scroller?.querySelector(`[data-pid="${pid}"]`);
     if (!scroller || !target) return;
@@ -3232,31 +4065,100 @@ const App = {
     setTimeout(() => target.classList.remove('para-flash'), 1800);
   },
 
-  // ── Reading position ────────────────────────────────────────
-  // Resume where the reader left off. Offsets are stored per unit_id, so
-  // reopening a half-read meditation lands where you stopped instead of at the
-  // hero title. Unread units have no saved offset and open at the top.
-  restoreScroll(scrollId, unitId) {
-    const el = document.getElementById(scrollId);
-    if (!el) return;
-    const saved = State.scrollPos[unitId] || 0;
-    el.scrollTop = saved;
-    // Fonts/images can shift layout after the first paint — re-apply once the
-    // next frame has settled so the restore doesn't land short.
-    if (saved > 0) requestAnimationFrame(() => { if (el.scrollTop !== saved) el.scrollTop = saved; });
+  // ── Reading position — MJV-E semantic anchor model ────────────
+  // `mjv_scroll` remains the key for compatibility, but each value is now:
+  // {unit_id, paragraph_id, fraction_within_paragraph, unit_fraction, legacy_px}
+  // A historical numeric pixel offset is accepted and becomes the fallback.
+  readingAnchorForScroller(el, unitId) {
+    if (!el) return null;
+    const off=Math.max(0,Math.round(el.scrollTop));
+    const max=Math.max(0,el.scrollHeight-el.clientHeight);
+    const unitFraction=max>0?Math.max(0,Math.min(1,off/max)):0;
+    const anchorY=off+72;
+    const paras=Array.from(el.querySelectorAll('p[data-pid]'));
+    let target=null, best=Infinity;
+    paras.forEach(p=>{const top=p.offsetTop,h=Math.max(1,p.offsetHeight),bottom=top+h;let d=0;if(anchorY<top)d=top-anchorY;else if(anchorY>bottom)d=anchorY-bottom;if(d<best){best=d;target=p;}});
+    let pid=null, frac=null;
+    if (target) { pid=target.dataset.pid||null; frac=Math.max(0,Math.min(1,(anchorY-target.offsetTop)/Math.max(1,target.offsetHeight))); }
+    return {unit_id:unitId,paragraph_id:pid,fraction_within_paragraph:frac,unit_fraction:unitFraction,legacy_px:off};
   },
 
-  recordScroll(scrollId) {
-    const el = document.getElementById(scrollId);
-    if (!el) return;
-    const unit = currentUnit();
-    if (!unit) return;
-    const off = Math.round(el.scrollTop);
-    // Don't persist trivial offsets — keeps the stored map small and means
-    // "scrolled back to the top" clears the resume point rather than saving 0.
-    if (off > CFG.SCROLL_MIN_SAVE) State.scrollPos[unit.unit_id] = off;
-    else delete State.scrollPos[unit.unit_id];
-    queueScrollSave();
+  applyReadingPosition(el, unitId) {
+    if (!el) return false;
+    const pos=Pure.normalizeReadingPosition(unitId,State.scrollPos[unitId]);
+    if (!pos) { el.scrollTop=0; return false; }
+    let targetPx=null;
+    if (pos.paragraph_id) {
+      const p=el.querySelector(`p[data-pid="${pos.paragraph_id}"]`);
+      if (p) targetPx=p.offsetTop+(Math.max(0,Math.min(1,pos.fraction_within_paragraph??0))*Math.max(1,p.offsetHeight))-72;
+    }
+    if (targetPx===null && pos.unit_fraction!==null) targetPx=pos.unit_fraction*Math.max(0,el.scrollHeight-el.clientHeight);
+    if (targetPx===null) targetPx=pos.legacy_px||0;
+    el.scrollTop=Math.max(0,Math.min(Math.max(0,el.scrollHeight-el.clientHeight),targetPx));
+    return true;
+  },
+
+  _readingRestoreSeq: 0,
+  _readingRestoreTokens: Object.create(null),
+  _readingRestoreTimers: Object.create(null),
+
+  beginReadingRestore(scrollId) {
+    const token=++this._readingRestoreSeq;
+    if (this._readingRestoreTimers[scrollId]) clearTimeout(this._readingRestoreTimers[scrollId]);
+    delete this._readingRestoreTimers[scrollId];
+    this._readingRestoreTokens[scrollId]=token;
+    return token;
+  },
+
+  cancelReadingRestore(scrollId) {
+    if (this._readingRestoreTimers[scrollId]) clearTimeout(this._readingRestoreTimers[scrollId]);
+    delete this._readingRestoreTimers[scrollId];
+    if (this._readingRestoreTokens[scrollId]) delete this._readingRestoreTokens[scrollId];
+  },
+
+  restoreScroll(scrollId, unitId, existingToken=null) {
+    const el=document.getElementById(scrollId); if (!el) return;
+    const token=existingToken || this.beginReadingRestore(scrollId);
+    if (this._readingRestoreTokens[scrollId]!==token) return;
+    const apply=()=>{
+      if (this._readingRestoreTokens[scrollId]!==token) return;
+      this.applyReadingPosition(el,unitId);
+    };
+    apply();
+    requestAnimationFrame(()=>{ apply(); requestAnimationFrame(apply); });
+    // Rapid size changes reuse the same semantic anchor. Restart the settle
+    // window on every call so an older timer cannot unlock midway through the
+    // latest reflow and let a transient scroll event overwrite that anchor.
+    if (this._readingRestoreTimers[scrollId]) clearTimeout(this._readingRestoreTimers[scrollId]);
+    this._readingRestoreTimers[scrollId]=setTimeout(()=>{
+      apply();
+      if (this._readingRestoreTokens[scrollId]===token) delete this._readingRestoreTokens[scrollId];
+      delete this._readingRestoreTimers[scrollId];
+    },80);
+  },
+
+  recordScroll(scrollId, immediate=false) {
+    const el=document.getElementById(scrollId); if (!el) return;
+    // A CSS breakpoint can hide the old reader before the debounced layout
+    // reconciliation runs. Some browsers then emit a scroll event with
+    // scrollTop=0 for that now-inactive container; never let that event erase
+    // the semantic position belonging to the active unit.
+    const activeScrollId=isWide()?'wide-reader-scroll':'reader-scroll';
+    if (scrollId!==activeScrollId) return;
+    // Programmatic restore/reflow scroll events must not overwrite the stable
+    // semantic anchor with a transient pixel position from the new layout.
+    // An explicit immediate capture supersedes the old restore and is allowed.
+    if (this._readingRestoreTokens[scrollId]) {
+      if (!immediate) return;
+      this.cancelReadingRestore(scrollId);
+    }
+    const unit=currentUnit(); if (!unit) return;
+    const off=Math.round(el.scrollTop);
+    if (off>CFG.SCROLL_MIN_SAVE) {
+      const pos=this.readingAnchorForScroller(el,unit.unit_id);
+      if (pos) State.scrollPos[unit.unit_id]=pos;
+    } else delete State.scrollPos[unit.unit_id];
+    if (immediate) saveScrollPos(); else queueScrollSave();
   },
 
   // ── Paragraph rendering ──────────────────────────────────────
@@ -3271,7 +4173,7 @@ const App = {
 
   paragraphMarkup(p, cls) {
     const pid = p.paragraph_id;
-    const recs = hlRecords(pid);
+    const recs = activeHlRecords(pid);
     const whole = wholeParaHl(pid);
     const anyHl = recs.length > 0;
 
@@ -3305,6 +4207,7 @@ const App = {
       : '';
 
     return `<p class="${cls}${wholeCls}" data-pid="${pid}">${inner}`
+      + `<button class="para-report-btn" onclick="App.reportTextIssue('${pid}')" title="Signaler un problème de texte" aria-label="Signaler un problème de texte">!</button>`
       + hlBtn
       + `<button class="para-note-btn" onclick="App.openNoteModal('${pid}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
   },
@@ -3338,10 +4241,9 @@ const App = {
       html += `<h3 class="section-label">${this.esc(label)}</h3>`;
       sec.paragraphs.forEach(p => {
         html += this.paragraphMarkup(p, cls);
-        const note = State.notes[p.paragraph_id];
-        if (note) {
-          html += `<div class="para-note" data-note-pid="${p.paragraph_id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.deleteNote('${p.paragraph_id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
-        }
+        this.notesForParagraph(p.paragraph_id).forEach(note => {
+          html += `<div class="para-note" data-note-pid="${p.paragraph_id}" data-note-id="${note.id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.openNoteModal('${p.paragraph_id}','${note.id}')" title="Modifier" aria-label="Modifier la note">✎</button><button class="para-note-del" onclick="App.deleteNote('${note.id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
+        });
       });
     });
     // If this is the active devotional unit, append the "Pour aujourd'hui" reminder
@@ -3442,6 +4344,54 @@ const App = {
   updateWideNav(unit)       { this.updateNavBar(unit, this.BAR.wide); },
   updateWideActionBar(unit) { this.updateBar(unit, this.BAR.wide); },
 
+  baseAppUrl() {
+    const u=new URL(window.location.href); u.search=''; u.hash=''; return u;
+  },
+  replaceRoute(params) {
+    try {
+      const u=this.baseAppUrl();
+      if (params) Object.entries(params).forEach(([k,v])=>{if(v!==null&&v!==undefined&&v!=='')u.searchParams.set(k,String(v));});
+      history.replaceState(null,'',u.pathname+(u.search||'')+(u.hash||''));
+    } catch(e) {}
+  },
+  unitDeepLink(unitId, pid) {
+    const unit=unitById(unitId); if(!unit) return null;
+    const u=this.baseAppUrl(); u.searchParams.set('open','unit');u.searchParams.set('id',unitId);
+    if(pid){const hit=findPara(pid);if(hit&&hit.unit.unit_id===unitId)u.searchParams.set('pid',pid);}
+    return u.toString();
+  },
+  searchDeepLink(query) {
+    const u=this.baseAppUrl();u.searchParams.set('open','search');u.searchParams.set('q',String(query||'').slice(0,200));return u.toString();
+  },
+  copyText(text) {
+    if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text).then(()=>true).catch(()=>false);
+    try { const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const ok=document.execCommand&&document.execCommand('copy');ta.remove();return Promise.resolve(!!ok); } catch(e){return Promise.resolve(false);}
+  },
+  copyCurrentLink() {
+    const unit=currentUnit();if(!unit)return;
+    const link=this.unitDeepLink(unit.unit_id,State.routeTargetPid);
+    this.copyText(link).then(ok=>this.showToast(ok?'Lien copié':'Impossible de copier le lien'));
+  },
+  applyStartupRoute(search=INITIAL_ROUTE_SEARCH) {
+    const route=Pure.parseDeepLink(search);
+    if(route.kind==='none') return false;
+    if(route.kind==='invalid'){this.replaceRoute(null);this.showToast('Lien non reconnu');return false;}
+    if(route.kind==='search'){
+      State.searchContext.query=route.query;
+      const mi=document.getElementById('search-input'),wi=document.getElementById('wide-search-input');if(mi)mi.value=route.query;if(wi)wi.value=route.query;
+      if(isWide()){State.searchContext.query=route.query;this.wideNav('search');}
+      else {State.searchContext.query=route.query;this.openSearchNav(false);}
+      return true;
+    }
+    const unit=unitById(route.unit_id);
+    if(!unit){this.replaceRoute(null);if(!isWide())this.showScreen('home');this.showToast('Jour ou appendice introuvable');return false;}
+    const hit=route.paragraph_id?findPara(route.paragraph_id):null;
+    const validPid=hit&&hit.unit.unit_id===unit.unit_id?route.paragraph_id:null;
+    this.openUnit(unit.unit_id,validPid);
+    if(route.paragraph_id&&!validPid)this.showToast('Passage introuvable — ouverture du jour');
+    return true;
+  },
+
   // ── Actions ──────────────────────────────────────────────────
   toggleComplete() {
     const unit = currentUnit();
@@ -3463,8 +4413,9 @@ const App = {
     const unit = currentUnit();
     if (!unit) return;
     const text = `La Vierge Marie dans le Royaume de la Divine Volonté — ${unit.ordinal_source||'Jour '+unit.day_number}\n${unit.title}`;
-    if (navigator.share) navigator.share({ title: 'La Vierge Marie dans le Royaume de la Divine Volonté', text }).catch(()=>{});
-    else navigator.clipboard?.writeText(text).then(()=>this.showToast('Copié !')).catch(()=>{});
+    const url=this.unitDeepLink(unit.unit_id,State.routeTargetPid);
+    if (navigator.share) navigator.share({ title: 'La Vierge Marie dans le Royaume de la Divine Volonté', text, url }).catch(()=>{});
+    else this.copyText(text+'\\n'+url).then(ok=>this.showToast(ok?'Copié !':'Impossible de copier'));
   },
 
   // ── Active day ──────────────────────────────────────────────────
@@ -3542,11 +4493,17 @@ const App = {
   },
 
   // ── Text size ─────────────────────────────────────────────────
+  syncTextSizeControls() {
+    document.querySelectorAll('[data-text-level]').forEach(btn => {
+      const active = btn.dataset.textLevel === State.textSize;
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  },
   toggleTextsizePanel() {
     const panel = document.getElementById('textsize-panel');
     const isOpen = panel.classList.toggle('open');
     document.getElementById('btn-textsize').classList.toggle('active', isOpen);
-    if (isOpen) document.getElementById('textsize-slider').value = State.textSize;
+    if (isOpen) this.syncTextSizeControls();
   },
   toggleWideTextsizePanel() {
     const panel = document.getElementById('wide-textsize-panel');
@@ -3554,20 +4511,33 @@ const App = {
     const btn = document.getElementById('wnav-textsize');
     btn.classList.toggle('active', isOpen);
     btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    if (isOpen) document.getElementById('wide-textsize-slider').value = State.textSize;
+    if (isOpen) this.syncTextSizeControls();
   },
-  applyTextSize(size, save=true) {
-    size = clampTextSize(size);
-    State.textSize = size;
-    document.documentElement.style.setProperty('--reader-size', size+'px');
-    document.documentElement.style.setProperty('--reader-lh', size>19?'1.88':'1.82');
-    ['textsize-value','wide-textsize-value'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.textContent = size;
-    });
-    ['textsize-slider','wide-textsize-slider'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = size;
-    });
+  applyTextSize(level, save=true) {
+    const unit=currentUnit(), scrollId=isWide()?'wide-reader-scroll':'reader-scroll';
+    let restoreToken=null;
+    if (unit && State.readerOpen) {
+      restoreToken=this._readingRestoreTokens[scrollId] || null;
+      if (!restoreToken) {
+        this.recordScroll(scrollId,true);
+        // Lock immediately, before changing CSS variables. Reflow can emit a
+        // scroll event synchronously/next-frame while the old pixel scrollTop is
+        // still present; without this lock that event can overwrite the stable
+        // paragraph anchor with a different paragraph.
+        restoreToken=this.beginReadingRestore(scrollId);
+      }
+      // If another text-size tap arrives before the previous reflow settles,
+      // keep the original semantic anchor instead of re-sampling transient
+      // geometry. restoreScroll() extends the settle window for this token.
+    }
+    level = normalizeTextLevel(level);
+    State.textSize = level;
+    const spec = TEXT_LEVELS[level];
+    document.documentElement.style.setProperty('--reader-size', spec.px + 'px');
+    document.documentElement.style.setProperty('--reader-lh', String(spec.lineHeight));
+    this.syncTextSizeControls();
     if (save) saveTextSize();
+    if (unit && State.readerOpen) requestAnimationFrame(()=>this.restoreScroll(scrollId,unit.unit_id,restoreToken));
   },
 
   // ── Modal accessibility ──────────────────────────────────────
@@ -3580,6 +4550,7 @@ const App = {
     { id: 'hl-picker',     close: function(){ App.closeHlPicker(); } },
     { id: 'onboard-modal', close: function(){ App.finishOnboarding(false); } },
     { id: 'note-modal',    close: function(){ App.closeNoteModal(); } },
+    { id: 'restore-modal', close: function(){ App.closeRestoreModal(); } },
     { id: 'debug-overlay', close: function(){ App.hideDebug(); } },
     { id: 'today-modal',   close: function(){ App.closeTodayModal(); } },
   ],
@@ -3636,26 +4607,32 @@ const App = {
   },
 
   // ── Notes ─────────────────────────────────────────────────────
-  openNoteModal(pid) {
-    // Capture the opener before focus moves, so closing can return the user there
+  // MJV-C: notes are record-based. The paragraph pencil always creates a new
+  // note; editing an existing note explicitly passes its note ID.
+  openNoteModal(pid, noteId=null) {
     this._modalOpener = document.activeElement;
     State.noteTargetPid = pid;
+    State.noteEditId = noteId || null;
     const hit = findPara(pid);
     if (!hit) return;
     const para = hit.para, unit = hit.unit;
-    const existing = State.notes[pid];
+    const existing = noteId ? State.notes[noteId] : null;
+    if (noteId && (!existing || existing.paragraph_id!==pid)) { State.noteEditId=null; return; }
     const dayLabel = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
-    document.getElementById('note-modal-subtitle').textContent = dayLabel + ' · ' + pid;
+    document.getElementById('note-modal-title').textContent = existing ? 'Modifier la note' : 'Ajouter une note';
+    document.getElementById('note-modal-subtitle').textContent = dayLabel + ' · ' + pid + (existing ? ' · note existante' : ' · nouvelle note');
     document.getElementById('note-modal-excerpt').textContent = para.text.slice(0,160) + (para.text.length>160?'…':'');
     const ta = document.getElementById('note-textarea');
     ta.value = existing ? existing.text : '';
+    ta.dataset.initialValue = ta.value;
+    ta.dataset.dirty = '0';
     document.getElementById('note-char-count').textContent = ta.value.length;
-    ta.oninput = () => { document.getElementById('note-char-count').textContent = ta.value.length; };
+    ta.oninput = () => {
+      document.getElementById('note-char-count').textContent = ta.value.length;
+      ta.dataset.dirty = ta.value === (ta.dataset.initialValue || '') ? '0' : '1';
+    };
     document.getElementById('note-modal').classList.add('open');
     this.startKeyboardTracking();
-    // Focus synchronously — iOS only raises the software keyboard for a focus()
-    // that happens inside the user-gesture task, so the previous deferred
-    // setTimeout(…, 300) often focused the field with no keyboard at all.
     try { ta.focus({ preventScroll: true }); } catch(e) { try { ta.focus(); } catch(_) {} }
   },
 
@@ -3665,7 +4642,6 @@ const App = {
     const overlay = document.getElementById('note-modal');
     if (!vv || !overlay) return;
     this._kbHandler = () => {
-      // How much of the layout viewport the keyboard is covering
       const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       overlay.style.setProperty('--kb-inset', inset + 'px');
     };
@@ -3688,13 +4664,11 @@ const App = {
     if (e && e.target !== document.getElementById('note-modal')) return;
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
+    State.noteEditId = null;
     this.stopKeyboardTracking();
     this.onModalClosed();
     this.checkPendingReload();
   },
-  // A SW update may have been deferred while the note modal held an unsaved
-  // draft (see the top-level SW_UPDATED listener). Once the modal closes —
-  // saved or cancelled — the draft is resolved, so apply it now.
   checkPendingReload() {
     if (window.__mjvPendingReload) {
       document.getElementById('update-banner')?.remove();
@@ -3703,48 +4677,44 @@ const App = {
   },
   saveNote() {
     const pid = State.noteTargetPid; if (!pid) return;
-    const text = document.getElementById('note-textarea').value.trim();
+    const raw = document.getElementById('note-textarea').value;
     const unit = findPara(pid)?.unit || null;
-
-    // Clearing the textarea deletes the note — treat that as destructive and
-    // offer the same undo as the explicit delete button.
-    const previous = State.notes[pid];
-    const isDeletion = !text;
-    if (text) State.notes[pid] = { text, unit_id: unit?.unit_id, pid, ts: Date.now() };
-    else delete State.notes[pid];
-    const ok = saveNotes();
-
-    document.getElementById('note-modal').classList.remove('open');
-    State.noteTargetPid = null;
-    this.stopKeyboardTracking();
-    this.onModalClosed();
-    this.refreshAfterNoteChange();
-
-    if (!ok) this.showToast(this.SAVE_ERROR_MSG);
-    else if (isDeletion) {
-      this.showUndoToast('Note supprimée', () => {
-        if (previous) State.notes[pid] = previous;
-        saveNotes();
-        this.refreshAfterNoteChange();
-        this.showToast('Note rétablie ✎');
-      });
-    } else {
-      this.showToast('Note enregistrée ✎');
+    if (!unit) return;
+    const editId=State.noteEditId;
+    const previous = editId ? State.notes[editId] : null;
+    // Empty new note = cancel. Empty edited note preserves the historical
+    // "clear to delete" behavior, but still uses ID-specific safe deletion.
+    if (!raw.trim()) {
+      if (editId && previous) { this.closeNoteModal(); this.deleteNote(editId); }
+      else this.closeNoteModal();
+      return;
     }
+    const now=Date.now();
+    const id=editId || this.newNoteId();
+    const record=previous
+      ? {...previous,text:raw,updated_at:now}
+      : {id,paragraph_id:pid,unit_id:unit.unit_id,text:raw,created_at:now,updated_at:now,selected_text:null,range:null};
+    const next={...State.notes,[id]:record};
+    const ok=saveNotes(next);
+    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
+    State.notes=next; State.notesNeedPersist=false;
+    document.getElementById('note-modal').classList.remove('open');
+    State.noteTargetPid = null; State.noteEditId=null;
+    this.stopKeyboardTracking(); this.onModalClosed(); this.refreshAfterNoteChange();
+    this.showToast(previous ? 'Note modifiée ✎' : 'Note enregistrée ✎');
     this.checkPendingReload();
   },
-  deleteNote(pid) {
-    // Keep the note in memory so Annuler can put it back verbatim.
-    const removed = State.notes[pid];
-    delete State.notes[pid];
-    const ok = saveNotes();
-    this.refreshAfterNoteChange();
+  deleteNote(noteId) {
+    const removed = State.notes[noteId];
+    if (!removed) return;
+    const next={...State.notes}; delete next[noteId];
+    const ok=saveNotes(next);
     if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
+    State.notes=next; State.notesNeedPersist=false; this.refreshAfterNoteChange();
     this.showUndoToast('Note supprimée', () => {
-      if (removed) State.notes[pid] = removed;
-      saveNotes();
-      this.refreshAfterNoteChange();
-      this.showToast('Note rétablie ✎');
+      const restored={...State.notes,[noteId]:removed};
+      if (!saveNotes(restored)) { this.showToast(this.SAVE_ERROR_MSG); return; }
+      State.notes=restored; this.refreshAfterNoteChange(); this.showToast('Note rétablie ✎');
     });
   },
 
@@ -3779,10 +4749,7 @@ const App = {
     // If storage is unavailable the overlay simply shows again next launch —
     // preferable to failing loudly on a first-run welcome screen.
     try { localStorage.setItem(SK.ONBOARDED, '1'); } catch(e) {}
-    if (openAide) {
-      if (isWide()) this.wideNav('aide');
-      else this.showScreen('aide');
-    }
+    if (openAide) this.openHelp();
   },
 
   // ── Highlights ─────────────────────────────────────────────
@@ -3791,7 +4758,7 @@ const App = {
   //   not highlighted → highlight immediately in the last-used colour
   //   highlighted     → open the picker to recolour or remove
   onHighlightBtn(pid) {
-    if (hlRecords(pid).length) { this.openHlPicker(pid); return; }
+    if (activeHlRecords(pid).length) { this.openHlPicker(pid); return; }
     // The button rendering this is never shown in this state where selection
     // is available (see paragraphMarkup) -- guard here too in case of stale
     // cached markup from before this change.
@@ -3822,7 +4789,8 @@ const App = {
       if (existing.color === col) return;         // nothing to do
       existing.color = col;
     } else {
-      recs.unshift({ id: newHlId(), color: col, range: null, text: '', ts: Date.now() });
+      const hit=findPara(pid), para=hit&&hit.para;
+      recs.unshift({ id: newHlId(), color: col, range: null, text: para?para.text:'', ts: Date.now(), text_fingerprint:para?.fingerprint_sha256||null, corpus_version:CORPUS_VERSION, status:'active', recovery:null });
     }
     State.highlights.set(pid, Pure.dedupeHls(recs));
     State.lastHlColor = col;
@@ -3834,7 +4802,8 @@ const App = {
   applyRangeHighlight(pid, start, end, colour, text) {
     const col = safeColor(colour);
     const recs = hlRecords(pid).slice();
-    recs.push({ id: newHlId(), color: col, range: { start, end }, text: text || '', ts: Date.now() });
+    const hit=findPara(pid), para=hit&&hit.para;
+    recs.push({ id: newHlId(), color: col, range: { start, end }, text: text || (para?para.text.slice(start,end):''), ts: Date.now(), text_fingerprint:para?.fingerprint_sha256||null, corpus_version:CORPUS_VERSION, status:'active', recovery:null });
     State.highlights.set(pid, Pure.dedupeHls(recs));
     State.lastHlColor = col;
     saveHlColor();
@@ -4275,6 +5244,14 @@ const App = {
         </div>
 
         <div class="help-item">
+          <div class="help-icon">⌕</div>
+          <div class="help-text">
+            <div class="help-label">Recherche</div>
+            <div class="help-desc">Ouvre directement la recherche plein texte dans les titres et les 753 paragraphes. Votre dernière recherche est conservée quand vous revenez d’un passage.</div>
+          </div>
+        </div>
+
+        <div class="help-item">
           <div class="help-icon">♡</div>
           <div class="help-text">
             <div class="help-label">Mon Espace</div>
@@ -4286,7 +5263,7 @@ const App = {
           <div class="help-icon">?</div>
           <div class="help-text">
             <div class="help-label">Aide</div>
-            <div class="help-desc">Cette page. Accessible à tout moment depuis la barre de navigation.</div>
+            <div class="help-desc">L’Aide reste disponible depuis le bouton ? des barres supérieures, sans occuper une destination principale de navigation.</div>
           </div>
         </div>
       </div>
@@ -4347,7 +5324,7 @@ const App = {
           <div class="help-icon">Aᵃ</div>
           <div class="help-text">
             <div class="help-label">Taille du texte</div>
-            <div class="help-desc">Le bouton Aᵃ (en haut à droite) ouvre un curseur pour ajuster la taille de lecture de 14 à 22 px. Le réglage est mémorisé entre les sessions.</div>
+            <div class="help-desc">Le bouton Aᵃ (en haut à droite) propose quatre tailles : Petit (16 px), Normal (19 px), Grand (22 px) et Très grand (26 px). Le réglage est mémorisé entre les sessions.</div>
           </div>
         </div>
 
@@ -4380,7 +5357,7 @@ const App = {
           <div class="help-icon">⌕</div>
           <div class="help-text">
             <div class="help-label">Filtrer la liste</div>
-            <div class="help-desc">La barre de recherche en haut de la liste « Jours » cherche à la fois dans les titres des 37 unités <strong>et dans le texte intégral des méditations</strong>. Les résultats sont groupés : d’abord les titres, puis les passages, avec le mot trouvé mis en évidence et le jour concerné. Appuyez sur un passage pour l’ouvrir directement à l’endroit exact. Les accents ne sont pas obligatoires (« eterne » trouve « Éternel »). Appuyez sur ✕ pour effacer.</div>
+            <div class="help-desc">La destination <strong>Recherche</strong> de la navigation principale cherche à la fois dans les titres des 37 unités <strong>et dans le texte intégral des méditations</strong>. Les résultats sont groupés : d’abord les titres, puis les passages, avec le mot trouvé mis en évidence et le jour concerné. Appuyez sur un passage pour l’ouvrir directement à l’endroit exact. Les accents ne sont pas obligatoires (« eterne » trouve « Éternel »). En revenant du lecteur, la requête et la position de la liste sont restaurées. Appuyez sur ✕ pour effacer.</div>
           </div>
         </div>
       </div>
@@ -4444,7 +5421,7 @@ const App = {
           <div class="help-icon">✎</div>
           <div class="help-text">
             <div class="help-label">Notes personnelles</div>
-            <div class="help-desc">L’icône crayon ouvre une zone de note privée (jusqu’à 1 000 caractères) attachée à ce paragraphe spécifique. Vos notes sont conservées même lors des mises à jour de l’application. Elles s’affichent en jaune sous le paragraphe concerné.</div>
+            <div class="help-desc">L’icône crayon crée une nouvelle note privée (jusqu’à 1 000 caractères) attachée à ce paragraphe. Vous pouvez conserver plusieurs notes sur le même paragraphe : une nouvelle note n’écrase jamais les précédentes. Chaque note peut être modifiée ou supprimée séparément et s’affiche en jaune sous le paragraphe concerné.</div>
           </div>
         </div>
 
@@ -4490,6 +5467,20 @@ const App = {
       </div>
 
       <div class="help-section">
+        <div class="help-section-title">✶ Sauvegarder vos données</div>
+        <div class="help-item"><div class="help-icon">↓</div><div class="help-text"><div class="help-label">Sauvegarde locale</div><div class="help-desc">Dans <strong>Mon Espace</strong>, « Sauvegarder » crée un fichier JSON de restauration contenant votre progression, jour actif, notes, surlignages, position de lecture et réglages. Le fichier est téléchargé uniquement à votre demande : l’application ne l’envoie à aucun serveur.</div></div></div>
+        <div class="help-item"><div class="help-icon">↥</div><div class="help-text"><div class="help-label">Restaurer</div><div class="help-desc">Choisissez une sauvegarde JSON créée par cette application. Elle est contrôlée entièrement avant toute écriture et un écran récapitulatif demande confirmation. Le mode actuel est <strong>Remplacer</strong>. En cas d’échec d’enregistrement, l’état précédent est rétabli.</div></div></div>
+        <div class="help-item"><div class="help-icon">≡</div><div class="help-text"><div class="help-label">Journal lisible</div><div class="help-desc">« Exporter le journal » crée un fichier Markdown pour lire vos notes, passages surlignés et progression. Ce journal n’est pas un fichier de restauration et l’application le refusera à l’import.</div></div></div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">✶ Liens et assistance</div>
+        <div class="help-item"><div class="help-icon">↗</div><div class="help-text"><div class="help-label">Copier un lien stable</div><div class="help-desc">Dans le lecteur, le bouton « Lien » copie une adresse qui rouvre ce jour ou cet appendice, et le passage ciblé lorsqu’il y en a un. Les liens utilisent les identifiants stables du corpus.</div></div></div>
+        <div class="help-item"><div class="help-icon">!</div><div class="help-text"><div class="help-label">Signaler un problème de texte</div><div class="help-desc">Le bouton ! d’un paragraphe prépare un signalement contenant uniquement la version de l’app, l’identité du corpus, l’unité, le paragraphe, le type de section et le lien stable. Vos notes et surlignages personnels ne sont jamais inclus.</div></div></div>
+        <div class="help-item"><div class="help-icon">i</div><div class="help-text"><div class="help-label">Diagnostics</div><div class="help-desc">Pour l’assistance technique, copiez des diagnostics sans contenu personnel.</div><button type="button" class="backup-btn" onclick="App.copyDiagnostics()" style="margin-top:8px">Copier les diagnostics</button></div></div>
+      </div>
+
+      <div class="help-section">
         <div class="help-section-title">✶ Fin de cycle</div>
         <div class="help-item">
           <div class="help-icon">✶</div>
@@ -4522,6 +5513,157 @@ const App = {
     </div>`;
     el.appendChild(div);
   },
+  // ── MJV-B/C local backup / restore + record-note portability ─────
+  backupValidationContext() {
+    const paraLengths={}, paraUnits={}, paraTexts={}, paraFingerprints={};
+    Object.entries(State.paraIndex || {}).forEach(([pid,hit]) => { paraLengths[pid]=(hit.para.text||'').length; paraUnits[pid]=hit.unit.unit_id; paraTexts[pid]=hit.para.text||''; paraFingerprints[pid]=hit.para.fingerprint_sha256||null; });
+    return { format:BACKUP_FORMAT, schemaVersion:BACKUP_SCHEMA_VERSION, corpusId:CORPUS_ID, corpusVersion:CORPUS_VERSION, corpusFingerprint:CORPUS_FINGERPRINT_SHA256, validUnitIds:new Set(Object.keys(State.unitIndex||{})), validParaIds:new Set(Object.keys(State.paraIndex||{})), paraLengths, paraUnits, paraTexts, paraFingerprints, colors:new Set(Object.keys(HL_COLORS)), textLevels:new Set(TEXT_LEVEL_ORDER) };
+  },
+
+  buildBackupEnvelope(nowIso) {
+    const theme=currentThemeMode();
+    const backupNotes=JSON.parse(JSON.stringify(State.notes));
+    return {
+      format:BACKUP_FORMAT, schema_version:BACKUP_SCHEMA_VERSION,
+      app:{module_id:'MJV',version:APP_VERSION},
+      corpus:{id:CORPUS_ID,version:CORPUS_VERSION,fingerprint_sha256:CORPUS_FINGERPRINT_SHA256,units:State.corpus.length,paragraphs:Object.keys(State.paraIndex).length},
+      exported_at:nowIso || new Date().toISOString(),
+      state:{
+        read:[...State.read], active_day:State.activeDay, active_appendix:State.activeAppendix,
+        notes:backupNotes, highlights:JSON.parse(JSON.stringify(Object.fromEntries(State.highlights))),
+        scroll:JSON.parse(JSON.stringify(State.scrollPos)), theme, text_size:State.textSize,
+        onboarded:localStorage.getItem(SK.ONBOARDED)==='1', highlight_color:State.lastHlColor,
+        favorites_migrated:localStorage.getItem(SK.FAV_MIGRATED)==='1'
+      }
+    };
+  },
+
+  downloadTextFile(name, text, mime) {
+    const blob=new Blob([text],{type:mime||'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=name; a.style.display='none';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+  },
+
+  exportBackup() {
+    if (!State.corpus) { this.showToast('Le corpus n’est pas encore chargé'); return; }
+    const iso=new Date().toISOString();
+    const env=this.buildBackupEnvelope(iso);
+    const check=Pure.validateBackupEnvelope(env,this.backupValidationContext());
+    if (!check.ok) { this.showToast('Sauvegarde impossible — validation interne échouée'); return; }
+    const text=JSON.stringify(env,null,2);
+    if (new Blob([text]).size > BACKUP_MAX_BYTES) { this.showToast('Sauvegarde trop volumineuse'); return; }
+    const day=iso.slice(0,10);
+    this.downloadTextFile(`Marie_sauvegarde_${day}.json`,text,'application/json;charset=utf-8');
+    const persisted=saveLastBackup(iso);
+    this.showToast(persisted ? 'Sauvegarde créée sur cet appareil' : 'Sauvegarde créée — date non mémorisée');
+    this.renderVisibleEspace();
+  },
+
+  exportJournal() {
+    if (!State.corpus) return;
+    const iso=new Date().toISOString();
+    const lines=['# La Vierge Marie dans le Royaume de la Divine Volonté — Journal personnel','',`Exporté le ${new Date(iso).toLocaleString('fr-FR')}`,`App v${APP_VERSION}`,'',`## Progression`,`- Jours/appendices marqués comme lus : ${State.read.size} / ${State.corpus.length}`];
+    const active=effectiveActiveUnit(); if (active) lines.push(`- Pratique active : ${active.day_number?'Jour '+active.day_number:'Appendice '+active.appendix_number} — ${active.title}`);
+    const readUnits=State.corpus.filter(u=>State.read.has(u.unit_id));
+    if (readUnits.length) { lines.push('','### Unités lues'); readUnits.forEach(u=>lines.push(`- ${u.day_number?'Jour '+u.day_number:'Appendice '+u.appendix_number} — ${u.title}`)); }
+    const notes=Object.values(State.notes).sort((a,b)=>(a.created_at||0)-(b.created_at||0));
+    lines.push('','## Notes');
+    if (!notes.length) lines.push('_Aucune note._');
+    notes.forEach(n=>{const hit=findPara(n.paragraph_id);if(!hit)return;const lab=hit.unit.day_number?'Jour '+hit.unit.day_number:'Appendice '+hit.unit.appendix_number;lines.push('',`### ${lab} — ${n.paragraph_id} — note ${n.id}`,n.text);});
+    const hs=[]; State.highlights.forEach((arr,pid)=>(arr||[]).forEach(h=>hs.push({pid,h}))); hs.sort((a,b)=>(a.h.ts||0)-(b.h.ts||0));
+    lines.push('','## Passages surlignés');
+    if (!hs.length) lines.push('_Aucun passage surligné._');
+    hs.forEach(({pid,h})=>{const hit=findPara(pid);const lab=hit?(hit.unit.day_number?'Jour '+hit.unit.day_number:'Appendice '+hit.unit.appendix_number):'Passage indisponible';const r=hit?Pure.usableRanges(hit.para.text,[h])[0]:null;const shown=h.status==='stale'?(h.text||'[extrait non disponible]'):(r?hit.para.text.slice(r.start,r.end):(hit?hit.para.text:(h.text||'[extrait non disponible]')));lines.push('',`### ${lab} — ${pid} — ${HL_COLORS[safeColor(h.color)].label}${h.status==='stale'?' — À VÉRIFIER':''}`,shown);});
+    lines.push('','---','Ce fichier est un journal lisible. Il ne peut pas être utilisé pour restaurer l’application.');
+    this.downloadTextFile(`Marie_journal_${iso.slice(0,10)}.md`,lines.join('\n'),'text/markdown;charset=utf-8');
+    this.showToast('Journal exporté');
+  },
+
+  chooseRestoreFile() {
+    const input=document.getElementById('backup-file-input'); if (!input) return; input.value=''; input.click();
+  },
+
+  async handleRestoreFile(event) {
+    const file=event?.target?.files?.[0]; if (!file) return;
+    State.pendingRestore=null;
+    if (file.size > BACKUP_MAX_BYTES) { this.showToast('Fichier refusé — taille maximale 2 Mo'); return; }
+    let text=''; try { text=await file.text(); } catch(e) { this.showToast('Impossible de lire ce fichier'); return; }
+    let env; try { env=JSON.parse(text); } catch(e) { this.showToast('Fichier refusé — JSON invalide'); return; }
+    const check=Pure.validateBackupEnvelope(env,this.backupValidationContext());
+    if (!check.ok) { this.showToast('Fichier refusé — sauvegarde non valide'); return; }
+    State.pendingRestore={env,normalized:check.normalized,warnings:check.warnings,sourceName:file.name};
+    this.openRestorePreview();
+  },
+
+  openRestorePreview() {
+    const p=State.pendingRestore; if (!p) return;
+    const s=p.normalized; const hlCount=Object.values(s.highlights).reduce((n,a)=>n+a.length,0);
+    const curHl=[...State.highlights.values()].reduce((n,a)=>n+(a||[]).length,0);
+    const rows=[
+      ['Fichier',p.sourceName],['Exporté',new Date(p.env.exported_at).toLocaleString('fr-FR')],
+      ['Progression',`${s.read.length} unité(s) — actuellement ${State.read.size}`],
+      ['Notes',`${Object.keys(s.notes).length} — actuellement ${Object.keys(State.notes).length}`],
+      ['Surlignages',`${hlCount} — actuellement ${curHl}`],
+      ['Taille / thème',`${TEXT_LEVELS[s.text_size].label} · ${THEME_LABELS[s.theme]}`]
+    ];
+    document.getElementById('restore-summary').innerHTML=rows.map(([a,b])=>`<div class="restore-row"><span>${this.esc(a)}</span><strong>${this.esc(b)}</strong></div>`).join('');
+    const er=document.getElementById('restore-errors');
+    if (p.warnings.length) { er.hidden=false; er.textContent='Avertissement : la version du corpus diffère, mais tous les identifiants de cette sauvegarde existent dans le corpus actuel.'; } else { er.hidden=true; er.textContent=''; }
+    document.getElementById('restore-modal').classList.add('open'); this.onModalOpened('restore-modal','restore-confirm-btn');
+  },
+
+  closeRestoreModal(e) {
+    if (e && e.target !== document.getElementById('restore-modal')) return;
+    document.getElementById('restore-modal')?.classList.remove('open'); State.pendingRestore=null; this.onModalClosed();
+  },
+
+  restoreStoragePayload(s) {
+    return {
+      [SK.READ]:JSON.stringify(s.read), [SK.ACTIVE_DAY]:s.active_day===null?'':String(s.active_day), [SK.ACTIVE_APPENDIX]:s.active_appendix===null?'':String(s.active_appendix),
+      [SK.NOTES]:JSON.stringify(Pure.noteStoreEnvelope(s.notes)), [SK.HIGHLIGHTS]:JSON.stringify(s.highlights), [SK.SCROLL]:JSON.stringify(s.scroll),
+      [SK.THEME]:s.theme==='system'?null:s.theme, [SK.TEXT_SIZE]:s.text_size, [SK.TEXT_SIZE_SCHEMA]:TEXT_SIZE_SCHEMA_VERSION,
+      [SK.ONBOARDED]:s.onboarded?'1':null, [SK.HL_COLOR]:s.highlight_color, [SK.FAV_MIGRATED]:s.favorites_migrated?'1':null, [SK.FAVORITES]:null
+    };
+  },
+
+  atomicReplaceStorage(s) {
+    const payload=this.restoreStoragePayload(s);
+    const snapshot={};
+    try { RESTORE_TARGET_KEYS.forEach(k=>snapshot[k]=localStorage.getItem(k)); } catch(e) { return {ok:false,phase:'snapshot',written:[],rolled_back:true}; }
+    const tx={kind:'MJV_RESTORE_TXN_V1',created_at:new Date().toISOString(),snapshot};
+    try { localStorage.setItem(SK.RESTORE_TXN,JSON.stringify(tx)); } catch(e) { return {ok:false,phase:'prepare',written:[],rolled_back:true}; }
+    const written=[];
+    try {
+      for (const key of RESTORE_TARGET_KEYS) { const v=payload[key]; if (v===null) localStorage.removeItem(key); else localStorage.setItem(key,v); written.push(key); }
+      localStorage.removeItem(SK.RESTORE_TXN);
+      return {ok:true,phase:'commit',written,rolled_back:false};
+    } catch(e) {
+      const rolled=restoreRawSnapshot(snapshot);
+      try { if (rolled) localStorage.removeItem(SK.RESTORE_TXN); } catch(_) {}
+      return {ok:false,phase:'write',written,rolled_back:rolled};
+    }
+  },
+
+  commitRestore() {
+    const p=State.pendingRestore; if (!p) return;
+    // Validate again at the final boundary, not only at file selection time.
+    const check=Pure.validateBackupEnvelope(p.env,this.backupValidationContext());
+    if (!check.ok) { this.showToast('Restauration annulée — validation échouée'); this.closeRestoreModal(); return; }
+    const result=this.atomicReplaceStorage(check.normalized);
+    if (!result.ok) { this.showToast(result.rolled_back ? 'Restauration annulée — données précédentes rétablies' : 'Restauration impossible — stockage indisponible'); this.closeRestoreModal(); return; }
+    document.getElementById('restore-modal')?.classList.remove('open'); State.pendingRestore=null;
+    loadStorage(); this.reconcileStoredIds(); this.applyTextSize(State.textSize,false); this.syncSystemTheme(); this.syncThemeIcon();
+    this.buildCalendar(); this.updateCalendar(); this.buildList();
+    if (isWide()) { this.buildWideCalendar(); this.updateWideCalendar(); this.updateWideProgress(); this.buildWideList(); }
+    this.renderVisibleEspace(); this.onModalClosed(); this.showToast('Sauvegarde restaurée');
+  },
+
+  renderVisibleEspace() {
+    if (isWide()) { if (State.widePanel==='espace') this.renderEspace('wide-espace'); }
+    else if (document.getElementById('screen-espace')?.classList.contains('active')) this.renderEspace('espace-scroll');
+  },
+
   renderEspace(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -4530,41 +5672,52 @@ const App = {
     // One card PER HIGHLIGHT, not per paragraph: two highlighted phrases in the
     // same paragraph are two separate things the user saved, so they list
     // separately. The stat tile counts highlights for the same reason.
-    const hlList = [];
+    const hlList = [], staleHlList=[];
     State.highlights.forEach((records, pid) => {
       const hit = findPara(pid);
-      if (!hit) return;
-      (records || []).forEach(h => hlList.push({ h, pid, para: hit.para, unit: hit.unit }));
+      (records || []).forEach(h => {
+        const item={h,pid,para:hit?hit.para:null,unit:hit?hit.unit:null};
+        if (h.status==='stale' || !hit) staleHlList.push(item); else hlList.push(item);
+      });
     });
     hlList.sort((a, b) => (b.h.ts || 0) - (a.h.ts || 0));
+    staleHlList.sort((a,b)=>(b.h.ts||0)-(a.h.ts||0));
 
-    const readCount = State.read.size, noteCount = Object.keys(State.notes).length, hlCount = hlList.length;
+    const readCount = State.read.size, noteCount = Object.keys(State.notes).length, hlCount = hlList.length + staleHlList.length;
     let html = `<div class="stat-grid">
       <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
       <div class="stat-card"><div class="stat-num" style="color:var(--highlight-accent)">${hlCount}</div><div class="stat-label">Surlignés</div></div>
       <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
     </div>`;
-    if (hlCount > 0) {
+    if (hlList.length > 0) {
       html += '<div class="espace-section-title">Passages surlignés</div>';
       hlList.forEach(({ h, pid, para, unit }) => {
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
         const col = HL_COLORS[safeColor(h.color)];
-        // A range highlight shows the highlighted phrase; a whole-paragraph one
-        // shows the paragraph, matching what the user actually marked.
         const ranges = Pure.usableRanges(para.text, [h]);
         const shown = ranges.length ? para.text.slice(ranges[0].start, ranges[0].end) : para.text;
         const kind = h.range ? 'Passage' : 'Paragraphe';
-        html += `<button type="button" class="fav-card hl-card ${col.cls}" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">◆ ${this.esc(label)} · ${this.esc(kind)} · ${this.esc(col.label)}</div><div class="fav-card-text">${this.esc(shown)}</div></button>`;
+        const recovered=h.status==='recovered'?' · réancré':'';
+        html += `<button type="button" class="fav-card hl-card ${col.cls}" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">◆ ${this.esc(label)} · ${this.esc(kind)} · ${this.esc(col.label)}${recovered}</div><div class="fav-card-text">${this.esc(shown)}</div></button>`;
       });
     }
-    const noteEntries = Object.entries(State.notes).sort((a,b)=>((b[1]&&b[1].ts)||0)-((a[1]&&a[1].ts)||0));
+    if (staleHlList.length > 0) {
+      html += `<div class="espace-section-title" style="margin-top:${hlList.length?'16px':'0'}">Surlignages à vérifier · ${staleHlList.length}</div>`;
+      staleHlList.forEach(({h,pid,unit})=>{
+        const label=unit?(unit.day_number?'Jour '+unit.day_number:'Appendice '+unit.appendix_number):pid;
+        const saved=h.text||'Passage enregistré sans extrait textuel.';
+        html += `<div class="stale-hl-wrap"><div class="fav-card stale-hl-card"><div class="fav-card-day">⚠ ${this.esc(label)} · Surlignage non réancré</div><div class="fav-card-text">${this.esc(saved)}</div></div><button type="button" class="stale-hl-remove" onclick="App.removeHighlightRecord('${pid}','${h.id}')" aria-label="Retirer ce surlignage à vérifier">Retirer</button></div>`;
+      });
+    }
+    const noteEntries = Object.values(State.notes).sort((a,b)=>(b.created_at||0)-(a.created_at||0));
     if (noteEntries.length > 0) {
-      html += `<div class="espace-section-title" style="margin-top:${hlCount>0?'16px':'0'}">Mes notes</div>`;
-      noteEntries.forEach(([pid,note]) => {
+      html += `<div class="espace-section-title" style="margin-top:${hlCount>0?'16px':'0'}">Mes notes · ${noteEntries.length}</div>`;
+      noteEntries.forEach(note => {
         const unit = unitById(note.unit_id); if (!unit) return;
+        const pid=note.paragraph_id;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
-        const date = new Date(note.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-        html += `<button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button>`;
+        const date = new Date(note.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+        html += `<div class="note-espace-wrap" data-note-id="${note.id}"><button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button><div class="note-espace-actions"><button type="button" class="note-espace-action" onclick="App.openNoteModal('${pid}','${note.id}')" aria-label="Modifier la note" title="Modifier">✎</button><button type="button" class="note-espace-action delete" onclick="App.deleteNote('${note.id}')" aria-label="Supprimer la note" title="Supprimer">×</button></div></div>`;
       });
     }
     if (!readCount && !hlCount && !noteCount) {
@@ -4575,6 +5728,22 @@ const App = {
     // across two devices and the physical book, so this device's count may
     // never reach 31/31 even once the cycle is genuinely finished; gating
     // the button on it made the reset unreachable for that (common) case.
+    // Local-first backup controls. The timestamp is device-local metadata and is
+    // deliberately NOT restored from another device's backup.
+    let lastBackup=null; try { lastBackup=localStorage.getItem(SK.LAST_BACKUP); } catch(e) {}
+    let backupLabel='Aucune sauvegarde enregistrée sur cet appareil.';
+    if (lastBackup && Number.isFinite(Date.parse(lastBackup))) backupLabel='Dernière sauvegarde : '+new Date(lastBackup).toLocaleString('fr-FR');
+    html += `
+      <div class="espace-section-title" style="margin-top:24px">Sauvegarde locale</div>
+      <div class="backup-card">
+        <div class="backup-status"><strong>Vos données restent sur cet appareil.</strong><br>${this.esc(backupLabel)} Aucun envoi automatique ni synchronisation cloud.</div>
+        <div class="backup-actions">
+          <button type="button" class="backup-btn primary" onclick="App.exportBackup()">↓ Sauvegarder</button>
+          <button type="button" class="backup-btn" onclick="App.chooseRestoreFile()">↥ Restaurer</button>
+          <button type="button" class="backup-btn" onclick="App.exportJournal()">≡ Exporter le journal</button>
+        </div>
+      </div>`;
+
     const daysRead = daysReadCount();
     const dayTotal = mainDayTotal();
     const cycleReady = daysRead >= dayTotal;
@@ -4595,6 +5764,57 @@ const App = {
     `;
     html += '<div style="height:24px"></div>';
     el.innerHTML = html;
+  },
+
+  buildTextIssueReport(pid) {
+    const hit=findPara(pid); if(!hit)return null;
+    const section=hit.section?.section_type||'unknown';
+    return [
+      'Signalement de texte — La Vierge Marie dans le Royaume de la Divine Volonté',
+      `App: v${APP_VERSION}`,
+      `Corpus: ${CORPUS_VERSION}`,
+      `Corpus fingerprint: ${CORPUS_FINGERPRINT_SHA256}`,
+      `Unité: ${hit.unit.unit_id}`,
+      `Paragraphe: ${pid}`,
+      `Section: ${section}`,
+      `Lien: ${this.unitDeepLink(hit.unit.unit_id,pid)}`,
+      '',
+      'Aucune note personnelle ni donnée de surlignage n’est incluse.'
+    ].join('\n');
+  },
+  reportTextIssue(pid) {
+    const report=this.buildTextIssueReport(pid);if(!report)return;
+    const title='Signalement de texte — '+pid;
+    if(navigator.share) navigator.share({title,text:report}).catch(()=>{});
+    else this.copyText(report).then(ok=>this.showToast(ok?'Signalement copié — prêt à envoyer':'Impossible de copier le signalement'));
+  },
+  buildDiagnostics() {
+    const unit=currentUnit();
+    const mode=currentThemeMode();
+    const route=Pure.parseDeepLink(window.location.search);
+    const storage=isStorageAvailable()?'available':'unavailable';
+    const swCtl=navigator.serviceWorker?.controller?'controlled':'not-controlled';
+    return [
+      'Diagnostics MJV (sans contenu personnel)',
+      `app_version=${APP_VERSION}`,
+      `corpus_version=${CORPUS_VERSION}`,
+      `corpus_fingerprint=${CORPUS_FINGERPRINT_SHA256}`,
+      `sw_shell_cache=mjv-shell-v${APP_VERSION}`,
+      'sw_content_cache=mjv-content-v1',
+      'sw_font_cache=mjv-fonts-v1',
+      `sw_control=${swCtl}`,
+      `storage=${storage}`,
+      `theme=${mode}`,
+      `text_level=${State.textSize}`,
+      `layout=${isWide()?'wide':'mobile'}`,
+      `route=${route.kind}`,
+      `unit=${unit?.unit_id||'none'}`,
+      `paragraph=${State.routeTargetPid||'none'}`
+    ].join('\n');
+  },
+  copyDiagnostics() {
+    const txt=this.buildDiagnostics();
+    this.copyText(txt).then(ok=>this.showToast(ok?'Diagnostics copiés':'Impossible de copier les diagnostics'));
   },
 
   // ── Utilities ─────────────────────────────────────────────────
@@ -4629,6 +5849,7 @@ const App = {
       })()],
       ['Couleur déf.', State.lastHlColor],
       ['Sélection', this.rangeHighlightSupported() ? 'partielle activée' : 'paragraphe seul (Android)'],
+      ['Surlignages à vérifier', [...State.highlights.values()].flat().filter(h=>h&&h.status==='stale').length],
       ['Notes', Object.keys(State.notes).length],
       ['Thème', document.documentElement.dataset.theme ?? 'system'],
       ['Layout', window.innerWidth + 'px'],
