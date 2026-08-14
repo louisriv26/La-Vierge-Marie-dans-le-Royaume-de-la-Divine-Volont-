@@ -511,24 +511,38 @@ html, body {
    clear space and lifting them into the gutter above the paragraph. The reading
    column keeps its full width (reserving horizontal space instead would have
    narrowed it by ~20% on a phone). */
-.para-hl-btn, .para-note-btn, .para-report-btn {
+.para-hl-btn, .para-note-btn {
   position: absolute; top: -19px;
   width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; border-radius: 50%;
   color: var(--muted); font-size: 13px; cursor: pointer; transition: color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
+/* Existing-highlight management remains available as an active-state control.
+   Creating a new highlight is contextual (selection on Apple/desktop, paragraph
+   target on Android) rather than another permanent gutter control. */
 .para-hl-btn { right: 56px; }
+/* The pencil is retained only for fine-pointer/keyboard desktop access. On
+   touch devices, Note is presented in the same contextual action bar as
+   Surligner and Copier, matching the 24H interaction grammar. */
 .para-note-btn { right: 0; }
-.para-report-btn { left: 0; }
 .para-hl-btn:hover, .para-hl-btn:active,
-.para-note-btn:hover, .para-note-btn:active,
-.para-report-btn:hover, .para-report-btn:active { color: var(--accent-fg); background: var(--practice-bg); }
+.para-note-btn:hover, .para-note-btn:active { color: var(--accent-fg); background: var(--practice-bg); }
 .para-hl-btn.active { color: var(--accent-fg); }
-/* Keep the 44px controls in the same gutter for boxed section types too.
-   This avoids covering prayer/practice text while preserving the paragraph box. */
-.para-practice .para-hl-btn, .para-practice .para-note-btn, .para-practice .para-report-btn,
-.para-prayer .para-hl-btn, .para-prayer .para-note-btn, .para-prayer .para-report-btn { top: -19px; }
+.para-practice .para-hl-btn, .para-practice .para-note-btn,
+.para-prayer .para-hl-btn, .para-prayer .para-note-btn { top: -19px; }
+/* Fine-pointer/keyboard fallback is deliberately non-persistent: it appears
+   only when the paragraph is hovered or the button receives keyboard focus.
+   The normal reader surface therefore follows the same quiet contextual-action
+   grammar as 24H. */
+@media (pointer: fine) {
+  .para-note-btn { opacity: 0; pointer-events: none; }
+  p[data-pid]:hover .para-note-btn,
+  .para-note-btn:focus-visible { opacity: 1; pointer-events: auto; }
+}
+@media (pointer: coarse) {
+  .para-note-btn { display: none !important; }
+}
 /* ══ Highlight colours ══
    Five tints, each with a dark-mode variant. Alphas are deliberately low so the
    body text keeps a high contrast ratio on top of them (verified >10:1 in both
@@ -589,10 +603,11 @@ html, body {
 [data-theme="dark"] .hl-mark.hl-purple { background: rgba(150,130,225,0.24); }
 [data-theme="dark"] .hl-mark.hl-rose   { background: rgba(200,95,145,0.22); }
 
-/* ══ Selection action bar ══
-   Custom "Surligner" bar shown near a text selection. Not rendered on Android,
-   where whole-paragraph tap-highlighting is the only mode (the OS selection bar
-   there cannot be suppressed, so competing with it is a fight we don't pick). */
+/* ══ Contextual reader action bar ══
+   Selection-capable devices: select text → Surligner · Note · Copier.
+   Android/Samsung: tap a paragraph → the same three actions, with Surligner
+   operating on the whole paragraph. This keeps the normal reading surface quiet
+   and aligns the interaction grammar with the 24 Heures reader. */
 #sel-bar {
   display: none; position: fixed; z-index: 220;
   background: var(--ink); border-radius: 20px;
@@ -1442,7 +1457,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.17.3</div>
+        <div class="mobile-version" onclick="App.debugTap()">v2.17.4</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1569,7 +1584,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.17.3</span>
+    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.17.4</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" data-primary-nav="true" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1706,11 +1721,16 @@ h1, h2, h3, h4 {
   <div class="tp-row" id="tp-options" role="radiogroup" aria-label="Thème"></div>
 </div>
 
-<!-- Selection action bar — appears over a text selection in the reader.
-     Hidden on Android, where whole-paragraph tapping is the only mode. -->
-<div id="sel-bar" role="toolbar" aria-label="Actions sur la sélection">
-  <button type="button" class="selbar-btn" onclick="App.highlightSelection()">
+<!-- Contextual action bar — selected text on Apple/desktop, paragraph target on Android. -->
+<div id="sel-bar" role="toolbar" aria-label="Actions sur le passage">
+  <button type="button" class="selbar-btn" id="sel-action-highlight" onclick="App.highlightSelection()">
     <span aria-hidden="true">◆</span> Surligner
+  </button>
+  <button type="button" class="selbar-btn" id="sel-action-note" onclick="App.noteSelection()">
+    <span aria-hidden="true">✎</span> Note
+  </button>
+  <button type="button" class="selbar-btn" id="sel-action-copy" onclick="App.copySelection()">
+    <span aria-hidden="true">⎘</span> Copier
   </button>
 </div>
 
@@ -1748,7 +1768,7 @@ h1, h2, h3, h4 {
         <div class="onb-icon">✎</div>
         <div>
           <div class="onb-label">Surligner et annoter</div>
-          <div class="onb-desc">Sur Android : l'icône ◇ à droite d'un paragraphe le surligne. Sur iPhone, iPad et ordinateur : sélectionnez un passage pour le surligner dans la couleur de votre choix. Partout : ✎ pour écrire une note, et un passage déjà surligné se retouche ou se retire d'un appui. Tout est conservé dans <strong>Mon Espace</strong>.</div>
+          <div class="onb-desc">Sur iPhone, iPad et ordinateur : sélectionnez un passage pour faire apparaître <strong>Surligner · Note · Copier</strong>. Sur Android/Samsung : touchez un paragraphe pour ouvrir les mêmes actions ; le surlignage porte alors sur le paragraphe entier. Tout est conservé dans <strong>Mon Espace</strong>.</div>
         </div>
       </div>
     </div>
@@ -1886,7 +1906,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.17.3';
+const APP_VERSION = '2.17.4';
 
 // MJV-B backup contract. The corpus is read-only in this roadmap, so its exact
 // SHA-256 is a stable identity for this release. A future corpus generation may
@@ -2786,10 +2806,10 @@ const State = {
   hlPickerHlId: null,        // specific range record being recoloured/removed (null = whole-paragraph mode)
   hlPickerNewSel: null,      // {pid,start,end,text} for a pending, not-yet-committed selection awaiting a colour pick
   themePickerOpen: false,    // is the theme picker popover open?
-  pendingSel: null,          // { pid, start, end, text } last usable selection
+  pendingSel: null,          // { pid,start,end,text,whole } contextual text/paragraph target
   forceRangeSupport: undefined, // test hook to override the Android gate
-  noteTargetPid: null, noteEditId: null, notesNeedPersist: false, widePanel: 'jours',
-  listMode: 'jours', helpReturnScreen: 'home', helpReturnWidePanel: 'jours',
+  noteTargetPid: null, noteEditId: null, noteSelectionContext: null, notesNeedPersist: false, widePanel: 'jours',
+  listMode: 'jours', helpReturnScreen: 'home', helpReturnWidePanel: 'jours', helpReportPid: null,
   activeDay: null,  // devotional day — may differ from calendar day
   activeAppendix: null, // active appendix (A1-A6); mutually exclusive with activeDay
   // MJV-E semantic reading positions. Each unit stores a stable paragraph
@@ -3454,7 +3474,17 @@ const App = {
     return 'home';
   },
 
+  currentReaderParagraphId() {
+    if (!State.readerOpen || !currentUnit()) return null;
+    if (State.routeTargetPid && findPara(State.routeTargetPid)) return State.routeTargetPid;
+    const scrollId=isWide()?'wide-reader-scroll':'reader-scroll';
+    const el=document.getElementById(scrollId);
+    const pos=this.readingAnchorForScroller(el,currentUnit().unit_id);
+    return pos?.paragraph_id || null;
+  },
+
   openHelp() {
+    State.helpReportPid=this.currentReaderParagraphId();
     if(isWide()) {
       State.helpReturnWidePanel=(State.widePanel && State.widePanel!=='aide')?State.widePanel:'jours';
       this.wideNav('aide');
@@ -4198,7 +4228,7 @@ const App = {
     // there — select text instead. ◆ (an existing highlight, of either
     // kind, from before this change or from Android) still needs to stay
     // manageable, so it keeps rendering regardless of platform.
-    const offerCreateViaTap = anyHl || !this.rangeHighlightSupported();
+    const offerCreateViaTap = anyHl;
     const hlLabel = anyHl
       ? 'Surlignage ' + HL_COLORS[hlColorOf(pid)].label.toLowerCase() + ' — changer la couleur ou retirer'
       : 'Surligner ce paragraphe';
@@ -4206,10 +4236,9 @@ const App = {
       ? `<button class="para-hl-btn${anyHl?' active':''}" onclick="App.onHighlightBtn('${pid}')" title="${anyHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${anyHl?'true':'false'}">${anyHl?'◆':'◇'}</button>`
       : '';
 
-    return `<p class="${cls}${wholeCls}" data-pid="${pid}">${inner}`
-      + `<button class="para-report-btn" onclick="App.reportTextIssue('${pid}')" title="Signaler un problème de texte" aria-label="Signaler un problème de texte">!</button>`
+    return `<p class="${cls}${wholeCls}" data-pid="${pid}" onclick="App.onParagraphContextTap(event,'${pid}')">${inner}`
       + hlBtn
-      + `<button class="para-note-btn" onclick="App.openNoteModal('${pid}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
+      + `<button class="para-note-btn" onclick="event.stopPropagation();App.openNoteModal('${pid}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
   },
 
   // Rebuilds ONE paragraph in place instead of the whole reader body.
@@ -4607,9 +4636,10 @@ const App = {
   },
 
   // ── Notes ─────────────────────────────────────────────────────
-  // MJV-C: notes are record-based. The paragraph pencil always creates a new
-  // note; editing an existing note explicitly passes its note ID.
-  openNoteModal(pid, noteId=null) {
+  // MJV-H.1: notes remain record-based, but creation can now carry the exact
+  // selected passage/range from the common contextual action bar. Existing
+  // paragraph-level/desktop note entry remains valid and produces null context.
+  openNoteModal(pid, noteId=null, selectionContext=null) {
     this._modalOpener = document.activeElement;
     State.noteTargetPid = pid;
     State.noteEditId = noteId || null;
@@ -4618,10 +4648,14 @@ const App = {
     const para = hit.para, unit = hit.unit;
     const existing = noteId ? State.notes[noteId] : null;
     if (noteId && (!existing || existing.paragraph_id!==pid)) { State.noteEditId=null; return; }
+    const existingContext = existing?.selected_text ? {selected_text:existing.selected_text,range:existing.range} : null;
+    const ctx = existingContext || (selectionContext?.selected_text ? selectionContext : null);
+    State.noteSelectionContext = ctx ? {selected_text:String(ctx.selected_text),range:ctx.range?{start:ctx.range.start,end:ctx.range.end}:null} : null;
     const dayLabel = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
     document.getElementById('note-modal-title').textContent = existing ? 'Modifier la note' : 'Ajouter une note';
-    document.getElementById('note-modal-subtitle').textContent = dayLabel + ' · ' + pid + (existing ? ' · note existante' : ' · nouvelle note');
-    document.getElementById('note-modal-excerpt').textContent = para.text.slice(0,160) + (para.text.length>160?'…':'');
+    document.getElementById('note-modal-subtitle').textContent = dayLabel + ' · ' + pid + (ctx ? ' · passage sélectionné' : (existing ? ' · note existante' : ' · nouvelle note'));
+    const excerptSource = ctx?.selected_text || para.text;
+    document.getElementById('note-modal-excerpt').textContent = excerptSource.slice(0,160) + (excerptSource.length>160?'…':'');
     const ta = document.getElementById('note-textarea');
     ta.value = existing ? existing.text : '';
     ta.dataset.initialValue = ta.value;
@@ -4665,6 +4699,7 @@ const App = {
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null;
     State.noteEditId = null;
+    State.noteSelectionContext = null;
     this.stopKeyboardTracking();
     this.onModalClosed();
     this.checkPendingReload();
@@ -4691,15 +4726,16 @@ const App = {
     }
     const now=Date.now();
     const id=editId || this.newNoteId();
+    const ctx=State.noteSelectionContext;
     const record=previous
       ? {...previous,text:raw,updated_at:now}
-      : {id,paragraph_id:pid,unit_id:unit.unit_id,text:raw,created_at:now,updated_at:now,selected_text:null,range:null};
+      : {id,paragraph_id:pid,unit_id:unit.unit_id,text:raw,created_at:now,updated_at:now,selected_text:ctx?.selected_text||null,range:ctx?.range?{start:ctx.range.start,end:ctx.range.end}:null};
     const next={...State.notes,[id]:record};
     const ok=saveNotes(next);
     if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
     State.notes=next; State.notesNeedPersist=false;
     document.getElementById('note-modal').classList.remove('open');
-    State.noteTargetPid = null; State.noteEditId=null;
+    State.noteTargetPid = null; State.noteEditId=null; State.noteSelectionContext=null;
     this.stopKeyboardTracking(); this.onModalClosed(); this.refreshAfterNoteChange();
     this.showToast(previous ? 'Note modifiée ✎' : 'Note enregistrée ✎');
     this.checkPendingReload();
@@ -4866,17 +4902,30 @@ const App = {
     const offsets = this.offsetsFromRange(startP, range);
     if (!offsets) { this.hideSelBar(); return; }
 
-    State.pendingSel = { pid: startP.dataset.pid, start: offsets.start, end: offsets.end, text: range.toString() };
+    State.pendingSel = { pid: startP.dataset.pid, start: offsets.start, end: offsets.end, text: range.toString(), whole:false };
     this.showSelBar(range);
+  },
+
+  onParagraphContextTap(event, pid) {
+    if (this.rangeHighlightSupported()) return;
+    if (!event || event.defaultPrevented) return;
+    const interactive=event.target?.closest?.('button,mark,a,input,textarea,select');
+    if (interactive) return;
+    const hit=findPara(pid); if(!hit) return;
+    const paraEl=event.currentTarget?.matches?.('[data-pid]')?event.currentTarget:document.querySelector(`[data-pid="${pid}"]`);
+    State.pendingSel={pid,start:null,end:null,text:hit.para.text,whole:true};
+    try { window.getSelection()?.removeAllRanges(); } catch(e) {}
+    this.showSelBar(paraEl || event.currentTarget);
   },
 
   showSelBar(range) {
     const bar = document.getElementById('sel-bar');
     if (!bar) return;
     bar.classList.add('open');
-    // Anchor above the selection, flipping below when there's no room
-    const rects = range.getClientRects();
+    // Anchor above the selection/paragraph, flipping below when needed.
+    const rects = range?.getClientRects ? range.getClientRects() : [];
     const r = rects.length ? rects[0] : range.getBoundingClientRect();
+    bar.setAttribute('aria-label', State.pendingSel?.whole ? 'Actions sur le paragraphe' : 'Actions sur la sélection');
     const bw = bar.offsetWidth, bh = bar.offsetHeight, M = 10;
     let left = r.left + r.width / 2 - bw / 2;
     left = Math.min(Math.max(M, left), window.innerWidth - bw - M);
@@ -4903,7 +4952,26 @@ const App = {
     const anchorRect = bar ? bar.getBoundingClientRect() : null;
     this.hideSelBar();
     try { window.getSelection()?.removeAllRanges(); } catch(e) {}
-    this.openHlPicker(s.pid, null, s, anchorRect);
+    if (s.whole) this.openHlPicker(s.pid, null, null, anchorRect);
+    else this.openHlPicker(s.pid, null, s, anchorRect);
+  },
+
+  noteSelection() {
+    const s=State.pendingSel;
+    if(!s){this.hideSelBar();return;}
+    const ctx=s.whole?null:{selected_text:s.text,range:{start:s.start,end:s.end}};
+    this.hideSelBar();
+    try { window.getSelection()?.removeAllRanges(); } catch(e) {}
+    this.openNoteModal(s.pid,null,ctx);
+  },
+
+  copySelection() {
+    const s=State.pendingSel;
+    if(!s){this.hideSelBar();return;}
+    const text=String(s.text||'');
+    this.hideSelBar();
+    try { window.getSelection()?.removeAllRanges(); } catch(e) {}
+    this.copyText(text).then(ok=>this.showToast(ok?(s.whole?'Paragraphe copié':'Passage copié'):'Impossible de copier'));
   },
 
   // ── DOM Range → text offsets ───────────────────────────────────────
@@ -4982,9 +5050,9 @@ const App = {
     if (removeBtn) removeBtn.style.display = newSel ? 'none' : '';
 
     picker.classList.add('open');
-    const anchor = newSel
-      ? (rect || document.getElementById('sel-bar'))
-      : (hlId ? document.querySelector(`mark[data-hlid="${hlId}"]`) : document.querySelector(`[data-pid="${pid}"] .para-hl-btn`));
+    const anchor = rect || (newSel
+      ? document.getElementById('sel-bar')
+      : (hlId ? document.querySelector(`mark[data-hlid="${hlId}"]`) : (document.querySelector(`[data-pid="${pid}"] .para-hl-btn`) || document.querySelector(`[data-pid="${pid}"]`))));
     this.positionPickerNear('hl-picker', anchor);
     this.onModalOpened('hl-picker');
   },
@@ -5388,8 +5456,8 @@ const App = {
         <div class="help-item">
           <div class="help-icon">◇</div>
           <div class="help-text">
-            <div class="help-label">Surligner un paragraphe entier</div>
-            <div class="help-desc">Sur Android et Samsung, chaque paragraphe porte une icône losange à droite : appuyez une fois pour le surligner dans votre dernière couleur utilisée, et le losange devient plein (◆). Sur iPhone, iPad et ordinateur, où l'on peut sélectionner un passage précis (voir ci-dessous), ce losange n'apparaît que sur un paragraphe déjà surligné — il sert alors à changer la couleur ou à retirer le surlignage, pas à en créer un nouveau. Le passage est conservé dans <strong>Mon Espace</strong>.</div>
+            <div class="help-label">Actions contextuelles</div>
+            <div class="help-desc">Sur iPhone, iPad et ordinateur, sélectionnez un passage : la même barre affiche <strong>Surligner · Note · Copier</strong>. Sur Android/Samsung, touchez un paragraphe pour ouvrir ces mêmes actions ; « Surligner » agit alors sur le paragraphe entier. Un surlignage déjà présent reste retouchable ou supprimable.</div>
           </div>
         </div>
 
@@ -5397,7 +5465,7 @@ const App = {
           <div class="help-icon">✧</div>
           <div class="help-text">
             <div class="help-label">Surligner une partie seulement</div>
-            <div class="help-desc">Sur iPhone, iPad et ordinateur : sélectionnez les mots souhaités avec le doigt (ou la souris), puis appuyez sur <strong>◆ Surligner</strong> dans la petite barre qui apparaît. Choisissez une couleur dans la palette qui s'ouvre : seuls ces mots sont surlignés dans cette couleur. Vous pouvez surligner plusieurs passages différents dans un même paragraphe.</div>
+            <div class="help-desc">Sur iPhone, iPad et ordinateur : sélectionnez les mots souhaités avec le doigt (ou la souris), puis choisissez <strong>Surligner</strong>, <strong>Note</strong> ou <strong>Copier</strong>. « Surligner » ouvre la palette et ne marque que les mots sélectionnés.</div>
           </div>
         </div>
 
@@ -5405,7 +5473,7 @@ const App = {
           <div class="help-icon">◈</div>
           <div class="help-text">
             <div class="help-label">Sur Android et Samsung</div>
-            <div class="help-desc">Le surlignage se fait par paragraphe entier (l'icône losange). La sélection mot à mot n'est pas proposée sur ces appareils, car le menu de sélection du système Android ne peut pas être remplacé par une application web. Tout le reste fonctionne de façon identique.</div>
+            <div class="help-desc">Touchez le paragraphe : <strong>Surligner · Note · Copier</strong> apparaît. Le surlignage est volontairement appliqué au paragraphe entier ; la sélection mot à mot n'est pas utilisée afin d'éviter les menus système Google/Traduire/Rechercher qui entrent en conflit avec l'application.</div>
           </div>
         </div>
 
@@ -5421,7 +5489,7 @@ const App = {
           <div class="help-icon">✎</div>
           <div class="help-text">
             <div class="help-label">Notes personnelles</div>
-            <div class="help-desc">L’icône crayon crée une nouvelle note privée (jusqu’à 1 000 caractères) attachée à ce paragraphe. Vous pouvez conserver plusieurs notes sur le même paragraphe : une nouvelle note n’écrase jamais les précédentes. Chaque note peut être modifiée ou supprimée séparément et s’affiche en jaune sous le paragraphe concerné.</div>
+            <div class="help-desc">Choisissez <strong>Note</strong> dans la barre contextuelle. Si vous avez sélectionné des mots, la note conserve aussi ce passage comme contexte ; sur Android/Samsung elle reste attachée au paragraphe ciblé. Plusieurs notes peuvent coexister sur le même paragraphe sans s’écraser.</div>
           </div>
         </div>
 
@@ -5476,7 +5544,7 @@ const App = {
       <div class="help-section">
         <div class="help-section-title">✶ Liens et assistance</div>
         <div class="help-item"><div class="help-icon">↗</div><div class="help-text"><div class="help-label">Copier un lien stable</div><div class="help-desc">Dans le lecteur, le bouton « Lien » copie une adresse qui rouvre ce jour ou cet appendice, et le passage ciblé lorsqu’il y en a un. Les liens utilisent les identifiants stables du corpus.</div></div></div>
-        <div class="help-item"><div class="help-icon">!</div><div class="help-text"><div class="help-label">Signaler un problème de texte</div><div class="help-desc">Le bouton ! d’un paragraphe prépare un signalement contenant uniquement la version de l’app, l’identité du corpus, l’unité, le paragraphe, le type de section et le lien stable. Vos notes et surlignages personnels ne sont jamais inclus.</div></div></div>
+        <div class="help-item"><div class="help-icon">!</div><div class="help-text"><div class="help-label">Signaler un problème de texte</div><div class="help-desc">Pour garder le lecteur sobre, le signe ! n’est plus répété devant chaque paragraphe. Depuis le lecteur, ouvrez Aide puis utilisez le bouton ci-dessous : il prépare un signalement pour le passage courant, sans inclure vos notes ni vos surlignages.</div><button type="button" class="backup-btn" onclick="App.reportCurrentTextIssue()" style="margin-top:8px">Signaler le passage courant</button></div></div>
         <div class="help-item"><div class="help-icon">i</div><div class="help-text"><div class="help-label">Diagnostics</div><div class="help-desc">Pour l’assistance technique, copiez des diagnostics sans contenu personnel.</div><button type="button" class="backup-btn" onclick="App.copyDiagnostics()" style="margin-top:8px">Copier les diagnostics</button></div></div>
       </div>
 
@@ -5782,11 +5850,26 @@ const App = {
       'Aucune note personnelle ni donnée de surlignage n’est incluse.'
     ].join('\n');
   },
-  reportTextIssue(pid) {
-    const report=this.buildTextIssueReport(pid);if(!report)return;
+  async reportTextIssue(pid) {
+    const report=this.buildTextIssueReport(pid);if(!report)return false;
     const title='Signalement de texte — '+pid;
-    if(navigator.share) navigator.share({title,text:report}).catch(()=>{});
-    else this.copyText(report).then(ok=>this.showToast(ok?'Signalement copié — prêt à envoyer':'Impossible de copier le signalement'));
+    if(navigator.share) {
+      try { await navigator.share({title,text:report}); return true; }
+      catch(e) {
+        if(e?.name==='AbortError') return false;
+        const ok=await this.copyText(report);
+        this.showToast(ok?'Partage indisponible — signalement copié':'Impossible de partager ou copier le signalement');
+        return ok;
+      }
+    }
+    const ok=await this.copyText(report);
+    this.showToast(ok?'Signalement copié — prêt à envoyer':'Impossible de copier le signalement');
+    return ok;
+  },
+  reportCurrentTextIssue() {
+    const pid=State.helpReportPid || this.currentReaderParagraphId();
+    if(!pid){this.showToast('Ouvrez d’abord le passage à signaler');return false;}
+    return this.reportTextIssue(pid);
   },
   buildDiagnostics() {
     const unit=currentUnit();

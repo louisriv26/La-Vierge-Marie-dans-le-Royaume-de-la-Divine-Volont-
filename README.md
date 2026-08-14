@@ -4,7 +4,7 @@ Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* 
 
 ## Current release
 
-- App version: **v2.17.3**
+- App version: **v2.17.4**
 - Corpus version: **1.0.0**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
@@ -29,7 +29,7 @@ Do **not** use a blind global replacement of old version strings: historical dat
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.3` — release-specific app shell
+- `mjv-shell-v2.17.4` — release-specific app shell
 - `mjv-content-v1` — corpus content; bump only when the governed corpus changes
 - `mjv-fonts-v1` — cached webfonts
 
@@ -123,10 +123,10 @@ No cloud service is used and no user data is uploaded automatically. The last su
 MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to a versioned record store. Each record has its own stable note ID plus `paragraph_id`, `unit_id`, exact note text, `created_at`, `updated_at`, and optional selection/range fields. The migration is deterministic and preserves every accepted historical note text byte-for-byte.
 
 - A paragraph can now hold multiple independent notes.
-- The paragraph pencil always creates a new note; existing notes expose ID-specific edit/delete actions.
+- The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.3 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.4 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 
@@ -153,7 +153,7 @@ MJV-E replaces pixel-only reading resume with a stable paragraph anchor plus wit
 
 ## MJV-G PWA / offline / fonts / orientation — v2.16.0
 
-- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.3`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
+- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.4`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
 - Install-time **required shell** requests (`./`, `index.html`, `manifest.json`) now use `cache: reload` and are atomic: a failed required fetch prevents the new worker from activating, leaving the previous working worker in control. Icons remain optional cosmetic precache assets.
 - The corpus bucket is retained across code-only releases. If an essential corpus asset is absent from that bucket, the install must fetch it successfully before activation.
 - Runtime shell navigations use network-first with a 3.5 s bound and `cache: no-store`, then the versioned shell cache as fallback. This avoids normal HTTP-cache staleness while preserving offline startup.
@@ -189,6 +189,17 @@ A second fresh audit of the locked v2.17.1 package found two runtime reproducibi
 - Physical iPhone/iPad/Samsung, installed-PWA/live-origin and real VoiceOver/TalkBack/NVDA gates remain **NOT_TESTED** and release-critical; this package cannot be promoted to full MJV-H PASS from static/headless evidence alone.
 
 
+
+## MJV-H.1 owner-test correction — v2.17.4
+
+v2.17.4 supersedes v2.17.3 as the MJV-H physical-test candidate after owner testing found the reader interaction was not fully harmonised with 24 Heures and the permanent paragraph `!` report control was distracting and could fail silently when Web Share rejected.
+
+- On iPhone/iPad/desktop, selecting text now exposes one contextual bar: **Surligner · Note · Copier**.
+- On Android/Samsung, tapping a paragraph opens the same actions; Surligner remains whole-paragraph only.
+- Notes created from a text selection retain the existing schema's `selected_text` and `range` context; no storage-schema migration was introduced.
+- The repeated paragraph `!` control is removed. Text-issue reporting remains available from Aide for the current passage and now falls back to clipboard feedback if Web Share fails.
+- The paragraph pencil is hidden on coarse-pointer/touch devices and is not persistently visible on fine-pointer desktop; the fallback appears only on paragraph hover or keyboard focus.
+- Corpus text, stable IDs, backup schema v4, highlight algorithm, reading-position/PWA fixes and existing user data remain protected.
 
 ## MJV-H third adversarial deep recheck — v2.17.3
 
