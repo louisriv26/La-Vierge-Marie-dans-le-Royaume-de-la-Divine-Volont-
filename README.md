@@ -4,7 +4,7 @@ Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* 
 
 ## Current release
 
-- App version: **v2.17.4**
+- App version: **v2.17.8**
 - Corpus version: **1.0.0**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
@@ -29,7 +29,7 @@ Do **not** use a blind global replacement of old version strings: historical dat
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.4` — release-specific app shell
+- `mjv-shell-v2.17.8` — release-specific app shell
 - `mjv-content-v1` — corpus content; bump only when the governed corpus changes
 - `mjv-fonts-v1` — cached webfonts
 
@@ -126,7 +126,7 @@ MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to 
 - The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.4 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.8 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 
@@ -153,7 +153,7 @@ MJV-E replaces pixel-only reading resume with a stable paragraph anchor plus wit
 
 ## MJV-G PWA / offline / fonts / orientation — v2.16.0
 
-- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.4`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
+- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.8`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
 - Install-time **required shell** requests (`./`, `index.html`, `manifest.json`) now use `cache: reload` and are atomic: a failed required fetch prevents the new worker from activating, leaving the previous working worker in control. Icons remain optional cosmetic precache assets.
 - The corpus bucket is retained across code-only releases. If an essential corpus asset is absent from that bucket, the install must fetch it successfully before activation.
 - Runtime shell navigations use network-first with a 3.5 s bound and `cache: no-store`, then the versioned shell cache as fallback. This avoids normal HTTP-cache staleness while preserving offline startup.
@@ -190,6 +190,29 @@ A second fresh audit of the locked v2.17.1 package found two runtime reproducibi
 
 
 
+
+
+## MJV-H.1 deep four-pass correction — v2.17.6
+
+v2.17.6 supersedes v2.17.5 after a fresh four-pass audit of the immutable v2.17.5 package.
+
+- The wide/iPad `Jours` title list remains removed, and its now-empty shared results surface is **fully collapsed** instead of leaving a large blank flex spacer above `Pour aujourd’hui`.
+- `Recherche` still reactivates the same results surface on demand; the mobile 37-unit `Jours` list remains unchanged.
+- Current QA evidence is rebuilt from the v2.17.6 package; the independent four-pass audit script is package-relative and executable against the actual evidence layout.
+- Active reports now include a line-by-line claims audit and a recursive stale/contradiction scan.
+- Corpus, stable IDs, notes, highlights, semantic reading position and PWA behaviour remain protected.
+- Real iPhone/iPad/Samsung, installed-PWA/live-origin and assistive-technology validation remain external release-critical gates.
+
+## MJV-H.1 wide-layout simplification — v2.17.5
+
+v2.17.5 is a narrow UX patch on the v2.17.4 controlled-test baseline.
+
+- On wide/iPad/desktop `Jours`, the persistent **Méditations du mois** title list is no longer rendered in the sidebar. The 31-day calendar and appendix buttons remain the direct navigation surface.
+- The shared sidebar scroller is retained only for **Recherche** results, so wide search continues to work without reintroducing the cramped title list.
+- The mobile `Jours` destination remains unchanged and still exposes the complete 37-unit list.
+- The wide `Pour aujourd’hui` card, progress, calendar, search, corpus, stable IDs, notes, highlights, reading position and PWA logic are unchanged.
+- Physical iPhone/iPad/Samsung, installed-PWA/live-origin and assistive-technology evidence remain separate release-critical gates.
+
 ## MJV-H.1 owner-test correction — v2.17.4
 
 v2.17.4 supersedes v2.17.3 as the MJV-H physical-test candidate after owner testing found the reader interaction was not fully harmonised with 24 Heures and the permanent paragraph `!` report control was distracting and could fail silently when Web Share rejected.
@@ -211,3 +234,29 @@ v2.17.3 supersedes v2.17.2 after a fresh package-level audit found two runtime/r
 - the exact uploaded encoding guard remains byte-identical and is executed through `scripts/run_exact_encoding_guard.py`, which verifies the guard's frozen SHA-256 and invokes its unchanged detection logic against this package's `index.html`, `manifest.json`, and `sw.js`.
 
 The protected corpus is unchanged. Physical iPhone/iPad/Samsung, installed-PWA, and real assistive-technology evidence remain separate release-critical gates.
+
+
+## MJV-H.1 Aide / À propos reconciliation — v2.17.7
+
+v2.17.7 supersedes v2.17.6 for controlled testing. It audits and reconciles the complete Aide / À propos content against the current runtime.
+
+- Adds explicit App/Corpus version and local-data/privacy information.
+- Corrects platform-specific Aujourd’hui and Terminé instructions.
+- Adds reading-position resume, stale-highlight explanation and clear 37-unit versus 31-day cycle wording.
+- Adds a dedicated Partager versus Lien explanation.
+- Fixes Partager so non-cancel share failures fall back to clipboard feedback instead of failing silently.
+- Makes Partager, Lien and text reporting resolve the paragraph actually being read, with the arrival/deep-link target only as fallback.
+- Clarifies first-online-load, offline/PWA and update behaviour, including protection of an unsaved note draft.
+- Corpus text and IDs are unchanged.
+
+
+## MJV-H.2 interaction closure — v2.17.8
+
+v2.17.8 supersedes v2.17.7 for controlled testing. This is a deliberately narrow ecosystem-alignment stage.
+
+- Contextual passage actions are now **Surligner · Note · Copier · Fermer**. `Fermer` dismisses the contextual bar and clears the temporary native selection without changing saved notes, highlights, read state or reading position.
+- The five user-facing highlight colour names are **Jaune · Bleu · Vert · Violet · Rose**. The internal `gold` storage key remains an implementation detail so no unnecessary user-state schema migration is introduced.
+- Aide remains the single help surface and retains À propos as an internal section.
+- Current Partager/Lien behaviour is preserved.
+- Android/Samsung highlighting policy and manifest `orientation: portrait` are intentionally unchanged pending physical-device evidence.
+- Corpus text, IDs and paragraph order are unchanged.
