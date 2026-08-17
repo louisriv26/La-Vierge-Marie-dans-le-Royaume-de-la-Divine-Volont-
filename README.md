@@ -4,7 +4,7 @@ Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* 
 
 ## Current release
 
-- App version: **v2.17.9**
+- App version: **v2.17.11**
 - Corpus version: **1.0.0**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
@@ -29,7 +29,7 @@ Do **not** use a blind global replacement of old version strings: historical dat
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.9` — release-specific app shell
+- `mjv-shell-v2.17.11` — release-specific app shell
 - `mjv-content-v1` — corpus content; bump only when the governed corpus changes
 - `mjv-fonts-v1` — cached webfonts
 
@@ -126,7 +126,7 @@ MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to 
 - The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.9 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.11 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 
@@ -153,7 +153,7 @@ MJV-E replaces pixel-only reading resume with a stable paragraph anchor plus wit
 
 ## MJV-G PWA / offline / fonts / orientation — v2.16.0
 
-- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.9`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
+- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.11`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
 - Install-time **required shell** requests (`./`, `index.html`, `manifest.json`) now use `cache: reload` and are atomic: a failed required fetch prevents the new worker from activating, leaving the previous working worker in control. Icons remain optional cosmetic precache assets.
 - The corpus bucket is retained across code-only releases. If an essential corpus asset is absent from that bucket, the install must fetch it successfully before activation.
 - Runtime shell navigations use network-first with a 3.5 s bound and `cache: no-store`, then the versioned shell cache as fallback. This avoids normal HTTP-cache staleness while preserving offline startup.
@@ -260,6 +260,20 @@ v2.17.8 supersedes v2.17.7 for controlled testing. This is a deliberately narrow
 - Current Partager/Lien behaviour is preserved.
 - Android/Samsung highlighting policy and manifest `orientation: portrait` are intentionally unchanged pending physical-device evidence.
 - Corpus text, IDs and paragraph order are unchanged.
+
+
+
+## MJV-H.4R iPad contextual-bar deep recheck — v2.17.11
+
+v2.17.11 re-executes the iPad contextual-action repair from the exact v2.17.9 governed baseline after an adversarial four-pass review invalidated the v2.17.10 evidence lock.
+
+- The iPadOS selection menu remains OS-owned near selected words. Marie's `Surligner · Note · Copier · Fermer` bar is separate, fixed at the bottom of the reading area **above** the reader navigation.
+- The earlier v2.17.10 candidate placed this bar only 14px above the viewport bottom; laid-out browser reconstruction found a 51px overlap with the wide reader navigation. The first v2.17.11 internal candidate then exposed a second mobile-specific overlap because mobile has both the reader navigation and a 4-action reader bar. The final v2.17.11 uses a safe-area-aware 152px mobile offset and 78px wide offset, leaving the contextual bar above the full reader controls.
+- The bar uses a stable dark `#1C1830` surface and light `#F8F6FC` action text in both themes.
+- The iOS selection-interaction guard preserves the captured exact range while toolbar touch collapses the native selection.
+- Help/onboarding now says the app bar appears above the reader navigation and separately from the system selection menu.
+- Corpus, stable IDs/order, highlight schema/range algorithm, notes/backup schema, Android/Samsung paragraph policy, Partager/Lien, navigation architecture, manifest identity/orientation and locked icon family remain unchanged.
+- Exact physical iPad Safari/PWA retesting is still required.
 
 
 ## Final locked Collection Luisa icon family v1 — v2.17.9
