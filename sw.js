@@ -1,5 +1,5 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '2.17.9';
+const VERSION = '2.17.6';
 
 // Three buckets instead of one. Previously a single version-scoped cache meant
 // every code-only deploy evicted the unchanged 416KB corpus and the fonts, so
@@ -21,14 +21,9 @@ const REQUIRED_SHELL_ASSETS = [
 ];
 
 const OPTIONAL_SHELL_ASSETS = [
-  './icons/favicon-16.png',
-  './icons/favicon-32.png',
-  './icons/favicon.ico',
-  './icons/icon-60.png',
-  './icons/icon-120.png',
+  './icons/icon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
 ];
 
