@@ -4,7 +4,7 @@ Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* 
 
 ## Current release
 
-- App version: **v2.17.6**
+- App version: **v2.17.9**
 - Corpus version: **1.0.0**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
@@ -29,7 +29,7 @@ Do **not** use a blind global replacement of old version strings: historical dat
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.6` — release-specific app shell
+- `mjv-shell-v2.17.9` — release-specific app shell
 - `mjv-content-v1` — corpus content; bump only when the governed corpus changes
 - `mjv-fonts-v1` — cached webfonts
 
@@ -126,7 +126,7 @@ MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to 
 - The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.6 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.9 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 
@@ -153,7 +153,7 @@ MJV-E replaces pixel-only reading resume with a stable paragraph anchor plus wit
 
 ## MJV-G PWA / offline / fonts / orientation — v2.16.0
 
-- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.6`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
+- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.9`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
 - Install-time **required shell** requests (`./`, `index.html`, `manifest.json`) now use `cache: reload` and are atomic: a failed required fetch prevents the new worker from activating, leaving the previous working worker in control. Icons remain optional cosmetic precache assets.
 - The corpus bucket is retained across code-only releases. If an essential corpus asset is absent from that bucket, the install must fetch it successfully before activation.
 - Runtime shell navigations use network-first with a 3.5 s bound and `cache: no-store`, then the versioned shell cache as fallback. This avoids normal HTTP-cache staleness while preserving offline startup.
@@ -234,3 +234,41 @@ v2.17.3 supersedes v2.17.2 after a fresh package-level audit found two runtime/r
 - the exact uploaded encoding guard remains byte-identical and is executed through `scripts/run_exact_encoding_guard.py`, which verifies the guard's frozen SHA-256 and invokes its unchanged detection logic against this package's `index.html`, `manifest.json`, and `sw.js`.
 
 The protected corpus is unchanged. Physical iPhone/iPad/Samsung, installed-PWA, and real assistive-technology evidence remain separate release-critical gates.
+
+
+## MJV-H.1 Aide / À propos reconciliation — v2.17.7
+
+v2.17.7 supersedes v2.17.6 for controlled testing. It audits and reconciles the complete Aide / À propos content against the current runtime.
+
+- Adds explicit App/Corpus version and local-data/privacy information.
+- Corrects platform-specific Aujourd’hui and Terminé instructions.
+- Adds reading-position resume, stale-highlight explanation and clear 37-unit versus 31-day cycle wording.
+- Adds a dedicated Partager versus Lien explanation.
+- Fixes Partager so non-cancel share failures fall back to clipboard feedback instead of failing silently.
+- Makes Partager, Lien and text reporting resolve the paragraph actually being read, with the arrival/deep-link target only as fallback.
+- Clarifies first-online-load, offline/PWA and update behaviour, including protection of an unsaved note draft.
+- Corpus text and IDs are unchanged.
+
+
+## MJV-H.2 interaction closure — v2.17.8
+
+v2.17.8 supersedes v2.17.7 for controlled testing. This is a deliberately narrow ecosystem-alignment stage.
+
+- Contextual passage actions are now **Surligner · Note · Copier · Fermer**. `Fermer` dismisses the contextual bar and clears the temporary native selection without changing saved notes, highlights, read state or reading position.
+- The five user-facing highlight colour names are **Jaune · Bleu · Vert · Violet · Rose**. The internal `gold` storage key remains an implementation detail so no unnecessary user-state schema migration is introduced.
+- Aide remains the single help surface and retains À propos as an internal section.
+- Current Partager/Lien behaviour is preserved.
+- Android/Samsung highlighting policy and manifest `orientation: portrait` are intentionally unchanged pending physical-device evidence.
+- Corpus text, IDs and paragraph order are unchanged.
+
+
+## Final locked Collection Luisa icon family v1 — v2.17.9
+
+v2.17.9 is a narrow visual-identity release on the exact v2.17.8 governed runtime.
+
+- Replaces the previous Marie icon set with the final locked Collection Luisa **Marie** identity across browser favicon, Apple touch and PWA surfaces.
+- Uses a dedicated `icon-maskable-512.png` for the manifest `maskable` purpose instead of reusing the ordinary 512px icon.
+- Precaches the nine platform-ready icon assets in the release-specific shell cache.
+- Removes the obsolete unreferenced `icons/icon.svg` and superseded `icons/icon-32.png`.
+- Preserves `orientation: portrait`, `start_url`, `scope`, corpus, stable IDs, local-data schema, reader interactions, Help/About, Partager/Lien and Android/Samsung policy unchanged.
+- Full physical-device, installed-PWA/live-origin and real assistive-technology validation remains external; this release must remain LIMITED_PASS until those exact-byte gates are executed.
