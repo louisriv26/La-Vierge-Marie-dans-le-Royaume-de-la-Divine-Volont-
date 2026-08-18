@@ -4,7 +4,19 @@ Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* 
 
 ## Current release
 
-- App version: **v2.17.11**
+## v2.17.14 — H.6 Aide / À propos public-release reconciliation
+
+This narrow successor reconciles the user-facing Aide/À propos content with the hardened v2.17.13 runtime. It moves À propos to the final Help section and documents the actual current contracts: self-hosted fonts, portrait/landscape support, the one-paragraph exact-selection limit on Apple/desktop, Android whole-paragraph targeting, Share/Link privacy, local-storage resilience, JSON backup/restore rejection reasons, and the corpus metadata/provenance boundary.
+
+No devotional corpus, stable ID, manifest, icon, font binary/licence, selection/highlight, note, backup-schema, search, navigation, orientation, or service-worker strategy change is introduced. Only `index.html`, `README.md`, and the service-worker release version change.
+
+Current PWA caches are `mjv-shell-v2.17.14` and `mjv-content-v1`. The former `mjv-fonts-v1` cache remains historical only and normal `mjv-` cache cleanup removes obsolete app-scoped caches after upgrade.
+
+`LIMITED_PASS_STATIC` remains the maximum automated status until physical iPad/iPhone/Samsung, installed-PWA/offline, native clipboard/share and real assistive-technology gates pass on these exact bytes.
+
+Historical baseline: v2.17.13 / H5R supplied the deep four-pass pre-public hardening that this Help-only stage documents; its protected runtime contracts are inherited unchanged.
+
+- App version: **v2.17.14**
 - Corpus version: **1.0.0**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
@@ -29,9 +41,8 @@ Do **not** use a blind global replacement of old version strings: historical dat
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.11` — release-specific app shell
+- `mjv-shell-v2.17.14` — release-specific app shell
 - `mjv-content-v1` — corpus content; bump only when the governed corpus changes
-- `mjv-fonts-v1` — cached webfonts
 
 The service worker deletes only `mjv-`-prefixed obsolete caches.
 
@@ -105,6 +116,14 @@ Static/browser-harness checks do not prove physical Safari or installed-PWA beha
 ├── corpus/
 │   ├── days.json
 │   └── manifest.json
+├── fonts/
+│   ├── crimson-text-400.woff2
+│   ├── crimson-text-600.woff2
+│   ├── crimson-text-400-italic.woff2
+│   ├── im-fell-english-400.woff2
+│   ├── im-fell-english-400-italic.woff2
+│   ├── OFL-Crimson-Text.txt
+│   └── OFL-IM-Fell-English.txt
 └── icons/
 ```
 
@@ -126,7 +145,7 @@ MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to 
 - The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.11 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.14 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 
@@ -151,14 +170,14 @@ MJV-E replaces pixel-only reading resume with a stable paragraph anchor plus wit
 - Production promotion remains subject to the roadmap's owner/user staging-acceptance gate and inherited unresolved physical-device gates.
 
 
-## MJV-G PWA / offline / fonts / orientation — v2.16.0
+## Historical — MJV-G PWA / offline / fonts / orientation — v2.16.0
 
-- The three-cache architecture established in MJV-G remains: release-specific `mjv-shell-v<APP_VERSION>` (currently `mjv-shell-v2.17.11`), plus `mjv-content-v1` and `mjv-fonts-v1`; cleanup remains scoped to `mjv-` cache names only.
+- Historical v2.16.0 architecture used three caches. v2.17.14 inherits/supersedes this with shell + content caches and self-hosted fonts; cleanup remains scoped to `mjv-` cache names only.
 - Install-time **required shell** requests (`./`, `index.html`, `manifest.json`) now use `cache: reload` and are atomic: a failed required fetch prevents the new worker from activating, leaving the previous working worker in control. Icons remain optional cosmetic precache assets.
 - The corpus bucket is retained across code-only releases. If an essential corpus asset is absent from that bucket, the install must fetch it successfully before activation.
 - Runtime shell navigations use network-first with a 3.5 s bound and `cache: no-store`, then the versioned shell cache as fallback. This avoids normal HTTP-cache staleness while preserving offline startup.
-- Google Fonts remain an **optional enhancement**, not a reader dependency. The install step now attempts to cache the Google Fonts stylesheet and all referenced `fonts.gstatic.com` resources; failure is non-fatal because the reader retains `Georgia, serif` fallback. No font-face change was made.
-- `manifest.json` intentionally remains `orientation: portrait`. MJV-G does **not** change it to `any` without the roadmap-required physical iPhone/iPad rotation/Split View evidence.
+- Historical v2.16.0 used optional remote Google Fonts. v2.17.14 inherits this: approved fonts are self-hosted and shipped in the app shell.
+- Historical v2.16.0 kept `orientation: portrait`. v2.17.14 preserves the current manifest at `orientation: any` so installed apps can use the validated wide/landscape layout.
 - Local Chromium service-worker/offline tests are evidence for browser/runtime behavior only. They do not substitute for installed physical-device Safari/Android testing or live GitHub Pages update testing.
 
 ## MJV-H accessibility / touch / responsive conformance — v2.17.0
@@ -258,7 +277,7 @@ v2.17.8 supersedes v2.17.7 for controlled testing. This is a deliberately narrow
 - The five user-facing highlight colour names are **Jaune · Bleu · Vert · Violet · Rose**. The internal `gold` storage key remains an implementation detail so no unnecessary user-state schema migration is introduced.
 - Aide remains the single help surface and retains À propos as an internal section.
 - Current Partager/Lien behaviour is preserved.
-- Android/Samsung highlighting policy and manifest `orientation: portrait` are intentionally unchanged pending physical-device evidence.
+- Historical H.2 statement: Android/Samsung highlighting policy and manifest `orientation: portrait` were unchanged at that stage. v2.17.14 preserves that orientation change only; Android/Samsung highlighting remains unchanged.
 - Corpus text, IDs and paragraph order are unchanged.
 
 
@@ -284,5 +303,5 @@ v2.17.9 is a narrow visual-identity release on the exact v2.17.8 governed runtim
 - Uses a dedicated `icon-maskable-512.png` for the manifest `maskable` purpose instead of reusing the ordinary 512px icon.
 - Precaches the nine platform-ready icon assets in the release-specific shell cache.
 - Removes the obsolete unreferenced `icons/icon.svg` and superseded `icons/icon-32.png`.
-- Preserves `orientation: portrait`, `start_url`, `scope`, corpus, stable IDs, local-data schema, reader interactions, Help/About, Partager/Lien and Android/Samsung policy unchanged.
+- Historical v2.17.9 statement: `orientation: portrait` was preserved then. v2.17.14 preserves `orientation: any`; the other listed contracts remain protected.
 - Full physical-device, installed-PWA/live-origin and real assistive-technology validation remains external; this release must remain LIMITED_PASS until those exact-byte gates are executed.

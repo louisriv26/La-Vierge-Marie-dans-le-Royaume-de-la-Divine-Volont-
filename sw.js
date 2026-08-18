@@ -1,16 +1,12 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '2.17.11';
+const VERSION = '2.17.14';
 
-// Three buckets instead of one. Previously a single version-scoped cache meant
-// every code-only deploy evicted the unchanged 416KB corpus and the fonts, so
-// the first launch after any update re-downloaded everything.
-//   SHELL   — bumped per app version (index.html, manifest, icons)
-//   CONTENT — bumped only when the corpus itself changes
-//   FONTS   — origin-independent, effectively permanent
+// H5 uses two app-scoped buckets. Local OFL fonts ship with the release shell.
+//   SHELL   — bumped per app version (index.html, manifest, icons, local fonts)
+//   CONTENT — bumped only when the governed corpus itself changes
 const SHELL_CACHE   = 'mjv-shell-v' + VERSION;
 const CONTENT_CACHE = 'mjv-content-v1';   // bump only when corpus/days.json changes
-const FONT_CACHE    = 'mjv-fonts-v1';
-const ALL_CACHES = [SHELL_CACHE, CONTENT_CACHE, FONT_CACHE];
+const ALL_CACHES = [SHELL_CACHE, CONTENT_CACHE];
 
 // Icons are precached too: without them a first-run-offline install showed
 // broken icons until one online visit populated the cache opportunistically.
@@ -18,6 +14,13 @@ const REQUIRED_SHELL_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './fonts/crimson-text-400.woff2',
+  './fonts/crimson-text-600.woff2',
+  './fonts/crimson-text-400-italic.woff2',
+  './fonts/im-fell-english-400.woff2',
+  './fonts/im-fell-english-400-italic.woff2',
+  './fonts/OFL-Crimson-Text.txt',
+  './fonts/OFL-IM-Fell-English.txt',
 ];
 
 const OPTIONAL_SHELL_ASSETS = [
@@ -37,13 +40,11 @@ const CONTENT_ASSETS = [
   './corpus/days.json'
 ];
 
-const FONT_URL = 'https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap';
 
 // How long to wait for the network before falling back to a cached copy.
 // Without this, a "lie-fi" connection left the app on the loading screen for
 // the full request timeout even though a perfectly good cached copy existed.
 const NET_TIMEOUT_MS = 3500;
-const FONT_TIMEOUT_MS = 2500;
 
 // Install-time requests bypass the browser HTTP cache. This prevents a new
 // service-worker version from seeding its versioned shell cache with stale
@@ -81,33 +82,7 @@ async function ensureContent(cache, url) {
   await cache.put(req, res.clone());
 }
 
-async function fetchOptionalFont(request) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FONT_TIMEOUT_MS);
-  try { return await fetch(request, { signal: controller.signal }); }
-  finally { clearTimeout(timer); }
-}
 
-async function warmFontCache() {
-  // Fonts remain an optional enhancement. The reader's local Georgia/serif
-  // fallback is always usable; when Google Fonts is reachable, cache both its
-  // stylesheet and every referenced WOFF/WOFF2 resource for later offline use.
-  const fonts = await caches.open(FONT_CACHE);
-  const cssReq = new Request(FONT_URL, { cache: 'reload', mode: 'cors' });
-  const cssRes = await fetchOptionalFont(cssReq);
-  if (!cssRes || !cssRes.ok) return;
-  const cssText = await cssRes.clone().text();
-  await fonts.put(cssReq, cssRes.clone());
-  const urls = [...new Set(Array.from(cssText.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g), m => m[1]))];
-  await Promise.all(urls.map(async url => {
-    try {
-      const req = new Request(url, { cache: 'reload', mode: 'cors' });
-      if (await fonts.match(req)) return;
-      const res = await fetchOptionalFont(req);
-      if (res && (res.ok || res.type === 'opaque')) await fonts.put(req, res.clone());
-    } catch (_) { /* font enhancement is deliberately non-fatal */ }
-  }));
-}
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
@@ -118,7 +93,6 @@ self.addEventListener('install', e => {
     const content = await caches.open(CONTENT_CACHE);
     for (const u of CONTENT_ASSETS) await ensureContent(content, u);
 
-    await warmFontCache().catch(() => {});
     await self.skipWaiting();
   })());
 });
@@ -211,11 +185,7 @@ self.addEventListener('fetch', e => {
   const isCorpus = url.pathname.includes('/corpus/');
   const isShell = url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
 
-  if (isCrossOrigin) {
-    // Fonts (and any other cross-origin asset): cache-first, own bucket
-    e.respondWith(cacheFirst(e.request, FONT_CACHE).catch(() => caches.match(e.request)));
-    return;
-  }
+  if (isCrossOrigin) return;
 
   if (isCorpus) {
     // Static book content — serve instantly from cache, refresh in background
