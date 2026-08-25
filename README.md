@@ -1,29 +1,32 @@
 # La Vierge Marie dans le Royaume de la Divine Volonté
 
-## v2.17.15 — H.7 Safety, durability & public-release remediation
+## v2.17.16 — H.9-R1 four-pass Help reconciliation
 
-H.7 preserves the exact v1.0.0 corpus bytes and hardens the application shell around four invariants: backup record IDs are constrained and historical unsafe IDs are migrated safely; destructive undo uses a dedicated recovery surface; read/highlight/active-cycle mutations commit to in-memory/UI state only after durable persistence succeeds, with journaled multi-key transactions; and the fetched `corpus/days.json` bytes are SHA-256 verified before parsing or rendering. Semantic accent tokens now separate decorative gold from meaningful text/state controls, and visible version badges derive from `APP_VERSION`.
-
-The deploy remains `LIMITED_PASS_STATIC` until live-origin and physical-device/assistive-technology validation are completed.
-
+H.9-R1 supersedes the earlier v2.17.16 H.9 candidate after a strict four-pass audit found stale current-release README evidence and a responsive Help-navigation ID collision risk. It preserves the exact v1.0.0 corpus and the governed v2.17.15 runtime baseline while keeping all changes inside Help/release-documentation scope plus the required shell-cache version coupling.
 
 Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* by Luisa Piccarreta: **31 main days + 6 appendices**.
 
 ## Current release
 
-## v2.17.14 — H.6 Aide / À propos public-release reconciliation (historical baseline)
+### v2.17.16 — H.9-R1 four-pass Help reconciliation
+
+This is a Help-only successor to the governed v2.17.15 runtime baseline. It reorganises Aide into seven semantic sections with an in-page index; clarifies Aujourd’hui / Activer / Terminé / “Pour aujourd’hui”; documents February Days 29–31, note edit/delete, Fermer, Share/Link behaviour, replacement-mode restore, stronger backup guidance, and historical highlight recovery; adds dedicated Help callout styling and semantic headings; and uses container-specific Help navigation targets so mobile/wide Help instances cannot collide after a responsive layout change.
+
+No devotional corpus, stable ID, manifest, icon, font binary/licence, storage schema, search, reader/navigation, highlight/note implementation, orientation, offline strategy or service-worker fetch strategy changes are introduced. Runtime changes are limited to `APP_VERSION`/shell-cache versioning needed to deliver the revised Help.
+
+The user reported that the v2.17.15 application had been tested and appeared to work correctly; no formal per-device H.8 evidence matrix was completed. Because v2.17.16 changes the Help UI and release cache only, a short post-deploy Help/open-close/update smoke test remains prudent.
+
+### v2.17.14 — H.6 Aide / À propos public-release reconciliation (historical baseline)
 
 This narrow successor reconciles the user-facing Aide/À propos content with the hardened v2.17.13 runtime. It moves À propos to the final Help section and documents the actual current contracts: self-hosted fonts, portrait/landscape support, the one-paragraph exact-selection limit on Apple/desktop, Android whole-paragraph targeting, Share/Link privacy, local-storage resilience, JSON backup/restore rejection reasons, and the corpus metadata/provenance boundary.
 
 No devotional corpus, stable ID, manifest, icon, font binary/licence, selection/highlight, note, backup-schema, search, navigation, orientation, or service-worker strategy change is introduced. Only `index.html`, `README.md`, and the service-worker release version change.
 
-Current PWA caches are `mjv-shell-v2.17.15` and `mjv-content-v1`. The former `mjv-fonts-v1` cache remains historical only and normal `mjv-` cache cleanup removes obsolete app-scoped caches after upgrade.
-
-`LIMITED_PASS_STATIC` remains the maximum automated status until physical iPad/iPhone/Samsung, installed-PWA/offline, native clipboard/share and real assistive-technology gates pass on these exact bytes.
+Current PWA caches are `mjv-shell-v2.17.16` and `mjv-content-v1`. The former `mjv-fonts-v1` cache remains historical only and normal `mjv-` cache cleanup removes obsolete app-scoped caches after upgrade.
 
 Historical baseline: v2.17.13 / H5R supplied the deep four-pass pre-public hardening that this Help-only stage documents; its protected runtime contracts are inherited unchanged.
 
-- App version: **v2.17.15**
+- App version: **v2.17.16**
 - Corpus version: **1.0.0**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
@@ -48,7 +51,7 @@ Do **not** use a blind global replacement of old version strings: historical dat
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.15` — release-specific app shell
+- `mjv-shell-v2.17.16` — release-specific app shell
 - `mjv-content-v1` — corpus content; bump only when the governed corpus changes
 
 The service worker deletes only `mjv-`-prefixed obsolete caches.
@@ -92,7 +95,7 @@ Favourites are intentionally retired: legacy favourites migrate once into gold h
 - Overlapping ranges resolve first-wins; nested `<mark>` elements are not allowed.
 - A range commit rerenders only the affected paragraph (`renderParagraph(pid)`), not the whole reader.
 - Android exact-range highlighting remains disabled unless physical-device evidence supports a future redesign.
-- Pure logic lives behind the `Pure` test seam. `App.selfTest()` currently contains **122 assertions**.
+- Pure logic lives behind the `Pure` test seam. `App.selfTest()` currently contains **131 assertions**.
 
 ## Pre-deploy checks
 
@@ -152,7 +155,7 @@ MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to 
 - The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.15 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.16 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 

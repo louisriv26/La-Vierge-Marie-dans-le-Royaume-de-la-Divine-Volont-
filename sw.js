@@ -1,5 +1,5 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '2.17.15';
+const VERSION = '2.17.16';
 
 // H5 uses two app-scoped buckets. Local OFL fonts ship with the release shell.
 //   SHELL   — bumped per app version (index.html, manifest, icons, local fonts)

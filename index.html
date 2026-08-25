@@ -1188,28 +1188,42 @@ h1, h2, h3, h4 {
 .restore-errors { margin-top: 10px; color: var(--danger); font-size: 12px; line-height: 1.5; }
 @media (max-width: 520px) { .backup-actions { grid-template-columns: 1fr; } }
 
-.help-section { margin-bottom: 24px; }
+.help-content { scroll-behavior: smooth; }
+.help-nav { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px; }
+.help-nav a {
+  display:inline-flex; align-items:center; min-height:36px; padding:7px 10px;
+  border:0.5px solid var(--border); border-radius:999px; background:var(--ivory);
+  color:var(--primary); font-size:12px; font-weight:600; text-decoration:none;
+}
+.help-nav a:hover, .help-nav a:focus-visible { border-color:var(--primary); outline:none; }
+.help-section { margin-bottom: 28px; scroll-margin-top: 12px; }
 .help-section-title {
-  font-family: var(--font-reader); font-size: 16px; color: var(--primary);
-  font-weight: 600; margin-bottom: 10px; padding-bottom: 6px;
-  border-bottom: 0.5px solid var(--border);
+  font-family: var(--font-reader); font-size: 17px; color: var(--primary);
+  font-weight: 600; margin:0 0 12px; padding:0 0 7px;
+  border-bottom: 0.5px solid var(--border); line-height:1.35;
 }
 .help-item { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
 .help-icon {
   width: 32px; height: 32px; border-radius: 50%; background: var(--mary-bg);
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; flex-shrink: 0; color: var(--primary);
-  border: 0.5px solid var(--border);
+  border: 0.5px solid var(--border); text-align:center;
 }
-.help-text { flex: 1; }
+.help-text { flex: 1; min-width:0; }
 .help-label { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
 .help-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
-.help-tip {
+.help-note, .help-tip {
   background: var(--practice-bg); border: 0.5px solid var(--accent);
-  border-radius: var(--radius-md); padding: 12px 14px; margin-top: 16px;
-  font-family: var(--font-reader); font-size: 13px; color: var(--ink); line-height: 1.65;
-  font-style: italic;
+  border-radius: var(--radius-md); padding: 12px 14px; margin: 12px 0 14px;
+  font-size: 13px; color: var(--ink); line-height: 1.65;
 }
+.help-tip { font-family: var(--font-reader); font-style: italic; }
+.help-key-grid { display:grid; grid-template-columns:1fr; gap:8px; margin:0 0 14px; }
+.help-key { border:0.5px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; background:var(--white); }
+.help-key strong { display:block; color:var(--ink); font-size:13px; margin-bottom:2px; }
+.help-key span { display:block; color:var(--muted); font-size:12px; line-height:1.5; }
+.help-subtitle { margin:16px 0 9px; color:var(--ink); font-size:13px; font-weight:700; }
+@media (min-width: 720px) { .help-key-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 [aria-label="Fermer l’aide"] { min-width: 44px; min-height: 44px; }
 
 /* Today card — clickable hint */
@@ -1979,7 +1993,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.17.15';
+const APP_VERSION = '2.17.16';
 
 // MJV-B backup contract. The corpus is read-only in this roadmap, so its exact
 // SHA-256 is a stable identity for this release. A future corpus generation may
@@ -5541,123 +5555,94 @@ const App = {
     const paraCount=Object.keys(State.paraIndex||{}).length || 753;
     const dayCount=mainDayTotal();
     const appendixCount=Math.max(0,unitCount-dayCount);
+    const helpPrefix = containerId === 'wide-aide' ? 'help-wide' : 'help-mobile';
     const div = document.createElement('div');
     div.className = 'help-content';
     div.innerHTML = `
     <div style="padding:16px 16px 0">
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Navigation principale</div>
-        <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Accueil</div><div class="help-desc">Sur téléphone, affiche le calendrier, la progression, la méditation du jour et la carte « Pour aujourd’hui ». Sur iPad/ordinateur, la disposition large ouvre directement le lecteur du jour calendaire.</div></div></div>
-        <div class="help-item"><div class="help-icon">◎</div><div class="help-text"><div class="help-label">Jours</div><div class="help-desc">Sur téléphone, Jours affiche les ${dayCount} méditations puis les ${appendixCount} appendices. Sur iPad/ordinateur, utilisez le calendrier et les boutons A1–A${appendixCount} dans la barre latérale.</div></div></div>
-        <div class="help-item"><div class="help-icon">⌕</div><div class="help-text"><div class="help-label">Recherche</div><div class="help-desc">Recherche en plein texte dans les titres et les ${paraCount} paragraphes. Lorsque vous revenez d’un résultat, l’application restaure votre requête et la position de la liste.</div></div></div>
-        <div class="help-item"><div class="help-icon">♡</div><div class="help-text"><div class="help-label">Mon Espace</div><div class="help-desc">Regroupe progression, surlignages, surlignages à vérifier, notes, sauvegarde/restauration, journal et nouveau cycle.</div></div></div>
-        <div class="help-item"><div class="help-icon">?</div><div class="help-text"><div class="help-label">Aide</div><div class="help-desc">Le bouton ? ouvre cette page sans perdre votre contexte de lecture. En la fermant, vous revenez à l’écran ou au panneau précédent.</div></div></div>
-        <div class="help-item"><div class="help-icon">✦</div><div class="help-text"><div class="help-label">Carte « Pour aujourd’hui »</div><div class="help-desc">Affiche la petite pratique et l’oraison jaculatoire du jour de pratique actif. Appuyez sur la carte pour l’ouvrir, puis sur ✕ Fermer ou en dehors de la fenêtre pour la refermer.</div></div></div>
-      </div>
+      <nav class="help-nav" aria-label="Sections de l’aide">
+        <a href="#${helpPrefix}-parcours">Parcours</a>
+        <a href="#${helpPrefix}-lire">Lire</a>
+        <a href="#${helpPrefix}-conserver">Surligner & noter</a>
+        <a href="#${helpPrefix}-donnees">Mon Espace</a>
+        <a href="#${helpPrefix}-appareil">Appareil</a>
+        <a href="#${helpPrefix}-assistance">Assistance</a>
+        <a href="#${helpPrefix}-apropos">À propos</a>
+      </nav>
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Lire une méditation</div>
-        <div class="help-item"><div class="help-icon">✶</div><div class="help-text"><div class="help-label">Structure d’un jour</div><div class="help-desc">Chaque méditation suit cinq parties :<br><strong>1. L’Âme</strong> — introduction de l’âme<br><strong>2. Leçon de la Reine du Ciel</strong> — enseignement de Marie<br><strong>3. Réponse de l’Âme</strong> — acte de l’âme en réponse<br><strong>4. Petite pratique</strong> — action concrète pour la journée<br><strong>5. Oraison jaculatoire</strong> — brève prière de la journée.</div></div></div>
-        <div class="help-item"><div class="help-icon">Aᵃ</div><div class="help-text"><div class="help-label">Taille du texte</div><div class="help-desc">Aᵃ propose Petit (16 px), Normal (19 px), Grand (22 px) et Très grand (26 px). Le réglage est mémorisé.</div></div></div>
-        <div class="help-item"><div class="help-icon">←→</div><div class="help-text"><div class="help-label">Précédent / suivant</div><div class="help-desc">Les boutons de navigation parcourent les ${unitCount} unités dans l’ordre, y compris les appendices après le Jour 31.</div></div></div>
-        <div class="help-item"><div class="help-icon">↧</div><div class="help-text"><div class="help-label">Reprendre votre lecture</div><div class="help-desc">La position de lecture est mémorisée par unité à partir du paragraphe et d’une position relative. Au retour, l’application tente de vous replacer au même endroit.</div></div></div>
-        <div class="help-item"><div class="help-icon">✓</div><div class="help-text"><div class="help-label">Terminé</div><div class="help-desc">« Terminé » marque ou démarque l’unité comme lue et met à jour le calendrier et la progression. Il se trouve dans la barre d’actions du lecteur : en bas sur téléphone, en haut en disposition large.</div></div></div>
-      </div>
+      <section class="help-section" id="${helpPrefix}-parcours" aria-labelledby="${helpPrefix}-parcours-title">
+        <h2 class="help-section-title" id="${helpPrefix}-parcours-title">✶ Comprendre votre parcours</h2>
+        <div class="help-note"><strong>Trois repères différents :</strong> « Aujourd’hui » indique la date actuelle ; « Activer » choisit votre pratique personnelle ; « Terminé » marque seulement une unité comme lue. <strong>Activer ne marque pas une méditation comme terminée, et Terminé ne change pas votre pratique active.</strong></div>
+        <div class="help-key-grid">
+          <div class="help-key"><strong>Aujourd’hui</strong><span>Le jour correspondant à la date actuelle, mis en valeur dans le calendrier.</span></div>
+          <div class="help-key"><strong>Activer</strong><span>Le jour ou l’appendice que vous choisissez comme pratique personnelle, indépendamment de la date.</span></div>
+          <div class="help-key"><strong>Terminé / Lu</strong><span>Une unité que vous avez explicitement marquée comme lue ; elle compte dans votre progression.</span></div>
+        </div>
+        <div class="help-item"><div class="help-icon">✦</div><div class="help-text"><div class="help-label">Carte « Pour aujourd’hui »</div><div class="help-desc">Par défaut, elle suit le jour calendaire. Si vous activez un autre jour ou un appendice, elle suit votre <strong>pratique active</strong> et affiche sa petite pratique et son oraison jaculatoire. Le repère « Aujourd’hui » du calendrier continue, lui, d’indiquer la date réelle.</div></div></div>
+        <div class="help-item"><div class="help-icon">1–31</div><div class="help-text"><div class="help-label">Cycle de 31 jours</div><div class="help-desc">Les ${dayCount} méditations restent toujours accessibles, même lorsque le mois civil compte moins de 31 jours. En février ou dans un mois plus court, utilisez <strong>Jours</strong> ou <strong>Activer</strong> pour poursuivre librement les Jours 29 à 31.</div></div></div>
+        <div class="help-item"><div class="help-icon">A1–A${appendixCount}</div><div class="help-text"><div class="help-label">Appendices</div><div class="help-desc">Après le Jour 31, ${appendixCount} appendices complètent le corpus. Ils peuvent être lus, activés et marqués comme terminés. Ils participent à la progression générale, mais ne sont pas nécessaires pour accomplir le cycle principal des ${dayCount} jours.</div></div></div>
+        <div class="help-item"><div class="help-icon">↺</div><div class="help-text"><div class="help-label">Nouveau cycle</div><div class="help-desc">Dans Mon Espace, « Nouveau cycle » remet à zéro la progression, la pratique active et les positions de lecture. Vos notes et surlignages sont conservés. Une confirmation est demandée avant l’action.</div></div></div>
+      </section>
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Calendrier et progression</div>
-        <div class="help-item"><div class="help-icon">1–31</div><div class="help-text"><div class="help-label">Jours du mois</div><div class="help-desc">Chaque chiffre correspond à une méditation. Le calendrier suit un cycle dévotionnel fixe de 31 jours, indépendamment de la longueur du mois civil.</div></div></div>
-        <div class="help-item"><div class="help-icon" style="background:var(--hero-bg);color:#fff;font-size:12px">15</div><div class="help-text"><div class="help-label">Aujourd’hui</div><div class="help-desc">Le jour calendaire actuel est mis en valeur en bleu marial avec un halo doré.</div></div></div>
-        <div class="help-item"><div class="help-icon" style="background:var(--accent-state);color:var(--on-accent-state);font-size:12px">8</div><div class="help-text"><div class="help-label">Unité lue</div><div class="help-desc">Les unités marquées comme terminées apparaissent en or. La progression générale compte ${unitCount} unités (${dayCount} jours + ${appendixCount} appendices).</div></div></div>
-        <div class="help-item"><div class="help-icon" style="box-shadow:0 0 0 2.5px var(--accent-state),0 0 0 4.5px rgba(201,168,76,0.3);font-size:12px">20</div><div class="help-text"><div class="help-label">Jour de pratique actif</div><div class="help-desc">Un double anneau doré indique votre pratique personnelle, qui peut être différente du jour calendaire.</div></div></div>
-        <div class="help-item"><div class="help-icon">0/${unitCount}</div><div class="help-text"><div class="help-label">Deux repères de progression</div><div class="help-desc">La progression générale compte les ${unitCount} unités. La fin de cycle, elle, utilise les ${dayCount} jours principaux : les appendices ne sont pas requis pour accomplir le cycle des 31 jours.</div></div></div>
-      </div>
+      <section class="help-section" id="${helpPrefix}-lire" aria-labelledby="${helpPrefix}-lire-title">
+        <h2 class="help-section-title" id="${helpPrefix}-lire-title">✶ Lire et rechercher</h2>
+        <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Se repérer</div><div class="help-desc"><strong>Accueil</strong> donne accès au calendrier et à votre pratique ; <strong>Jours</strong> affiche les ${dayCount} méditations puis les ${appendixCount} appendices ; <strong>Recherche</strong> parcourt titres et texte ; <strong>Mon Espace</strong> rassemble progression, surlignages, notes et sauvegardes. Le bouton <strong>?</strong> ouvre cette Aide sans perdre votre contexte.</div></div></div>
+        <div class="help-item"><div class="help-icon">✶</div><div class="help-text"><div class="help-label">Structure d’une méditation</div><div class="help-desc">Chaque jour suit cinq parties : <strong>L’Âme</strong>, <strong>Leçon de la Reine du Ciel</strong>, <strong>Réponse de l’Âme</strong>, <strong>Petite pratique</strong> et <strong>Oraison jaculatoire</strong>.</div></div></div>
+        <div class="help-item"><div class="help-icon">Aᵃ</div><div class="help-text"><div class="help-label">Taille du texte</div><div class="help-desc">Aᵃ propose Petit (16 px), Normal (19 px), Grand (22 px) et Très grand (26 px). Le réglage est mémorisé et l’application tente de préserver votre position de lecture lors du changement.</div></div></div>
+        <div class="help-item"><div class="help-icon">←→</div><div class="help-text"><div class="help-label">Précédent / suivant et reprise</div><div class="help-desc">Les boutons parcourent les ${unitCount} unités dans l’ordre. Votre position de lecture est mémorisée par unité afin de tenter de vous replacer au même passage lors du retour.</div></div></div>
+        <div class="help-item"><div class="help-icon">⌕</div><div class="help-text"><div class="help-label">Recherche</div><div class="help-desc">La recherche examine les titres et les ${paraCount} paragraphes. Chaque résultat montre un extrait et ouvre directement le passage concerné. Elle ne dépend pas des accents (« eterne » peut trouver « Éternel »). Lorsque vous revenez d’un résultat, la requête et la position de la liste sont restaurées.</div></div></div>
+      </section>
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Les appendices</div>
-        <p class="help-desc" style="margin-bottom:10px">Après le Jour 31, ${appendixCount} appendices complètent le corpus. Ils peuvent être parcourus à la suite ou ouverts séparément.</p>
-        <div class="help-item"><div class="help-icon">A1–A6</div><div class="help-text"><div class="help-label">Accès aux appendices</div><div class="help-desc">Sur téléphone, ils apparaissent dans Jours après le Jour 31. Sur iPad/ordinateur, leurs boutons restent sous le calendrier. Ils peuvent être marqués comme lus et participent à la progression générale.</div></div></div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-title">✶ Recherche</div>
-        <div class="help-item"><div class="help-icon">⌕</div><div class="help-text"><div class="help-label">Rechercher dans tout le texte</div><div class="help-desc">Recherche examine les titres des ${unitCount} unités et le texte intégral. Chaque résultat montre un extrait et l’unité concernée ; appuyez dessus pour ouvrir le passage. La recherche ne dépend pas des accents (« eterne » trouve « Éternel »). Appuyez sur ✕ pour effacer la requête.</div></div></div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-title">✶ Surligner, noter et copier</div>
-        <div class="help-item"><div class="help-icon">◇</div><div class="help-text"><div class="help-label">iPhone, iPad et ordinateur</div><div class="help-desc">Sélectionnez un passage <strong>à l’intérieur d’un seul paragraphe</strong> : <strong>Surligner · Note · Copier · Fermer</strong> apparaît au bas de la zone de lecture, séparé du menu de sélection du système. Si la sélection traverse plusieurs paragraphes, l’application la refuse et affiche « Sélectionnez un passage dans un seul paragraphe ».</div></div></div>
-        <div class="help-item"><div class="help-icon">✧</div><div class="help-text"><div class="help-label">Surligner une partie seulement</div><div class="help-desc">Sur iPhone, iPad et ordinateur, choisissez les mots puis Surligner. La palette propose Jaune, Bleu, Vert, Violet et Rose ; seule la sélection exacte est enregistrée.</div></div></div>
-        <div class="help-item"><div class="help-icon">◈</div><div class="help-text"><div class="help-label">Android et Samsung</div><div class="help-desc">Le mode actuel cible le paragraphe entier afin d’éviter les menus système Google/Traduire/Rechercher qui peuvent entrer en conflit avec l’application. Touchez le paragraphe puis choisissez l’action voulue.</div></div></div>
-        <div class="help-item"><div class="help-icon">◆</div><div class="help-text"><div class="help-label">Changer la couleur ou retirer</div><div class="help-desc">Appuyez sur un passage déjà surligné, ou sur le losange ◆ d’un paragraphe qui contient un surlignage, pour ouvrir la palette et modifier ou retirer le surlignage concerné.</div></div></div>
-        <div class="help-item"><div class="help-icon">✎</div><div class="help-text"><div class="help-label">Notes personnelles</div><div class="help-desc">Choisissez Note dans la barre contextuelle. Sur Apple/ordinateur, une sélection conserve le passage comme contexte ; sur Android/Samsung, la note est attachée au paragraphe ciblé. Plusieurs notes peuvent coexister sur un même paragraphe.</div></div></div>
+      <section class="help-section" id="${helpPrefix}-conserver" aria-labelledby="${helpPrefix}-conserver-title">
+        <h2 class="help-section-title" id="${helpPrefix}-conserver-title">✶ Surligner, noter, copier et partager</h2>
+        <div class="help-item"><div class="help-icon">◇</div><div class="help-text"><div class="help-label">iPhone, iPad et ordinateur</div><div class="help-desc">Sélectionnez les mots voulus <strong>dans un seul paragraphe</strong>. La barre <strong>Surligner · Note · Copier · Fermer</strong> apparaît au bas de la zone de lecture. Une sélection qui traverse plusieurs paragraphes est refusée afin d’éviter un ancrage incorrect.</div></div></div>
+        <div class="help-item"><div class="help-icon">◈</div><div class="help-text"><div class="help-label">Android / Samsung</div><div class="help-desc">Le mode actuel travaille sur le <strong>paragraphe entier</strong> afin d’éviter les conflits avec les menus système de sélection. Touchez le paragraphe puis choisissez l’action voulue.</div></div></div>
+        <div class="help-item"><div class="help-icon">◆</div><div class="help-text"><div class="help-label">Surlignages</div><div class="help-desc">La palette propose Jaune, Bleu, Vert, Violet et Rose. Appuyez sur un passage déjà surligné, ou sur le losange ◆ du paragraphe, pour changer sa couleur ou le retirer. Après une suppression, <strong>Annuler</strong> permet de rétablir l’élément pendant quelques secondes.</div></div></div>
+        <div class="help-item"><div class="help-icon">✎</div><div class="help-text"><div class="help-label">Notes</div><div class="help-desc">Choisissez <strong>Note</strong> depuis la barre contextuelle. Une sélection Apple/ordinateur est conservée comme contexte ; sur Android/Samsung, la note est liée au paragraphe. Dans <strong>Mon Espace</strong>, appuyez sur une note pour revenir au passage ; utilisez ✎ pour la modifier et × pour la supprimer. Plusieurs notes peuvent coexister sur un même paragraphe.</div></div></div>
         <div class="help-item"><div class="help-icon">⎘</div><div class="help-text"><div class="help-label">Copier</div><div class="help-desc">Copier place dans le presse-papiers le passage sélectionné sur iPhone/iPad/ordinateur, ou le paragraphe entier sur Android/Samsung.</div></div></div>
-        <div class="help-item"><div class="help-icon">↺</div><div class="help-text"><div class="help-label">Annuler une suppression</div><div class="help-desc">Après retrait d’un surlignage ou suppression d’une note, « Annuler » apparaît quelques secondes pour permettre de rétablir l’élément.</div></div></div>
+        <div class="help-item"><div class="help-icon">×</div><div class="help-text"><div class="help-label">Fermer</div><div class="help-desc">Fermer referme la barre d’actions et efface la sélection temporaire. <strong>Aucun surlignage, aucune note, aucun état de lecture ni aucune position enregistrée n’est supprimé.</strong></div></div></div>
+        <div class="help-item"><div class="help-icon">↑</div><div class="help-text"><div class="help-label">Partager</div><div class="help-desc">Lorsque l’appareil le permet, Partager ouvre son interface de partage avec le nom de l’application, le jour ou l’appendice, son titre et un lien stable vers la lecture. Lorsque le paragraphe visible peut être identifié, le lien le cible. Si le partage système n’est pas disponible ou échoue, l’application tente de copier le texte de référence et le lien.</div></div></div>
+        <div class="help-item"><div class="help-icon">↗</div><div class="help-text"><div class="help-label">Lien</div><div class="help-desc">Lien n’ouvre pas le panneau de partage : il copie uniquement l’adresse stable de l’unité et, lorsque possible, du paragraphe visible.</div></div></div>
+        <div class="help-note"><strong>Confidentialité :</strong> notes, surlignages, progression et positions de lecture ne sont jamais ajoutés automatiquement au lien ou au partage.</div>
+        <div class="help-subtitle">Données anciennes et récupération</div>
         <div class="help-item"><div class="help-icon">⚠</div><div class="help-text"><div class="help-label">Surlignage à vérifier</div><div class="help-desc">Si une future version du corpus modifie le texte et qu’un ancien surlignage ne peut pas être réancré avec certitude, Mon Espace le conserve comme « à vérifier » plutôt que de le rattacher au mauvais passage.</div></div></div>
-        <div class="help-note">Le surlignage remplace l’ancienne fonction « Favori ». Les anciens favoris ont été migrés vers des surlignages jaunes.</div>
-      </div>
+        <div class="help-note">L’ancienne fonction « Favori » est retirée. Les favoris historiques déjà présents ont été migrés vers des surlignages jaunes.</div>
+      </section>
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Partager et copier un lien</div>
-        <div class="help-item"><div class="help-icon">↑</div><div class="help-text"><div class="help-label">Partager</div><div class="help-desc"><strong>Partager</strong> demande au système d’ouvrir son interface de partage avec le titre, le texte de référence du jour et une adresse stable. Lorsque le lecteur peut identifier le paragraphe actuellement visible, le lien le cible ; sinon le lien vers l’unité reste valide. Une annulation volontaire reste silencieuse. Si le partage système échoue, l’application tente de copier le texte et le lien.</div></div></div>
-        <div class="help-item"><div class="help-icon">↗</div><div class="help-text"><div class="help-label">Lien</div><div class="help-desc"><strong>Lien</strong> n’ouvre pas le panneau de partage : il copie uniquement l’adresse stable de l’unité et, lorsque possible, du paragraphe visible.</div></div></div>
-        <div class="help-note"><strong>Confidentialité :</strong> vos notes, surlignages, progression et positions de lecture ne sont jamais ajoutés automatiquement à un lien ou à un partage.</div>
-      </div>
+      <section class="help-section" id="${helpPrefix}-donnees" aria-labelledby="${helpPrefix}-donnees-title">
+        <h2 class="help-section-title" id="${helpPrefix}-donnees-title">✶ Mon Espace et vos données</h2>
+        <div class="help-item"><div class="help-icon">◎</div><div class="help-text"><div class="help-label">Mon Espace</div><div class="help-desc">Rassemble progression, surlignages, éléments à vérifier, notes, sauvegarde/restauration, journal et nouveau cycle.</div></div></div>
+        <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Stockage local et vie privée</div><div class="help-desc">Aucun compte n’est requis. Progression, pratique active, notes, surlignages, positions de lecture et réglages restent dans le stockage local du navigateur/appareil ; aucune synchronisation cloud automatique n’est effectuée.</div></div></div>
+        <div class="help-item"><div class="help-icon">↓</div><div class="help-text"><div class="help-label">Sauvegarder</div><div class="help-desc">« Sauvegarder » télécharge à votre demande un fichier JSON de restauration contenant vos données d’utilisation. <strong>Avant de changer d’appareil, de supprimer l’application ou d’effacer les données de Safari/Chrome, conservez une sauvegarde JSON récente dans vos propres fichiers.</strong></div></div></div>
+        <div class="help-item"><div class="help-icon">↥</div><div class="help-text"><div class="help-label">Restaurer — mode Remplacer</div><div class="help-desc">Choisissez une <strong>sauvegarde JSON créée précédemment par cette application</strong>. L’application valide le fichier et affiche un aperçu avant toute écriture. La restauration fonctionne en mode <strong>Remplacer</strong> : les données couvertes par la sauvegarde remplacent celles déjà présentes ; elles ne sont pas fusionnées. Si une écriture échoue, l’application tente de rétablir l’état précédent.</div></div></div>
+        <div class="help-item"><div class="help-icon">≡</div><div class="help-text"><div class="help-label">Journal lisible</div><div class="help-desc">« Exporter le journal » crée un fichier Markdown lisible avec progression, notes et passages surlignés. Il sert à la lecture ou à l’archivage ; <strong>il ne peut pas restaurer l’application</strong>.</div></div></div>
+        <div class="help-note">Même lorsque le navigateur accepte une conservation plus durable du stockage, des données locales peuvent exceptionnellement être effacées par le navigateur, le système ou une réinitialisation. La sauvegarde JSON reste votre copie de sécurité portable.</div>
+      </section>
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Jour de pratique actif</div>
-        <div class="help-item"><div class="help-icon">✶</div><div class="help-text"><div class="help-label">Activer un jour ou un appendice</div><div class="help-desc">« Activer » désigne une unité comme pratique personnelle indépendamment du jour calendaire. La carte « Pour aujourd’hui » utilise alors la pratique et l’oraison de cette unité. Un seul élément peut être actif à la fois ; appuyez de nouveau sur Activer pour revenir au jour calendaire.</div></div></div>
-        <div class="help-item"><div class="help-icon">♡</div><div class="help-text"><div class="help-label">Quand l’utiliser ?</div><div class="help-desc">Utile si vous avancez plus lentement que le calendrier ou si vous souhaitez approfondir une méditation pendant plusieurs jours.</div></div></div>
-      </div>
+      <section class="help-section" id="${helpPrefix}-appareil" aria-labelledby="${helpPrefix}-appareil-title">
+        <h2 class="help-section-title" id="${helpPrefix}-appareil-title">✶ Affichage, installation et mises à jour</h2>
+        <div class="help-item"><div class="help-icon">◑</div><div class="help-text"><div class="help-label">Thème</div><div class="help-desc">Choisissez <strong>Automatique</strong> (suit l’appareil), <strong>Sombre</strong> ou <strong>Clair</strong>. Le réglage est mémorisé.</div></div></div>
+        <div class="help-item"><div class="help-icon">↔</div><div class="help-text"><div class="help-label">Portrait, paysage et Split View</div><div class="help-desc">L’application adapte sa disposition à l’espace disponible. Sur iPad, une fenêtre Split View étroite peut utiliser la présentation téléphone ; en l’élargissant, la disposition large revient automatiquement.</div></div></div>
+        <div class="help-item"><div class="help-icon">⤓</div><div class="help-text"><div class="help-label">Installer sur l’écran d’accueil</div><div class="help-desc">Sur iPhone/iPad : utilisez <strong>Partager</strong> dans Safari puis « Sur l’écran d’accueil ». Sur Android/Chrome : utilisez Installer/Ajouter à l’écran d’accueil lorsqu’il est proposé. Effectuez d’abord une ouverture complète avec connexion afin que l’interface et le corpus puissent être mis en cache.</div></div></div>
+        <div class="help-item"><div class="help-icon">↯</div><div class="help-text"><div class="help-label">Hors ligne</div><div class="help-desc">Après une première ouverture en ligne et une mise en cache réussie, l’application est conçue pour rouvrir son interface et son corpus sans connexion. La toute première ouverture nécessite Internet.</div></div></div>
+        <div class="help-item"><div class="help-icon">↺</div><div class="help-text"><div class="help-label">Mises à jour</div><div class="help-desc">À l’ouverture puis lorsque l’application redevient visible, elle recherche une nouvelle version. Quand elle est prête, « Nouvelle version disponible — Actualiser » apparaît : le rechargement n’est pas automatique. Une note non enregistrée, la lecture d’un fichier de restauration ou un aperçu de restauration en attente bloque l’actualisation pour protéger vos données.</div></div></div>
+      </section>
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Affichage et orientation</div>
-        <div class="help-item"><div class="help-icon">◑</div><div class="help-text"><div class="help-label">Thème</div><div class="help-desc">Le bouton de thème propose <strong>Automatique</strong> (suit l’appareil), <strong>Sombre</strong> et <strong>Clair</strong>. Le réglage est mémorisé.</div></div></div>
-        <div class="help-item"><div class="help-icon">↔</div><div class="help-text"><div class="help-label">Portrait, paysage et Split View</div><div class="help-desc">L’application autorise le portrait et le paysage et adapte sa disposition à l’espace disponible. Sur iPad, une fenêtre Split View étroite peut utiliser la présentation téléphone ; en élargissant la fenêtre, la disposition large revient automatiquement.</div></div></div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-title">✶ Mon Espace et confidentialité</div>
-        <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Vos données restent sur cet appareil</div><div class="help-desc">Aucun compte n’est requis. Progression, pratique active, notes, surlignages, positions de lecture et réglages sont conservés dans le stockage local du navigateur/appareil. Il n’y a pas de synchronisation cloud automatique.</div></div></div>
-        <div class="help-item"><div class="help-icon">◇</div><div class="help-text"><div class="help-label">Persistance du stockage</div><div class="help-desc">Lorsque le navigateur le permet, l’application demande au mieux une conservation plus durable du stockage après certaines actions enregistrées. Malgré cela, un navigateur ou le système peut exceptionnellement effacer des données locales. Pour conserver durablement vos notes et surlignages, gardez une sauvegarde JSON récente dans vos propres fichiers.</div></div></div>
-        <div class="help-item"><div class="help-icon">◎</div><div class="help-text"><div class="help-label">Ce que Mon Espace rassemble</div><div class="help-desc">Statistiques, surlignages, éléments à vérifier, notes, sauvegarde/restauration, journal et nouveau cycle.</div></div></div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-title">✶ Sauvegarder et restaurer</div>
-        <div class="help-item"><div class="help-icon">↓</div><div class="help-text"><div class="help-label">Télécharger une sauvegarde JSON</div><div class="help-desc">Dans Mon Espace, « Sauvegarder » télécharge un fichier JSON de restauration contenant progression, pratique active, notes, surlignages, positions de lecture et réglages. Il est créé uniquement à votre demande et l’application ne l’envoie pas à un serveur.</div></div></div>
-        <div class="help-item"><div class="help-icon">↥</div><div class="help-text"><div class="help-label">Restaurer</div><div class="help-desc">Choisissez un fichier JSON créé par Marie. Avant toute écriture, l’application vérifie son format et affiche un aperçu. Lorsqu’elle reconnaît la cause d’un refus, elle l’indique : autre application, mauvais format, autre corpus, sauvegarde créée par une version plus récente ou données endommagées/incompatibles. Si l’écriture échoue, la restauration transactionnelle tente de rétablir l’état précédent.</div></div></div>
-        <div class="help-item"><div class="help-icon">≡</div><div class="help-text"><div class="help-label">Journal lisible</div><div class="help-desc">« Exporter le journal » télécharge un fichier Markdown lisible contenant progression, notes et passages surlignés. Ce journal est destiné à la lecture/archivage et ne peut pas restaurer l’application.</div></div></div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-title">✶ Installation, hors ligne et mises à jour</div>
-        <div class="help-item"><div class="help-icon">⤓</div><div class="help-text"><div class="help-label">Installer sur l’écran d’accueil</div><div class="help-desc">Sur iPhone/iPad : utilisez le menu Partager de Safari puis « Sur l’écran d’accueil ». Sur Android/Chrome : utilisez Installer/Ajouter à l’écran d’accueil lorsqu’il est proposé. Faites d’abord une ouverture complète avec connexion afin que l’interface et le corpus puissent être mis en cache.</div></div></div>
-        <div class="help-item"><div class="help-icon">Aa</div><div class="help-text"><div class="help-label">Polices incluses dans l’application</div><div class="help-desc">Les polices de lecture sont fournies localement avec l’application. Leur chargement normal ne nécessite pas Google Fonts ni un autre service de polices externe.</div></div></div>
-        <div class="help-item"><div class="help-icon">↯</div><div class="help-text"><div class="help-label">Utilisation hors ligne</div><div class="help-desc">Après une première ouverture en ligne et une mise en cache réussie, l’application est conçue pour rouvrir son interface et son corpus sans connexion. Une toute première ouverture nécessite Internet.</div></div></div>
-        <div class="help-item"><div class="help-icon">↺</div><div class="help-text"><div class="help-label">Mises à jour</div><div class="help-desc">À l’ouverture puis lorsque l’application redevient visible, elle recherche une nouvelle version. Quand une version est prête, « Nouvelle version disponible — Actualiser » apparaît : l’application ne se recharge pas automatiquement. Une note non enregistrée, la lecture d’un fichier de restauration ou un aperçu de restauration en attente bloque l’actualisation afin de protéger vos données.</div></div></div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-title">✶ Assistance</div>
+      <section class="help-section" id="${helpPrefix}-assistance" aria-labelledby="${helpPrefix}-assistance-title">
+        <h2 class="help-section-title" id="${helpPrefix}-assistance-title">✶ Assistance</h2>
         <div class="help-item"><div class="help-icon">!</div><div class="help-text"><div class="help-label">Signaler un problème de texte</div><div class="help-desc">Depuis le lecteur, ouvrez Aide puis utilisez ce bouton : il prépare un signalement pour le passage qui était en cours de lecture, sans joindre vos notes ni vos surlignages.</div><button type="button" class="backup-btn" onclick="App.reportCurrentTextIssue()" style="margin-top:8px">Signaler le passage courant</button></div></div>
-        <div class="help-item"><div class="help-icon">i</div><div class="help-text"><div class="help-label">Diagnostics</div><div class="help-desc">« Copier les diagnostics » place dans le presse-papiers uniquement des informations techniques (versions, cache, stockage, thème, disposition et identifiants de navigation), sans le contenu de vos notes ou surlignages.</div><button type="button" class="backup-btn" onclick="App.copyDiagnostics()" style="margin-top:8px">Copier les diagnostics</button></div></div>
-      </div>
+        <div class="help-item"><div class="help-icon">i</div><div class="help-text"><div class="help-label">Diagnostics</div><div class="help-desc">« Copier les diagnostics » place dans le presse-papiers uniquement des informations techniques utiles au dépannage — versions, cache, stockage, thème, disposition et identifiants de navigation — sans le contenu de vos notes ou surlignages.</div><button type="button" class="backup-btn" onclick="App.copyDiagnostics()" style="margin-top:8px">Copier les diagnostics</button></div></div>
+      </section>
 
-      <div class="help-section">
-        <div class="help-section-title">✶ Fin de cycle</div>
-        <div class="help-item"><div class="help-icon">✶</div><div class="help-text"><div class="help-label">Nouveau cycle</div><div class="help-desc">« Nouveau cycle » remet à zéro la progression de lecture, la pratique active et les positions de lecture, tout en conservant vos notes et surlignages. Une confirmation est demandée avant l’action. Les appendices ne sont pas nécessaires pour terminer le cycle des ${dayCount} jours.</div></div></div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-title">✶ À propos de cette application</div>
+      <section class="help-section" id="${helpPrefix}-apropos" aria-labelledby="${helpPrefix}-apropos-title">
+        <h2 class="help-section-title" id="${helpPrefix}-apropos-title">✶ À propos</h2>
         <p class="help-desc" style="margin-bottom:12px"><strong>La Vierge Marie dans le Royaume de la Divine Volonté</strong> est une application de lecture et de méditation spirituelle fondée sur l’ouvrage du même titre de <strong>Luisa Piccarreta</strong>.</p>
-        <div class="help-item"><div class="help-icon">v</div><div class="help-text"><div class="help-label">Version</div><div class="help-desc">Application <strong>v${this.esc(APP_VERSION)}</strong> · corpus <strong>v${this.esc(CORPUS_VERSION)}</strong>. Le numéro affiché ici correspond au code réellement chargé.</div></div></div>
-        <div class="help-item"><div class="help-icon">31</div><div class="help-text"><div class="help-label">Corpus intégré</div><div class="help-desc">Le manifeste du corpus l’identifie comme <strong>VM_DV</strong>, en français, auteur <strong>Luisa Piccarreta</strong>, version <strong>${this.esc(CORPUS_VERSION)}</strong> : ${dayCount} jours principaux + ${appendixCount} appendices, soit ${unitCount} unités et ${paraCount} paragraphes.</div></div></div>
-        <div class="help-item"><div class="help-icon">§</div><div class="help-text"><div class="help-label">Provenance éditoriale</div><div class="help-desc">Le manifeste du corpus fourni avec cette version ne désigne pas une édition imprimée particulière ; l’application n’en attribue donc pas une. Toute correction du texte ou de sa segmentation relève d’une validation séparée du corpus. Si vous repérez une anomalie, utilisez « Signaler le passage courant » dans la section Assistance.</div></div></div>
-        <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Vie privée</div><div class="help-desc">Aucun compte n’est requis et l’application ne synchronise pas automatiquement vos données personnelles. Les polices sont auto-hébergées avec l’application ; aucun appel à Google Fonts n’est nécessaire pour les charger.</div></div></div>
-      </div>
+        <div class="help-item"><div class="help-icon">v</div><div class="help-text"><div class="help-label">Versions</div><div class="help-desc">Application <strong>v${this.esc(APP_VERSION)}</strong> · corpus <strong>v${this.esc(CORPUS_VERSION)}</strong>. Le numéro affiché ici correspond au code réellement chargé.</div></div></div>
+        <div class="help-item"><div class="help-icon">31</div><div class="help-text"><div class="help-label">Corpus intégré</div><div class="help-desc">Le manifeste identifie le corpus comme <strong>VM_DV</strong>, en français, auteur <strong>Luisa Piccarreta</strong>, version <strong>${this.esc(CORPUS_VERSION)}</strong> : ${dayCount} jours + ${appendixCount} appendices, soit ${unitCount} unités et ${paraCount} paragraphes.</div></div></div>
+        <div class="help-item"><div class="help-icon">§</div><div class="help-text"><div class="help-label">Provenance éditoriale</div><div class="help-desc">Le manifeste fourni avec cette version ne désigne pas une édition imprimée particulière ; l’application n’en attribue donc pas une. Toute correction du texte ou de sa segmentation relève d’une validation séparée du corpus. Utilisez « Signaler le passage courant » si vous repérez une anomalie.</div></div></div>
+        <div class="help-item"><div class="help-icon">Aa</div><div class="help-text"><div class="help-label">Informations techniques</div><div class="help-desc">Les polices de lecture sont fournies localement avec l’application ; leur chargement normal ne nécessite pas Google Fonts. L’application fonctionne sans compte et ne synchronise pas automatiquement vos données personnelles.</div></div></div>
+      </section>
 
       <div style="height:32px"></div>
     </div>`;
