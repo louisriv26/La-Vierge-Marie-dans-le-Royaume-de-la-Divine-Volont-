@@ -1,22 +1,29 @@
 # La Vierge Marie dans le Royaume de la Divine Volonté
 
+## v2.17.15 — H.7 Safety, durability & public-release remediation
+
+H.7 preserves the exact v1.0.0 corpus bytes and hardens the application shell around four invariants: backup record IDs are constrained and historical unsafe IDs are migrated safely; destructive undo uses a dedicated recovery surface; read/highlight/active-cycle mutations commit to in-memory/UI state only after durable persistence succeeds, with journaled multi-key transactions; and the fetched `corpus/days.json` bytes are SHA-256 verified before parsing or rendering. Semantic accent tokens now separate decorative gold from meaningful text/state controls, and visible version badges derive from `APP_VERSION`.
+
+The deploy remains `LIMITED_PASS_STATIC` until live-origin and physical-device/assistive-technology validation are completed.
+
+
 Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* by Luisa Piccarreta: **31 main days + 6 appendices**.
 
 ## Current release
 
-## v2.17.14 — H.6 Aide / À propos public-release reconciliation
+## v2.17.14 — H.6 Aide / À propos public-release reconciliation (historical baseline)
 
 This narrow successor reconciles the user-facing Aide/À propos content with the hardened v2.17.13 runtime. It moves À propos to the final Help section and documents the actual current contracts: self-hosted fonts, portrait/landscape support, the one-paragraph exact-selection limit on Apple/desktop, Android whole-paragraph targeting, Share/Link privacy, local-storage resilience, JSON backup/restore rejection reasons, and the corpus metadata/provenance boundary.
 
 No devotional corpus, stable ID, manifest, icon, font binary/licence, selection/highlight, note, backup-schema, search, navigation, orientation, or service-worker strategy change is introduced. Only `index.html`, `README.md`, and the service-worker release version change.
 
-Current PWA caches are `mjv-shell-v2.17.14` and `mjv-content-v1`. The former `mjv-fonts-v1` cache remains historical only and normal `mjv-` cache cleanup removes obsolete app-scoped caches after upgrade.
+Current PWA caches are `mjv-shell-v2.17.15` and `mjv-content-v1`. The former `mjv-fonts-v1` cache remains historical only and normal `mjv-` cache cleanup removes obsolete app-scoped caches after upgrade.
 
 `LIMITED_PASS_STATIC` remains the maximum automated status until physical iPad/iPhone/Samsung, installed-PWA/offline, native clipboard/share and real assistive-technology gates pass on these exact bytes.
 
 Historical baseline: v2.17.13 / H5R supplied the deep four-pass pre-public hardening that this Help-only stage documents; its protected runtime contracts are inherited unchanged.
 
-- App version: **v2.17.14**
+- App version: **v2.17.15**
 - Corpus version: **1.0.0**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
@@ -30,18 +37,18 @@ Live origin: `https://louisriv26.github.io/La-Vierge-Marie-dans-le-Royaume-de-la
 
 ## Release/version contract
 
-Every app-code release must keep these live version strings synchronized:
+Every app-code release must keep the two source version constants synchronized:
 
 1. `sw.js`: `const VERSION = 'X.Y.Z'` → shell cache `mjv-shell-vX.Y.Z`
 2. `index.html`: `const APP_VERSION = 'X.Y.Z'`
-3. `index.html`: mobile visible badge `vX.Y.Z`
-4. `index.html`: wide visible badge `vX.Y.Z`
+
+The mobile and wide version badges are runtime-derived from `APP_VERSION`; they are no longer separate hand-edited release strings.
 
 Do **not** use a blind global replacement of old version strings: historical data-shape comments intentionally retain the version ranges to which they refer.
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.14` — release-specific app shell
+- `mjv-shell-v2.17.15` — release-specific app shell
 - `mjv-content-v1` — corpus content; bump only when the governed corpus changes
 
 The service worker deletes only `mjv-`-prefixed obsolete caches.
@@ -94,7 +101,7 @@ Run the encoding guard first, then syntax/self-tests and version checks:
 ```bash
 python scripts/run_exact_encoding_guard.py
 # Then verify the live strings deliberately, not by global replace:
-grep -n "APP_VERSION = \|mobile-version\|version-badge" index.html
+grep -n "APP_VERSION = \|mobile-version\|version-badge" index.html  # badges are runtime-derived; no badge literal edits
 grep -n "const VERSION = " sw.js
 ```
 
@@ -145,7 +152,7 @@ MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to 
 - The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.14 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.15 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 

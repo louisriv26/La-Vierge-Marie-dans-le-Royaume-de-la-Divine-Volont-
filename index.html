@@ -75,6 +75,8 @@ window.APP_BASE = (function() {
      ~2.3:1 on ivory, so it must not be used for text or meaningful icons.
      Use --accent-fg for those; it clears 4.5:1 on --ivory/--white. */
   --accent-fg: #806014;
+  --accent-state: #806014;
+  --on-accent-state: #FFFFFF;
   --highlight-accent: #6B57C4;  /* highlighted-passage marker, >=4.5:1 on ivory */
   /* Hero panels keep a deep blue in both themes. In dark mode --primary is a
      LIGHT blue meant for text, and using it as a hero fill dropped the gold
@@ -122,7 +124,7 @@ window.APP_BASE = (function() {
     --accent: #D4A843; --accent-light: #E8C45A;
     /* On the dark ivory (#1A1720) the gold is already legible, so the
        foreground variant is the lighter tone rather than a darker one. */
-    --accent-fg: #E8C45A; --highlight-accent: #B0A0F0;
+    --accent-fg: #E8C45A; --accent-state: #E8C45A; --on-accent-state: #201C2C; --highlight-accent: #B0A0F0;
     --hero-bg: #22314A;
     --ivory: #1A1720; --ivory-deep: #201C2C;
     --ink: #E0DCF0; --muted: #8A8498;
@@ -139,7 +141,7 @@ window.APP_BASE = (function() {
     --accent: #D4A843; --accent-light: #E8C45A;
     /* On the dark ivory (#1A1720) the gold is already legible, so the
        foreground variant is the lighter tone rather than a darker one. */
-    --accent-fg: #E8C45A; --highlight-accent: #B0A0F0;
+    --accent-fg: #E8C45A; --accent-state: #E8C45A; --on-accent-state: #201C2C; --highlight-accent: #B0A0F0;
     --hero-bg: #22314A;
     --ivory: #1A1720; --ivory-deep: #201C2C;
     --ink: #E0DCF0; --muted: #8A8498;
@@ -149,6 +151,12 @@ window.APP_BASE = (function() {
     --practice-bg: #1E1C12; --prayer-bg: #1A1720;
     --note-bg: #1C1A0C; --note-border: #C9A84C;
     --prayer-text: #78A8DE;
+}
+
+@media (forced-colors: active) {
+  .cal-cell.read, .ws-cal-cell.read, .app-circle.read, .list-day-circle.read-circle, .ws-day-circle.read-c { border: 2px solid CanvasText; }
+  .cal-cell.read::after, .ws-cal-cell.read::after, .app-circle.read::after, .list-day-circle.read-circle::after, .ws-day-circle.read-c::after { color: CanvasText; background: Canvas; }
+  .cycle-card.ready .cycle-btn, .action-btn.complete-btn.done, .wrt-btn.done, .action-btn.active-day-btn { border: 2px solid ButtonText; }
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -222,7 +230,7 @@ html, body {
   }
   .wt-date {
     font-size: 12px;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255,255,255,0.68);
     letter-spacing: 0.04em;
   }
   .wt-nav {
@@ -295,7 +303,7 @@ html, body {
   }
   .ws-progress-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--accent-state);
     border-radius: 2px;
     transition: width 0.4s;
   }
@@ -313,9 +321,10 @@ html, body {
   }
   .ws-cal-cell:hover:not(:disabled) { color: var(--primary); border-color: var(--border); }
   .ws-cal-cell.today { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); box-shadow: 0 0 0 2px var(--accent); }
-  .ws-cal-cell.read { color: var(--accent); border-color: var(--accent); }
+  .ws-cal-cell.read { color: var(--accent-fg); border-color: var(--accent-state); font-weight: 700; position: relative; }
+  .ws-cal-cell.read::after { content:'✓'; position:absolute; right:-1px; bottom:-1px; font-size:7px; line-height:1; font-weight:800; color:var(--accent-fg); }
   .ws-cal-cell.appendix { color: var(--border); cursor: default; }
-  .ws-cal-cell.active-day { box-shadow: 0 0 0 2.5px var(--accent), 0 0 0 4.5px rgba(201,168,76,0.25); }
+  .ws-cal-cell.active-day { box-shadow: 0 0 0 2.5px var(--accent-state), 0 0 0 4.5px rgba(201,168,76,0.25); }
 
   /* Sidebar list */
   .ws-list-scroll { flex: 1; overflow-y: auto; padding-bottom: calc(8px + var(--safe-bottom)); }
@@ -352,7 +361,8 @@ html, body {
     border: 1.5px solid var(--border); color: var(--muted); background: var(--ivory);
   }
   .ws-day-circle.today-c { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); }
-  .ws-day-circle.read-c { background: var(--accent); color: var(--white); border-color: var(--accent); }
+  .ws-day-circle.read-c { background: var(--accent-state); color: var(--on-accent-state); border-color: var(--accent-state); position:relative; }
+  .ws-day-circle.read-c::after { content:'✓'; position:absolute; right:-2px; bottom:-2px; font-size:8px; font-weight:800; color:var(--accent-fg); background:var(--ivory); border-radius:50%; padding:1px; }
   .ws-item-info { flex: 1; min-width: 0; }
   .ws-item-title {
     font-family: var(--font-reader); font-size: 13px; color: var(--ink);
@@ -390,7 +400,7 @@ html, body {
     font-family: var(--font-ui); transition: all 0.15s; display: flex; align-items: center; gap: 5px;
   }
   .wrt-btn:hover, .wrt-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
-  .wrt-btn.done { color: var(--accent); border-color: var(--accent); background: var(--practice-bg); }
+  .wrt-btn.done { color: var(--accent-fg); border-color: var(--accent-state); background: var(--practice-bg); font-weight: 700; }
 
   /* Reader scroll */
   #wide-reader-scroll {
@@ -759,10 +769,10 @@ html, body {
 .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 11.5px; font-weight: 500; cursor: pointer; color: var(--muted); border: 1.5px solid transparent; transition: all 0.15s; position: relative; -webkit-tap-highlight-color: transparent; background: transparent; }
 .cal-cell:hover:not(:disabled) { color: var(--primary); border-color: var(--border); }
 .cal-cell.today { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); box-shadow: 0 0 0 2px var(--accent); }
-.cal-cell.read { color: var(--accent); border-color: var(--accent); }
-.cal-cell.read::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--accent); }
+.cal-cell.read { color: var(--accent-fg); border-color: var(--accent-state); font-weight: 700; }
+.cal-cell.read::after { content: '✓'; position: absolute; bottom: -1px; right: 0; font-size: 8px; line-height: 1; font-weight: 800; color: var(--accent-fg); }
 .cal-cell.appendix { font-size: 10px; color: var(--border); border-color: var(--border-light); cursor: default; }
-.cal-cell.active-day { box-shadow: 0 0 0 2.5px var(--accent), 0 0 0 4.5px rgba(201,168,76,0.25); }
+.cal-cell.active-day { box-shadow: 0 0 0 2.5px var(--accent-state), 0 0 0 4.5px rgba(201,168,76,0.25); }
 
 .progress-wrap { padding: 6px 16px 10px; flex-shrink: 0; }
 .progress-row { display: flex; align-items: center; gap: 10px; }
@@ -776,12 +786,12 @@ html, body {
 .app-circle { position: relative; width: 28px; height: 28px; padding: 7px; box-sizing: content-box; background-clip: content-box; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: var(--font-ui); }
 /* Matches .cal-cell.read exactly (ring + small dot, not a filled background)
    so a read appendix and a read day communicate the same thing the same way. */
-.app-circle.read { color: var(--accent); border-color: var(--accent); background: transparent; }
-.app-circle.read::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--accent); }
-.app-circle.active { box-shadow: 0 0 0 2.5px var(--accent), 0 0 0 4.5px rgba(201,168,76,0.25); }
+.app-circle.read { color: var(--accent-fg); border-color: var(--accent-state); background: transparent; font-weight: 700; }
+.app-circle.read::after { content: '✓'; position: absolute; bottom: -1px; right: 0; font-size: 8px; line-height: 1; font-weight: 800; color: var(--accent-fg); }
+.app-circle.active { box-shadow: 0 0 0 2.5px var(--accent-state), 0 0 0 4.5px rgba(201,168,76,0.25); }
 .app-circle:hover { border-color: var(--primary); color: var(--primary); }
 .progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+.progress-bar-fill { height: 100%; background: var(--accent-state); border-radius: 2px; transition: width 0.4s ease; }
 .progress-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .divider { height: 0.5px; background: var(--border); margin: 0 16px; flex-shrink: 0; }
 
@@ -882,7 +892,8 @@ h1, h2, h3, h4 {
 .list-card:hover { border-color: var(--primary); background: var(--ivory-deep); }
 .list-day-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; border: 1.5px solid var(--border); color: var(--muted); background: var(--ivory); }
 .list-day-circle.today-circle { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); box-shadow: 0 0 0 2px var(--accent); }
-.list-day-circle.read-circle { background: var(--accent); color: var(--white); border-color: var(--accent); }
+.list-day-circle.read-circle { background: var(--accent-state); color: var(--on-accent-state); border-color: var(--accent-state); position:relative; }
+.list-day-circle.read-circle::after { content:'✓'; position:absolute; right:-2px; bottom:-2px; font-size:8px; font-weight:800; color:var(--accent-fg); background:var(--ivory); border-radius:50%; padding:1px; }
 .list-info { flex: 1; min-width: 0; }
 .list-title { font-family: var(--font-reader); font-size: 14px; color: var(--ink); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .list-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -961,7 +972,7 @@ h1, h2, h3, h4 {
 .action-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-family: var(--font-ui); transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
 .action-btn .action-icon { font-size: 18px; }
 .action-btn:hover, .action-btn.active { color: var(--primary); border-color: var(--primary); background: var(--mary-bg); }
-.action-btn.complete-btn.done { color: var(--accent); border-color: var(--accent); background: var(--practice-bg); }
+.action-btn.complete-btn.done { color: var(--accent-fg); border-color: var(--accent-state); background: var(--practice-bg); font-weight: 700; }
 
 /* Text size panel (mobile + wide): four semantic levels shared with the reader. */
 .textsize-panel { display: none; position: absolute; bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px); left: 50%; transform: translateX(-50%); background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; width: 340px; max-width: calc(100vw - 24px); box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 50; }
@@ -1066,9 +1077,12 @@ h1, h2, h3, h4 {
 .toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--ivory); padding: 9px 18px; border-radius: 20px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 100; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 /* Undo variant — must accept clicks, so it opts out of the base pointer-events:none */
-.toast.with-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding-right: 8px; }
+.toast.with-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding-right: 8px; z-index: 260; }
 .toast-undo-btn { background: rgba(255,255,255,0.2); color: var(--ivory); border: none; border-radius: 14px; padding: 5px 12px; font-size: 12.5px; font-family: var(--font-ui); cursor: pointer; white-space: nowrap; min-height: 44px; }
 .toast-undo-btn:hover { background: rgba(255,255,255,0.32); }
+.undo-toast { z-index: 260; pointer-events: none; }
+.undo-toast.with-action { pointer-events: auto; }
+
 
 /* Deferred SW-update banner — shown instead of a forced reload when the
    note modal is open with unsaved text, so a draft is never silently lost. */
@@ -1101,7 +1115,7 @@ h1, h2, h3, h4 {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-fg);
 }
 .tac-day {
   font-size: 10px;
@@ -1141,7 +1155,7 @@ h1, h2, h3, h4 {
 /* ── Reset section ───────────────────────────────────────────── */
 .cycle-section { padding: 0 16px; }
 .cycle-card { background: var(--white); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.3s, background 0.3s; }
-.cycle-card.ready { border-color: var(--accent); background: var(--practice-bg); }
+.cycle-card.ready { border-color: var(--accent-state); background: var(--practice-bg); }
 .cycle-icon { font-size: 24px; flex-shrink: 0; opacity: 0.35; transition: opacity 0.3s; }
 .cycle-card.ready .cycle-icon { opacity: 1; }
 .cycle-text { flex: 1; }
@@ -1154,8 +1168,8 @@ h1, h2, h3, h4 {
    default; .ready adds the gold "you've actually finished" treatment. */
 .cycle-btn { flex-shrink: 0; min-height: 44px; padding: 9px 14px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.3s; }
 .cycle-btn:hover { border-color: var(--primary); color: var(--primary); }
-.cycle-card.ready .cycle-btn { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
-.cycle-card.ready .cycle-btn:hover { color: #fff; }
+.cycle-card.ready .cycle-btn { border-color: var(--accent-state); background: var(--accent-state); color: var(--on-accent-state); box-shadow: 0 2px 8px rgba(201,168,76,0.35); }
+.cycle-card.ready .cycle-btn:hover { color: var(--on-accent-state); }
 
 /* MJV-B — local backup / restore workspace. Kept visually secondary to the
    devotional content, but every action is a real 44px+ button. */
@@ -1286,7 +1300,7 @@ h1, h2, h3, h4 {
 #today-modal-title {
   font-size: 11px; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-fg);
 }
 #today-modal-day {
   font-size: 12px; color: var(--muted);
@@ -1340,7 +1354,7 @@ h1, h2, h3, h4 {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-fg);
   margin-bottom: 8px;
 }
 .ws-today-pratique {
@@ -1372,7 +1386,7 @@ h1, h2, h3, h4 {
   margin: 24px 0 16px;
 }
 .rtr-header {
-  background: var(--accent);
+  background: var(--accent-state);
   padding: 8px 16px;
   display: flex;
   align-items: center;
@@ -1383,7 +1397,7 @@ h1, h2, h3, h4 {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--white);
+  color: var(--on-accent-state);
 }
 .rtr-section {
   padding: 12px 16px;
@@ -1395,7 +1409,7 @@ h1, h2, h3, h4 {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-fg);
   margin-bottom: 6px;
 }
 .rtr-pratique {
@@ -1413,7 +1427,7 @@ h1, h2, h3, h4 {
   text-align: center;
 }
 /* Active day button in reader action bar */
-.action-btn.active-day-btn { color: var(--accent); border-color: var(--accent); background: var(--practice-bg); }
+.action-btn.active-day-btn { color: var(--accent-fg); border-color: var(--accent-state); background: var(--practice-bg); font-weight: 700; }
 
 /* Version badge */
 .version-badge {
@@ -1496,7 +1510,7 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" onclick="App.debugTap()">v2.17.14</div>
+        <div class="mobile-version" id="mobile-version" onclick="App.debugTap()">v—</div>
       </div>
       <div class="topbar-actions">
         <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
@@ -1623,7 +1637,7 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v2.17.14</span>
+    <span class="version-badge" id="desktop-version" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v—</span>
     <nav class="wt-nav" aria-label="Navigation principale">
       <button class="wt-nav-btn active" data-primary-nav="true" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
@@ -1748,6 +1762,7 @@ h1, h2, h3, h4 {
 
 <!-- Toast (shared) -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast undo-toast" id="undo-toast" role="status" aria-live="assertive"></div>
 
 <!-- Highlight colour picker — anchored to the tapped paragraph's control -->
 <div id="hl-picker" role="dialog" aria-modal="true" aria-label="Couleur du surlignage">
@@ -1899,7 +1914,7 @@ h1, h2, h3, h4 {
 </div>
 
 <script>
-const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', TEXT_SIZE_SCHEMA:'mjv_textsize_schema', ACTIVE_DAY:'mjv_active_day', ACTIVE_APPENDIX:'mjv_active_appendix', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded', HL_COLOR:'mjv_hl_color', FAV_MIGRATED:'mjv_fav_migrated', THEME:'mjv_theme', LAST_BACKUP:'mjv_last_backup', RESTORE_TXN:'mjv_restore_txn' };
+const SK = { READ:'mjv_read', FAVORITES:'mjv_favorites', NOTES:'mjv_notes', TEXT_SIZE:'mjv_textsize', TEXT_SIZE_SCHEMA:'mjv_textsize_schema', ACTIVE_DAY:'mjv_active_day', ACTIVE_APPENDIX:'mjv_active_appendix', HIGHLIGHTS:'mjv_highlights', SCROLL:'mjv_scroll', ONBOARDED:'mjv_onboarded', HL_COLOR:'mjv_hl_color', FAV_MIGRATED:'mjv_fav_migrated', THEME:'mjv_theme', LAST_BACKUP:'mjv_last_backup', RESTORE_TXN:'mjv_restore_txn', STATE_TXN:'mjv_state_txn' };
 const NOTE_STORAGE_SCHEMA_VERSION = 1;
 
 // Highlight colours. 'gold' is the default and the value every pre-v2.7.0
@@ -1964,7 +1979,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.17.14';
+const APP_VERSION = '2.17.15';
 
 // MJV-B backup contract. The corpus is read-only in this roadmap, so its exact
 // SHA-256 is a stable identity for this release. A future corpus generation may
@@ -1977,6 +1992,7 @@ const CORPUS_VERSION = '1.0.0';
 const CORPUS_FINGERPRINT_SHA256 = '63211c89125db278a971dbf1bd658d5fb9b7bd1a2128f130f930ed6783a14364';
 const INITIAL_ROUTE_SEARCH = window.location.search;
 const RESTORE_TARGET_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.NOTES, SK.HIGHLIGHTS, SK.SCROLL, SK.THEME, SK.TEXT_SIZE, SK.TEXT_SIZE_SCHEMA, SK.ONBOARDED, SK.HL_COLOR, SK.FAV_MIGRATED, SK.FAVORITES]);
+const USER_STATE_TXN_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.SCROLL]);
 
 
 // ── Config ────────────────────────────────────────────────────────────
@@ -2038,6 +2054,13 @@ const setText = (id, value) => {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
 };
+
+async function sha256Hex(buffer) {
+  if (!globalThis.crypto?.subtle) throw new Error('crypto.subtle unavailable');
+  const digest=await crypto.subtle.digest('SHA-256',buffer);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 
 // ── Pure logic (test seam) ────────────────────────────────────────────
 // Everything here is a pure function of its arguments — no DOM, no State — so
@@ -2182,8 +2205,8 @@ const Pure = {
   // deterministic and testable.
   parseHighlights(raw) {
     const m = new Map();
-    let pidSeed = '';
-    const rec = (color, range, text, ts, id, meta, malformedRange=false) => {
+    let pidSeed = '', migrated = false;
+    const rec = (color, range, text, ts, id, meta, malformedRange=false, usedIds=null) => {
       const status = meta && ['active','recovered','stale'].includes(meta.status) ? meta.status : (malformedRange ? 'stale' : 'active');
       const fp = meta && typeof meta.text_fingerprint === 'string' && /^[0-9a-f]{64}$/.test(meta.text_fingerprint) ? meta.text_fingerprint : null;
       const cv = meta && typeof meta.corpus_version === 'string' && meta.corpus_version ? meta.corpus_version : null;
@@ -2195,8 +2218,20 @@ const Pure = {
           from_range: rr === null ? null : Pure.validRange(rr),
         };
       }
+      let safeId = id;
+      if (safeId && !Pure.validRecordId(safeId)) {
+        safeId = Pure.migratedRecordId(safeId, 'h', pidSeed + '|' + String(ts || 0));
+        migrated = true;
+      }
+      if (!safeId) safeId = 'h' + Math.abs(Pure.hashStr(pidSeed + color + JSON.stringify(range || 0))).toString(36);
+      if (usedIds) {
+        let candidate=safeId, n=1;
+        while (usedIds.has(candidate)) candidate=(safeId + '_' + (n++)).slice(0,128);
+        if (candidate!==safeId) migrated=true;
+        safeId=candidate; usedIds.add(safeId);
+      }
       return {
-        id: id || ('h' + Math.abs(Pure.hashStr(pidSeed + color + JSON.stringify(range || 0))).toString(36)),
+        id: safeId,
         color: (typeof color === 'string' && HL_COLORS[color]) ? color : HL_DEFAULT,
         range: malformedRange ? null : Pure.validRange(range),
         text: typeof text === 'string' ? text : '',
@@ -2216,20 +2251,25 @@ const Pure = {
     }
     if (!raw || typeof raw !== 'object') return m;
 
-    for (const [pid, val] of Object.entries(raw)) {
-      if (!pid) continue;
+    for (const [rawPid, val] of Object.entries(raw)) {
+      if (!rawPid) continue;
+      const pid=Pure.validStableId(rawPid)?rawPid:Pure.migratedRecordId(rawPid,'orphan','paragraph');
+      if (pid!==rawPid) migrated=true;
       pidSeed = pid;
       if (typeof val === 'string') {
-        m.set(pid, [rec(val, null, '', 0, null, null)]);
+        const one=rec(val,null,'',0,null,{status:pid===rawPid?'active':'stale'});
+        m.set(pid,[one]);
       } else if (Array.isArray(val)) {
+        const usedIds=new Set();
         const list = val.filter(h => h && typeof h === 'object').map(h => {
           const malformed = h.range !== null && h.range !== undefined && !Pure.validRange(h.range);
-          const meta={text_fingerprint:h.text_fingerprint,corpus_version:h.corpus_version,status:h.status,recovery:h.recovery};
-          return rec(h.color, h.range, h.text, h.ts, h.id, meta, malformed);
+          const meta={text_fingerprint:h.text_fingerprint,corpus_version:h.corpus_version,status:pid===rawPid?h.status:'stale',recovery:h.recovery};
+          return rec(h.color, h.range, h.text, h.ts, h.id, meta, malformed, usedIds);
         });
         if (list.length) m.set(pid, Pure.dedupeHls(list));
       }
     }
+    m.migrated = migrated;
     return m;
   },
 
@@ -2401,7 +2441,7 @@ const Pure = {
       const cls = colorCls[Pure.safeColorKey(r.h.color)] || colorCls[HL_DEFAULT];
       // data-hlid lets openHlPicker() anchor the popover to this exact mark
       // when it's tapped; onclick does the actual dispatch.
-      const tap = pid ? ' data-hlid="' + r.h.id + '" onclick="App.onMarkClick(event,\'' + pid + '\',\'' + r.h.id + '\')"' : '';
+      const tap = pid ? ' data-hlid="' + Pure.esc(r.h.id) + '" onclick="App.onMarkClick(event,\'' + pid + '\',\'' + r.h.id + '\')"' : '';
       html += '<mark class="hl-mark ' + cls + '"' + tap + '>' + Pure.formatText(src.slice(r.start, r.end)) + '</mark>';
       cursor = r.end;
     });
@@ -2450,6 +2490,26 @@ const Pure = {
     return keys.length === want.length && keys.every((k,i) => k === want[i]);
   },
 
+
+  // H.7: record identifiers are application identifiers, never arbitrary user
+  // strings. Keeping them to a strict ASCII alphabet closes attribute / inline-
+  // handler injection routes and matches every id generated by Marie itself.
+  validRecordId(id) {
+    return typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id);
+  },
+
+
+  validStableId(id) {
+    return typeof id === 'string' && /^[A-Za-z0-9_.-]{1,180}$/.test(id);
+  },
+
+  migratedRecordId(rawId, prefix, salt='') {
+    const base = String(rawId ?? '');
+    const h1 = Math.abs(Pure.hashStr(prefix + '|' + base + '|' + salt)).toString(36);
+    const h2 = Math.abs(Pure.hashStr(base.split('').reverse().join('') + '|' + salt)).toString(36);
+    return `${prefix}_migr_${h1}_${h2}`;
+  },
+
   // MJV-C note records. The deterministic legacy id makes migration idempotent:
   // re-reading an old paragraph-keyed note never creates a second record.
   legacyNoteId(pid) {
@@ -2473,7 +2533,14 @@ const Pure = {
         if (!id || id.length>128 || !Pure.isPlainObject(n)) { out.dropped++; continue; }
         const keys=['id','paragraph_id','unit_id','text','created_at','updated_at','selected_text','range'];
         if (!Pure.exactKeys(n,keys) || n.id!==id || typeof n.paragraph_id!=='string' || typeof n.unit_id!=='string' || typeof n.text!=='string' || n.text.length>1000 || typeof n.created_at!=='number' || !Number.isFinite(n.created_at) || n.created_at<0 || typeof n.updated_at!=='number' || !Number.isFinite(n.updated_at) || n.updated_at<0 || n.updated_at<n.created_at || (n.selected_text!==null && typeof n.selected_text!=='string') || (n.range!==null && !Pure.validRange(n.range))) { out.dropped++; continue; }
-        out.records[id]={id,paragraph_id:n.paragraph_id,unit_id:n.unit_id,text:n.text,created_at:n.created_at,updated_at:n.updated_at,selected_text:n.selected_text,range:n.range===null?null:{start:n.range.start,end:n.range.end}};
+        let safeId=id;
+        if (!Pure.validRecordId(id)) {
+          safeId=Pure.migratedRecordId(id,'n',n.paragraph_id+'|'+String(n.created_at));
+          let suffix=1, base=safeId;
+          while (out.records[safeId]) safeId=(base+'_'+(suffix++)).slice(0,128);
+          out.migrated=true;
+        }
+        out.records[safeId]={id:safeId,paragraph_id:n.paragraph_id,unit_id:n.unit_id,text:n.text,created_at:n.created_at,updated_at:n.updated_at,selected_text:n.selected_text,range:n.range===null?null:{start:n.range.start,end:n.range.end}};
       }
       if (out.dropped) out.migrated=true;
       return out;
@@ -2556,7 +2623,7 @@ const Pure = {
       }
     } else {
       for (const [id,note] of Object.entries(st.notes)) {
-        if (!id || id.length>128 || !Pure.isPlainObject(note) || !Pure.exactKeys(note,['id','paragraph_id','unit_id','text','created_at','updated_at','selected_text','range'])) { fail('notes:v2_record_shape'); break; }
+        if (!Pure.validRecordId(id) || !Pure.isPlainObject(note) || !Pure.exactKeys(note,['id','paragraph_id','unit_id','text','created_at','updated_at','selected_text','range'])) { fail('notes:v2_record_shape'); break; }
         const pid=note.paragraph_id;
         if (note.id!==id || !validParas.has(pid) || note.unit_id!==paraUnits[pid]) { fail('notes:v2_id_mismatch'); break; }
         if (typeof note.text!=='string' || note.text.length>1000 || typeof note.created_at!=='number' || !Number.isFinite(note.created_at) || note.created_at<0 || typeof note.updated_at!=='number' || !Number.isFinite(note.updated_at) || note.updated_at<note.created_at || (note.selected_text!==null && (typeof note.selected_text!=='string' || note.selected_text.length>(paraLengths[pid]||0)))) { fail('notes:v2_value'); break; }
@@ -2573,13 +2640,14 @@ const Pure = {
     else for (const [pid,list] of Object.entries(st.highlights)) {
       if (!Array.isArray(list) || !list.length) { fail('highlights:shape'); break; }
       const knownPara=validParas.has(pid);
+      if (!knownPara && !Pure.validStableId(pid)) { fail('highlights:unsafe_paragraph_id'); break; }
       if (!knownPara && !(env.schema_version>=3 && list.every(h=>h&&h.status==='stale'))) { fail('highlights:unknown_paragraph'); break; }
       const out=[], ids=new Set();
       for (const h of list) {
         const legacy=env.schema_version<=2;
         const keys=legacy?['id','color','range','text','ts']:['id','color','range','text','ts','text_fingerprint','corpus_version','status','recovery'];
         if (!Pure.isPlainObject(h) || !Pure.exactKeys(h,keys)) { fail('highlights:record_shape'); break; }
-        if (typeof h.id!=='string'||!h.id||h.id.length>128||ids.has(h.id)||!colors.has(h.color)||typeof h.text!=='string'||h.text.length>10000||typeof h.ts!=='number'||!Number.isFinite(h.ts)||h.ts<0) { fail('highlights:record_value'); break; }
+        if (!Pure.validRecordId(h.id)||ids.has(h.id)||!colors.has(h.color)||typeof h.text!=='string'||h.text.length>10000||typeof h.ts!=='number'||!Number.isFinite(h.ts)||h.ts<0) { fail('highlights:record_value'); break; }
         ids.add(h.id);
         let range=null;
         if (h.range!==null) {
@@ -2631,6 +2699,13 @@ const Pure = {
     eq('esc: null-safe', Pure.esc(null), '');
     eq('esc: ampersand first', Pure.esc('a & <b>'), 'a &amp; &lt;b&gt;');
     eq('esc: double quote', Pure.esc('say "hi"'), 'say &quot;hi&quot;');
+    eq('record id: generated id accepted', Pure.validRecordId('n_abc-123'), true);
+    eq('record id: quote rejected', Pure.validRecordId('x" onmouseover="evil'), false);
+    eq('record id: apostrophe rejected', Pure.validRecordId("x'bad"), false);
+    eq('stable id: corpus-style accepted', Pure.validStableId('VM_DV.D01.P001'), true);
+    eq('stable id: quote rejected', Pure.validStableId('x" onclick=evil'), false);
+
+
     eq('esc: apostrophe', Pure.esc("l'âme"), 'l&#39;âme');
     eq('esc: no double-encoding of entity text', Pure.esc('&amp;'), '&amp;amp;');
 
@@ -2795,6 +2870,8 @@ const Pure = {
     eq('notes: legacy migration preserves text byte-identically', parsedLegacy.records[legacyId].text, '  ancien texte  ');
     eq('notes: new shape idempotent', Pure.parseNotes(Pure.noteStoreEnvelope(parsedLegacy.records)).migrated, false);
     eq('notes: malformed record is dropped not fatal', Pure.parseNotes({schema_version:1,records:{bad:{id:'bad'}}}).dropped, 1);
+    eq('notes: unsafe stored id is safely re-keyed', (()=>{const bad='x" onmouseover="evil';const r=Pure.parseNotes({schema_version:1,records:{[bad]:{id:bad,paragraph_id:'P1',unit_id:'D1',text:'safe',created_at:1,updated_at:1,selected_text:null,range:null}}});return r.migrated&&Object.keys(r.records).length===1&&Pure.validRecordId(Object.keys(r.records)[0])&&Object.values(r.records)[0].text==='safe';})(), true);
+
 
     const bctx={format:'MJV_LOCAL_BACKUP',schemaVersion:4,corpusId:'VM_DV',corpusVersion:'1.0.0',corpusFingerprint:'a'.repeat(64),validUnitIds:new Set(['D1']),validParaIds:new Set(['P1']),paraLengths:{P1:20},paraUnits:{P1:'D1'},paraTexts:{P1:'abcdefghijklmnopqrst'},paraFingerprints:{P1:'a'.repeat(64)},colors:new Set(['gold','blue']),textLevels:new Set(['small','normal'])};
     const noteId='n1';
@@ -2808,6 +2885,11 @@ const Pure = {
     eq('backup: wrong module rejected', (()=>{const x=benv();x.app.module_id='X';return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
     eq('backup: unknown read unit rejected', (()=>{const x=benv();x.state.read=['NO'];return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
     eq('backup: note id mismatch rejected', (()=>{const x=benv();x.state.notes[noteId].id='other';return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: unsafe note id rejected', (()=>{const x=benv(),bad='x" onmouseover="evil';x.state.notes[bad]={...x.state.notes[noteId],id:bad};delete x.state.notes[noteId];return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: unsafe highlight id rejected', (()=>{const x=benv();x.state.highlights.P1[0].id="x' onclick='evil";return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+    eq('backup: unsafe stale paragraph id rejected', (()=>{const x=benv(),bad='x" onclick=evil';x.state.highlights[bad]=x.state.highlights.P1.map(h=>({...h,status:'stale'}));delete x.state.highlights.P1;return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
+
+
     eq('backup: second note same paragraph accepted', (()=>{const x=benv();x.state.notes.n2={...x.state.notes[noteId],id:'n2',text:'second',created_at:3,updated_at:3};return Pure.validateBackupEnvelope(x,bctx).ok})(), true);
     eq('backup: highlight bad colour rejected', (()=>{const x=benv();x.state.highlights.P1[0].color='red';return Pure.validateBackupEnvelope(x,bctx).ok})(), false);
     eq('backup: highlight out-of-range unique snapshot recovers', (()=>{const x=benv();x.state.highlights.P1[0].range.end=99;const r=Pure.validateBackupEnvelope(x,bctx);return r.ok && r.normalized.highlights.P1[0].status==='recovered' && r.normalized.highlights.P1[0].range.start===1 && r.normalized.highlights.P1[0].range.end===3})(), true);
@@ -2853,7 +2935,7 @@ const Pure = {
 if (typeof module !== 'undefined' && module.exports) module.exports = Pure;
 
 const State = {
-  corpus: null, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
+  corpus: null, loadedCorpusFingerprint: null, storageRecoveryFailed: false, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
   read: new Set(), notes: {}, textSize: 'normal',
   // Map<paragraph_id, colourKey>. Was a Set of ids before v2.7.0; the loader
@@ -2951,16 +3033,67 @@ function recoverInterruptedRestore() {
   } catch(e) { return false; }
 }
 
+
+function restoreRawSubset(snapshot, keys) {
+  if (!snapshot || typeof snapshot !== 'object' || !Array.isArray(keys)) return false;
+  try {
+    for (const key of keys) {
+      const value=Object.prototype.hasOwnProperty.call(snapshot,key)?snapshot[key]:null;
+      if (value===null) localStorage.removeItem(key); else localStorage.setItem(key,value);
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+function recoverInterruptedStateTransaction() {
+  let raw=null;
+  try { raw=localStorage.getItem(SK.STATE_TXN); } catch(e) { return false; }
+  if (!raw) return true;
+  try {
+    const tx=JSON.parse(raw);
+    if (!tx || tx.kind!=='MJV_STATE_TXN_V1' || !Array.isArray(tx.keys) || !tx.keys.every(k=>USER_STATE_TXN_KEYS.includes(k)) || !tx.snapshot || Pure.hasDangerousKey(tx)) return false;
+    const ok=restoreRawSubset(tx.snapshot,tx.keys);
+    if (ok) localStorage.removeItem(SK.STATE_TXN);
+    return ok;
+  } catch(e) { return false; }
+}
+
+function atomicUserStateWrite(payload) {
+  const keys=Object.keys(payload||{});
+  if (!keys.length || !keys.every(k=>USER_STATE_TXN_KEYS.includes(k))) return {ok:false,phase:'scope',rolled_back:true};
+  try { if (localStorage.getItem(SK.STATE_TXN) || localStorage.getItem(SK.RESTORE_TXN)) return {ok:false,phase:'pending_recovery',rolled_back:false}; }
+  catch(e) { return {ok:false,phase:'recovery_probe',rolled_back:false}; }
+  const snapshot={};
+  try { keys.forEach(k=>snapshot[k]=localStorage.getItem(k)); } catch(e) { return {ok:false,phase:'snapshot',rolled_back:true}; }
+  const tx={kind:'MJV_STATE_TXN_V1',created_at:new Date().toISOString(),keys,snapshot};
+  try { localStorage.setItem(SK.STATE_TXN,JSON.stringify(tx)); } catch(e) { return {ok:false,phase:'prepare',rolled_back:true}; }
+  const written=[];
+  try {
+    for (const key of keys) { const v=payload[key]; if (v===null) localStorage.removeItem(key); else localStorage.setItem(key,v); written.push(key); }
+    localStorage.removeItem(SK.STATE_TXN);
+    return {ok:true,phase:'commit',written,rolled_back:false};
+  } catch(e) {
+    const rolled=restoreRawSubset(snapshot,keys);
+    try { if (rolled) localStorage.removeItem(SK.STATE_TXN); } catch(_) {}
+    return {ok:false,phase:'write',written,rolled_back:rolled};
+  }
+}
+
 function loadStorage() {
-  recoverInterruptedRestore();
+  if (!recoverInterruptedStateTransaction() || !recoverInterruptedRestore()) {
+    State.storageRecoveryFailed=true;
+    return false;
+  }
+  State.storageRecoveryFailed=false;
   try { State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]')); }
   catch(e) { State.read = new Set(); }
 
   // Highlights: accepts both shapes. Pre-v2.7.0 stored a plain array of
   // paragraph_ids with no colour; v2.7.0+ stores { paragraph_id: colourKey }.
   try {
-    State.highlights = Pure.parseHighlights(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '{}'));
-    State.highlightsNeedPersist = false;
+    const parsedHighlights=Pure.parseHighlights(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '{}'));
+    State.highlights = parsedHighlights;
+    State.highlightsNeedPersist = !!parsedHighlights.migrated;
   } catch(e) { State.highlights = new Map(); State.highlightsNeedPersist = false; }
 
   try {
@@ -3004,6 +3137,11 @@ function loadStorage() {
     const aa = parseInt(localStorage.getItem(SK.ACTIVE_APPENDIX) || '0');
     State.activeAppendix = (aa >= 1 && aa <= CFG.APPENDICES) ? aa : null;
   } catch(e) { State.activeAppendix = null; }
+  if (State.activeDay!==null && State.activeAppendix!==null) {
+    const repaired=atomicUserStateWrite({[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:String(State.activeAppendix)});
+    if (repaired.ok) State.activeDay=null;
+    else { State.storageRecoveryFailed=true; return false; }
+  }
 
   try {
     const sp = JSON.parse(localStorage.getItem(SK.SCROLL) || '{}');
@@ -3015,20 +3153,26 @@ function loadStorage() {
       }
     }
   } catch(e) { State.scrollPos = {}; }
+  return true;
 }
 // Each save* helper returns true on success, false on failure (quota exceeded,
 // private-mode restrictions, storage disabled) so callers can tell the user
 // the truth instead of showing a success toast for a write that never happened.
-const saveRead       = () => { try { localStorage.setItem(SK.READ, JSON.stringify([...State.read])); return true; } catch(e){ return false; } };
+const storageWritesAllowed = () => {
+  if (State.storageRecoveryFailed) return false;
+  try { return !localStorage.getItem(SK.RESTORE_TXN) && !localStorage.getItem(SK.STATE_TXN); }
+  catch(e) { return false; }
+};
+const saveRead       = (readSet=State.read) => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.READ, JSON.stringify([...readSet])); return true; } catch(e){ return false; } };
 // Persisted as an object { paragraph_id: colourKey } from v2.7.0 on.
-const saveHighlights = () => { try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify(Object.fromEntries(State.highlights))); return true; } catch(e){ return false; } };
-const saveHlColor    = () => { try { localStorage.setItem(SK.HL_COLOR, State.lastHlColor); return true; } catch(e){ return false; } };
-const saveNotes      = (records=State.notes) => { try { localStorage.setItem(SK.NOTES, JSON.stringify(Pure.noteStoreEnvelope(records))); return true; } catch(e){ return false; } };
-const saveTextSize   = () => { try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); localStorage.setItem(SK.TEXT_SIZE_SCHEMA, TEXT_SIZE_SCHEMA_VERSION); return true; } catch(e){ return false; } };
-const saveActiveDay  = () => { try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
-const saveActiveAppendix = () => { try { localStorage.setItem(SK.ACTIVE_APPENDIX, State.activeAppendix || ''); return true; } catch(e){ return false; } };
-const saveScrollPos  = () => { try { localStorage.setItem(SK.SCROLL, JSON.stringify(State.scrollPos)); return true; } catch(e){ return false; } };
-const saveLastBackup = iso => { try { localStorage.setItem(SK.LAST_BACKUP, iso); return true; } catch(e){ return false; } };
+const saveHighlights = (map=State.highlights) => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify(Object.fromEntries(map))); return true; } catch(e){ return false; } };
+const saveHlColor    = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.HL_COLOR, State.lastHlColor); return true; } catch(e){ return false; } };
+const saveNotes      = (records=State.notes) => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.NOTES, JSON.stringify(Pure.noteStoreEnvelope(records))); return true; } catch(e){ return false; } };
+const saveTextSize   = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); localStorage.setItem(SK.TEXT_SIZE_SCHEMA, TEXT_SIZE_SCHEMA_VERSION); return true; } catch(e){ return false; } };
+const saveActiveDay  = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
+const saveActiveAppendix = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.ACTIVE_APPENDIX, State.activeAppendix || ''); return true; } catch(e){ return false; } };
+const saveScrollPos  = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.SCROLL, JSON.stringify(State.scrollPos)); return true; } catch(e){ return false; } };
+const saveLastBackup = iso => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.LAST_BACKUP, iso); return true; } catch(e){ return false; } };
 
 // Scroll fires rapidly — record into State immediately (cheap) but debounce the
 // localStorage write so reading never causes a write storm.
@@ -3210,7 +3354,13 @@ const App = {
   },
 
   async init() {
-    loadStorage();
+    if (!loadStorage()) {
+      document.getElementById('screen-loading').innerHTML = `<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)"><div style="font-size:32px;margin-bottom:16px">✦</div><div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Récupération des données impossible</div><div style="font-size:14px;margin-bottom:24px">Une opération interrompue n’a pas pu être restaurée en toute sécurité. Ne modifiez pas vos données personnelles ici ; réessayez après avoir vérifié le stockage du navigateur.</div><button onclick="window.location.reload()" style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button></div>`;
+      document.getElementById('screen-loading').classList.add('active');
+      return;
+    }
+    setText('mobile-version','v'+APP_VERSION);
+    setText('desktop-version','v'+APP_VERSION);
     this.applyTextSize(State.textSize, false);
     this.syncSystemTheme();  // belt-and-suspenders alongside the head-script's early pass
     this.syncThemeIcon();
@@ -3234,7 +3384,11 @@ const App = {
       const res = await fetch(window.APP_BASE + 'corpus/days.json', { signal: controller.signal });
       clearTimeout(timeout);
       if (!res.ok) throw new Error(res.status);
-      const parsed = await res.json();
+      const bytes=await res.arrayBuffer();
+      const actualFingerprint=await sha256Hex(bytes);
+      if (actualFingerprint!==CORPUS_FINGERPRINT_SHA256) throw new Error('corpus fingerprint mismatch');
+      const parsed=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+      State.loadedCorpusFingerprint=actualFingerprint;
       // A valid-JSON-but-malformed corpus (empty array, units missing
       // sections/paragraphs) must not pass silently — it has to route into
       // the same catch block below so the Retry UI shows instead of a blank
@@ -3725,7 +3879,7 @@ const App = {
         const isRead = State.read.has(u.unit_id);
         const isActive = State.activeAppendix === u.appendix_number;
         const cls = (isRead ? ' read' : '') + (isActive ? ' active' : '');
-        return '<button class="app-circle' + cls + '" title="' + u.title + '" aria-pressed="' + isActive + '" onclick="App.openUnit(' + "'" + u.unit_id + "'" + ')">A' + u.appendix_number + '</button>';
+        return '<button class="app-circle' + cls + '" title="' + this.esc(u.title) + '" aria-pressed="' + isActive + '" onclick="App.openUnit(' + "'" + u.unit_id + "'" + ')">A' + u.appendix_number + '</button>';
       }).join('');
   },
 
@@ -4363,7 +4517,7 @@ const App = {
       sec.paragraphs.forEach(p => {
         html += this.paragraphMarkup(p, cls);
         this.notesForParagraph(p.paragraph_id).forEach(note => {
-          html += `<div class="para-note" data-note-pid="${p.paragraph_id}" data-note-id="${note.id}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.openNoteModal('${p.paragraph_id}','${note.id}')" title="Modifier" aria-label="Modifier la note">✎</button><button class="para-note-del" onclick="App.deleteNote('${note.id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
+          html += `<div class="para-note" data-note-pid="${p.paragraph_id}" data-note-id="${this.esc(note.id)}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.openNoteModal('${p.paragraph_id}','${note.id}')" title="Modifier" aria-label="Modifier la note">✎</button><button class="para-note-del" onclick="App.deleteNote('${note.id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
         });
       });
     });
@@ -4520,8 +4674,12 @@ const App = {
     if (!unit) return;
     const key = unit.unit_id;
     const label = unit.day_number ? 'Jour ' + unit.day_number : 'Appendice ' + unit.appendix_number;
-    if (State.read.has(key)) { State.read.delete(key); this.showToast(saveRead() ? 'Marqué comme non lu' : this.SAVE_ERROR_MSG); }
-    else { State.read.add(key); this.showToast(saveRead() ? label + ' terminé ✓' : this.SAVE_ERROR_MSG); }
+    const next=new Set(State.read);
+    const wasRead=next.has(key);
+    if (wasRead) next.delete(key); else next.add(key);
+    if (!saveRead(next)) { this.showToast(this.SAVE_ERROR_MSG); return; }
+    State.read=next;
+    this.showToast(wasRead ? 'Marqué comme non lu' : label + ' terminé ✓');
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
     this.updateCalendar();
@@ -4556,41 +4714,26 @@ const App = {
   activateDay() {
     const unit = currentUnit();
     if (!unit) return;
+    let nextDay=State.activeDay, nextAppendix=State.activeAppendix, successMessage='';
     if (unit.appendix_number) {
-      const a = unit.appendix_number;
-      if (State.activeAppendix === a) {
-        State.activeAppendix = null;
-        this.showToast(saveActiveAppendix() ? 'Jour de pratique réinitialisé' : this.SAVE_ERROR_MSG);
-      } else {
-        // Mutually exclusive with an active day — only one devotional focus at a time.
-        State.activeAppendix = a;
-        State.activeDay = null;
-        const ok = saveActiveAppendix() && saveActiveDay();
-        this.showToast(ok ? 'Appendice ' + a + ' activé comme jour de pratique ✦' : this.SAVE_ERROR_MSG);
-      }
-      this.updateAppendixRows();
+      const a=unit.appendix_number;
+      if (State.activeAppendix===a) { nextAppendix=null; successMessage='Jour de pratique réinitialisé'; }
+      else { nextAppendix=a; nextDay=null; successMessage='Appendice '+a+' activé comme jour de pratique ✦'; }
     } else if (unit.day_number) {
-      const d = unit.day_number;
-      if (State.activeDay === d) {
-        // Deactivate — revert to calendar day
-        State.activeDay = null;
-        this.showToast(saveActiveDay() ? 'Jour de pratique réinitialisé' : this.SAVE_ERROR_MSG);
-      } else {
-        State.activeDay = d;
-        State.activeAppendix = null;
-        const ok = saveActiveDay() && saveActiveAppendix();
-        this.showToast(ok ? 'Jour ' + d + ' activé comme jour de pratique ✦' : this.SAVE_ERROR_MSG);
-      }
-      this.updateAppendixRows();
-    } else {
-      return;
-    }
+      const d=unit.day_number;
+      if (State.activeDay===d) { nextDay=null; successMessage='Jour de pratique réinitialisé'; }
+      else { nextDay=d; nextAppendix=null; successMessage='Jour '+d+' activé comme jour de pratique ✦'; }
+    } else return;
+    const result=atomicUserStateWrite({[SK.ACTIVE_DAY]:nextDay===null?'':String(nextDay),[SK.ACTIVE_APPENDIX]:nextAppendix===null?'':String(nextAppendix)});
+    if (!result.ok) { if(!result.rolled_back)State.storageRecoveryFailed=true; this.showToast(result.rolled_back?this.SAVE_ERROR_MSG:'Stockage incohérent — rechargez l’application pour récupérer vos données'); return; }
+    State.activeDay=nextDay; State.activeAppendix=nextAppendix;
+    this.showToast(successMessage);
+    this.updateAppendixRows();
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
     this.updateCalendar();
     this.updateWideCalendar();
     this.renderTodayCard();
-    // Re-render reader body to show/hide reminder
     this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
   },
 
@@ -4612,9 +4755,9 @@ const App = {
   confirmNewCycle() {
     const notesBefore=JSON.stringify(State.notes);
     const highlightsBefore=JSON.stringify(Object.fromEntries(State.highlights));
+    const result=atomicUserStateWrite({[SK.READ]:'[]',[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:'',[SK.SCROLL]:'{}'});
+    if (!result.ok) { if(!result.rolled_back)State.storageRecoveryFailed=true; this.showToast(result.rolled_back?this.SAVE_ERROR_MSG:'Stockage incohérent — rechargez l’application pour récupérer vos données'); return; }
     State.read=new Set(); State.activeDay=null; State.activeAppendix=null; State.scrollPos={};
-    const ok=saveRead() && saveActiveDay() && saveActiveAppendix() && saveScrollPos();
-    // The reset contract must never touch private annotations.
     if (JSON.stringify(State.notes)!==notesBefore || JSON.stringify(Object.fromEntries(State.highlights))!==highlightsBefore) {
       this.showToast('Réinitialisation annulée — protection des notes/surlignages'); return;
     }
@@ -4624,9 +4767,10 @@ const App = {
     const unit=currentUnit(); if(unit){this.updateActionBar(unit);this.updateWideActionBar(unit);}
     if(isWide()) this.renderEspace('wide-espace'); else this.renderEspace('espace-scroll');
     this.onModalClosed();
-    this.showToast(ok?'Nouveau cycle commencé ✦':this.SAVE_ERROR_MSG);
-    if(ok) requestPersistentStorageBestEffort();
+    this.showToast('Nouveau cycle commencé ✦');
+    requestPersistentStorageBestEffort();
   },
+
 
   // ── Text size ─────────────────────────────────────────────────
   syncTextSizeControls() {
@@ -4867,8 +5011,8 @@ const App = {
     State.notes=next; State.notesNeedPersist=false; this.refreshAfterNoteChange();
     this.showUndoToast('Note supprimée', () => {
       const restored={...State.notes,[noteId]:removed};
-      if (!saveNotes(restored)) { this.showToast(this.SAVE_ERROR_MSG); return; }
-      State.notes=restored; this.refreshAfterNoteChange(); this.showToast('Note rétablie ✎');
+      if (!saveNotes(restored)) { this.showToast(this.SAVE_ERROR_MSG); return false; }
+      State.notes=restored; this.refreshAfterNoteChange(); this.showToast('Note rétablie ✎'); return true;
     });
   },
 
@@ -4920,75 +5064,66 @@ const App = {
     this.applyHighlight(pid, State.lastHlColor);
   },
 
-  // Writes the store, persists, re-renders just the affected paragraph, and
-  // reports honestly if the write failed. Central so every highlight mutation
-  // goes through the same path.
-  commitHighlights(pid, opts) {
-    const ok = saveHighlights();
+  // H.7: highlight mutations use a proposed Map. Persistence must succeed
+  // before State or the rendered reader changes, so a quota/storage failure can
+  // never leave a highlight looking durable when it is not.
+  commitHighlights(pid, nextMap, opts) {
+    if (!(nextMap instanceof Map)) return false;
+    if (!saveHighlights(nextMap)) { this.showToast(this.SAVE_ERROR_MSG); return false; }
+    State.highlights=nextMap;
     if (!this.renderParagraph(pid)) this.refreshAfterHighlightChange();
     this.refreshHighlightSurfaces();
-    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return false; }
     if (opts && opts.toast) this.showToast(opts.toast);
     requestPersistentStorageBestEffort();
     return true;
   },
 
-  // Whole-paragraph highlight (range: null). Also used to recolour: an existing
-  // whole-paragraph record is updated in place rather than duplicated.
   applyHighlight(pid, colour) {
-    const col = safeColor(colour);
-    const recs = hlRecords(pid).slice();
-    const existing = recs.find(h => !h.range);
-    const isNew = !existing;
-    if (existing) {
-      if (existing.color === col) return;         // nothing to do
-      existing.color = col;
-    } else {
+    const col=safeColor(colour);
+    const recs=hlRecords(pid).map(h=>Object.assign({},h));
+    const existingIndex=recs.findIndex(h=>!h.range);
+    const isNew=existingIndex<0;
+    if (!isNew && recs[existingIndex].color===col) return;
+    if (!isNew) recs[existingIndex]=Object.assign({},recs[existingIndex],{color:col});
+    else {
       const hit=findPara(pid), para=hit&&hit.para;
-      recs.unshift({ id: newHlId(), color: col, range: null, text: para?para.text:'', ts: Date.now(), text_fingerprint:para?.fingerprint_sha256||null, corpus_version:CORPUS_VERSION, status:'active', recovery:null });
+      recs.unshift({id:newHlId(),color:col,range:null,text:para?para.text:'',ts:Date.now(),text_fingerprint:para?.fingerprint_sha256||null,corpus_version:CORPUS_VERSION,status:'active',recovery:null});
     }
-    State.highlights.set(pid, Pure.dedupeHls(recs));
-    State.lastHlColor = col;
-    saveHlColor();
-    this.commitHighlights(pid, { toast: isNew ? 'Paragraphe surligné ◆' : 'Couleur : ' + HL_COLORS[col].label.toLowerCase() });
+    const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(recs));
+    if (!this.commitHighlights(pid,nextMap,{toast:isNew?'Paragraphe surligné ◆':'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
+    State.lastHlColor=col; saveHlColor();
   },
 
-  // Partial highlight over a character range of the paragraph's source text.
   applyRangeHighlight(pid, start, end, colour, text) {
-    const col = safeColor(colour);
-    const recs = hlRecords(pid).slice();
+    const col=safeColor(colour), recs=hlRecords(pid).map(h=>Object.assign({},h));
     const hit=findPara(pid), para=hit&&hit.para;
-    recs.push({ id: newHlId(), color: col, range: { start, end }, text: text || (para?para.text.slice(start,end):''), ts: Date.now(), text_fingerprint:para?.fingerprint_sha256||null, corpus_version:CORPUS_VERSION, status:'active', recovery:null });
-    State.highlights.set(pid, Pure.dedupeHls(recs));
-    State.lastHlColor = col;
-    saveHlColor();
-    this.commitHighlights(pid, { toast: 'Passage surligné ◆' });
+    recs.push({id:newHlId(),color:col,range:{start,end},text:text||(para?para.text.slice(start,end):''),ts:Date.now(),text_fingerprint:para?.fingerprint_sha256||null,corpus_version:CORPUS_VERSION,status:'active',recovery:null});
+    const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(recs));
+    if (!this.commitHighlights(pid,nextMap,{toast:'Passage surligné ◆'})) return;
+    State.lastHlColor=col; saveHlColor();
   },
 
-  // Removes every highlight on a paragraph (what the picker's Retirer does).
   removeHighlight(pid) {
-    const previous = hlRecords(pid);
+    const previous=hlRecords(pid).map(h=>Object.assign({},h));
     if (!previous.length) return;
-    State.highlights.delete(pid);
-    if (!this.commitHighlights(pid)) return;
-    // Undo restores the exact records, ranges and colours included
-    this.showUndoToast(previous.length > 1 ? 'Surlignages retirés' : 'Surlignage retiré', () => {
-      State.highlights.set(pid, previous);
-      this.commitHighlights(pid, { toast: 'Surlignage rétabli ◆' });
+    const nextMap=new Map(State.highlights); nextMap.delete(pid);
+    if (!this.commitHighlights(pid,nextMap)) return;
+    this.showUndoToast(previous.length>1?'Surlignages retirés':'Surlignage retiré',()=>{
+      const restoredMap=new Map(State.highlights); restoredMap.set(pid,previous);
+      return this.commitHighlights(pid,restoredMap,{toast:'Surlignage rétabli ◆'});
     });
   },
 
-  // Removes one specific record — used by Mon Espace, where each record is its
-  // own card and removing one must not disturb the others.
   removeHighlightRecord(pid, hlId) {
-    const previous = hlRecords(pid);
-    const kept = previous.filter(h => h.id !== hlId);
-    if (kept.length === previous.length) return;
-    if (kept.length) State.highlights.set(pid, kept); else State.highlights.delete(pid);
-    if (!this.commitHighlights(pid)) return;
-    this.showUndoToast('Surlignage retiré', () => {
-      State.highlights.set(pid, previous);
-      this.commitHighlights(pid, { toast: 'Surlignage rétabli ◆' });
+    const previous=hlRecords(pid).map(h=>Object.assign({},h));
+    const kept=previous.filter(h=>h.id!==hlId);
+    if (kept.length===previous.length) return;
+    const nextMap=new Map(State.highlights);
+    if (kept.length) nextMap.set(pid,kept); else nextMap.delete(pid);
+    if (!this.commitHighlights(pid,nextMap)) return;
+    this.showUndoToast('Surlignage retiré',()=>{
+      const restoredMap=new Map(State.highlights); restoredMap.set(pid,previous);
+      return this.commitHighlights(pid,restoredMap,{toast:'Surlignage rétabli ◆'});
     });
   },
 
@@ -5176,7 +5311,7 @@ const App = {
     }).join('');
 
     const removeBtn = picker.querySelector('.hlp-remove');
-    if (removeBtn) removeBtn.style.display = newSel ? 'none' : '';
+    if (removeBtn) removeBtn.style.display = (newSel || !activeHlRecords(pid).length) ? 'none' : '';
 
     picker.classList.add('open');
     const anchor = rect || (newSel
@@ -5255,12 +5390,11 @@ const App = {
     // One specific record, from tapping a highlighted passage: recolour only
     // that record, leaving every other highlight in the paragraph untouched.
     if (hlId) {
-      const recs = hlRecords(pid);
-      const next = recs.map(h => h.id === hlId ? Object.assign({}, h, { color: col }) : h);
-      State.highlights.set(pid, Pure.dedupeHls(next));
-      State.lastHlColor = col;
-      saveHlColor();
-      this.commitHighlights(pid, { toast: 'Couleur : ' + HL_COLORS[col].label.toLowerCase() });
+      const recs=hlRecords(pid);
+      const next=recs.map(h=>h.id===hlId?Object.assign({},h,{color:col}):h);
+      const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(next));
+      if (!this.commitHighlights(pid,nextMap,{toast:'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
+      State.lastHlColor=col; saveHlColor();
       return;
     }
 
@@ -5270,11 +5404,10 @@ const App = {
     // If the paragraph only carries range highlights, "change the colour"
     // means recolour those — NOT add a whole-paragraph tint on top of them.
     if (ranges.length && !recs.some(h => !h.range)) {
-      const next = recs.map(h => h.range ? Object.assign({}, h, { color: col }) : h);
-      State.highlights.set(pid, Pure.dedupeHls(next));
-      State.lastHlColor = col;
-      saveHlColor();
-      this.commitHighlights(pid, { toast: 'Couleur : ' + HL_COLORS[col].label.toLowerCase() });
+      const next=recs.map(h=>h.range?Object.assign({},h,{color:col}):h);
+      const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(next));
+      if (!this.commitHighlights(pid,nextMap,{toast:'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
+      State.lastHlColor=col; saveHlColor();
       return;
     }
     this.applyHighlight(pid, col);
@@ -5434,10 +5567,10 @@ const App = {
 
       <div class="help-section">
         <div class="help-section-title">✶ Calendrier et progression</div>
-        <div class="help-item"><div class="help-icon">1–31</div><div class="help-text"><div class="help-label">Jours du mois</div><div class="help-desc">Chaque chiffre correspond à une méditation. Les cases ne correspondant pas à un jour du mois sont inactives.</div></div></div>
+        <div class="help-item"><div class="help-icon">1–31</div><div class="help-text"><div class="help-label">Jours du mois</div><div class="help-desc">Chaque chiffre correspond à une méditation. Le calendrier suit un cycle dévotionnel fixe de 31 jours, indépendamment de la longueur du mois civil.</div></div></div>
         <div class="help-item"><div class="help-icon" style="background:var(--hero-bg);color:#fff;font-size:12px">15</div><div class="help-text"><div class="help-label">Aujourd’hui</div><div class="help-desc">Le jour calendaire actuel est mis en valeur en bleu marial avec un halo doré.</div></div></div>
-        <div class="help-item"><div class="help-icon" style="background:var(--accent);color:#fff;font-size:12px">8</div><div class="help-text"><div class="help-label">Unité lue</div><div class="help-desc">Les unités marquées comme terminées apparaissent en or. La progression générale compte ${unitCount} unités (${dayCount} jours + ${appendixCount} appendices).</div></div></div>
-        <div class="help-item"><div class="help-icon" style="box-shadow:0 0 0 2.5px var(--accent),0 0 0 4.5px rgba(201,168,76,0.3);font-size:12px">20</div><div class="help-text"><div class="help-label">Jour de pratique actif</div><div class="help-desc">Un double anneau doré indique votre pratique personnelle, qui peut être différente du jour calendaire.</div></div></div>
+        <div class="help-item"><div class="help-icon" style="background:var(--accent-state);color:var(--on-accent-state);font-size:12px">8</div><div class="help-text"><div class="help-label">Unité lue</div><div class="help-desc">Les unités marquées comme terminées apparaissent en or. La progression générale compte ${unitCount} unités (${dayCount} jours + ${appendixCount} appendices).</div></div></div>
+        <div class="help-item"><div class="help-icon" style="box-shadow:0 0 0 2.5px var(--accent-state),0 0 0 4.5px rgba(201,168,76,0.3);font-size:12px">20</div><div class="help-text"><div class="help-label">Jour de pratique actif</div><div class="help-desc">Un double anneau doré indique votre pratique personnelle, qui peut être différente du jour calendaire.</div></div></div>
         <div class="help-item"><div class="help-icon">0/${unitCount}</div><div class="help-text"><div class="help-label">Deux repères de progression</div><div class="help-desc">La progression générale compte les ${unitCount} unités. La fin de cycle, elle, utilise les ${dayCount} jours principaux : les appendices ne sont pas requis pour accomplir le cycle des 31 jours.</div></div></div>
       </div>
 
@@ -5534,7 +5667,7 @@ const App = {
   backupValidationContext() {
     const paraLengths={}, paraUnits={}, paraTexts={}, paraFingerprints={};
     Object.entries(State.paraIndex || {}).forEach(([pid,hit]) => { paraLengths[pid]=(hit.para.text||'').length; paraUnits[pid]=hit.unit.unit_id; paraTexts[pid]=hit.para.text||''; paraFingerprints[pid]=hit.para.fingerprint_sha256||null; });
-    return { format:BACKUP_FORMAT, schemaVersion:BACKUP_SCHEMA_VERSION, corpusId:CORPUS_ID, corpusVersion:CORPUS_VERSION, corpusFingerprint:CORPUS_FINGERPRINT_SHA256, validUnitIds:new Set(Object.keys(State.unitIndex||{})), validParaIds:new Set(Object.keys(State.paraIndex||{})), paraLengths, paraUnits, paraTexts, paraFingerprints, colors:new Set(Object.keys(HL_COLORS)), textLevels:new Set(TEXT_LEVEL_ORDER) };
+    return { format:BACKUP_FORMAT, schemaVersion:BACKUP_SCHEMA_VERSION, corpusId:CORPUS_ID, corpusVersion:CORPUS_VERSION, corpusFingerprint:State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256, validUnitIds:new Set(Object.keys(State.unitIndex||{})), validParaIds:new Set(Object.keys(State.paraIndex||{})), paraLengths, paraUnits, paraTexts, paraFingerprints, colors:new Set(Object.keys(HL_COLORS)), textLevels:new Set(TEXT_LEVEL_ORDER) };
   },
 
   buildBackupEnvelope(nowIso) {
@@ -5543,7 +5676,7 @@ const App = {
     return {
       format:BACKUP_FORMAT, schema_version:BACKUP_SCHEMA_VERSION,
       app:{module_id:'MJV',version:APP_VERSION},
-      corpus:{id:CORPUS_ID,version:CORPUS_VERSION,fingerprint_sha256:CORPUS_FINGERPRINT_SHA256,units:State.corpus.length,paragraphs:Object.keys(State.paraIndex).length},
+      corpus:{id:CORPUS_ID,version:CORPUS_VERSION,fingerprint_sha256:State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256,units:State.corpus.length,paragraphs:Object.keys(State.paraIndex).length},
       exported_at:nowIso || new Date().toISOString(),
       state:{
         read:[...State.read], active_day:State.activeDay, active_appendix:State.activeAppendix,
@@ -5681,7 +5814,7 @@ const App = {
     const check=Pure.validateBackupEnvelope(p.env,this.backupValidationContext());
     if (!check.ok) { this.showToast(this.restoreValidationMessage(check.errors,'Restauration annulée')); this.closeRestoreModal(); return; }
     const result=this.atomicReplaceStorage(check.normalized);
-    if (!result.ok) { this.showToast(result.rolled_back ? 'Restauration annulée — données précédentes rétablies' : 'Restauration impossible — stockage indisponible'); this.closeRestoreModal(); return; }
+    if (!result.ok) { if(!result.rolled_back)State.storageRecoveryFailed=true; this.showToast(result.rolled_back ? 'Restauration annulée — données précédentes rétablies' : 'Restauration incomplète — rechargez l’application pour récupérer vos données'); this.closeRestoreModal(); return; }
     document.getElementById('restore-modal')?.classList.remove('open'); State.pendingRestore=null; window.__mjvPendingRestorePreview=false;
     loadStorage(); this.reconcileStoredIds(); this.applyTextSize(State.textSize,false); this.syncSystemTheme(); this.syncThemeIcon();
     this.buildCalendar(); this.updateCalendar(); this.buildList();
@@ -5747,7 +5880,7 @@ const App = {
         const pid=note.paragraph_id;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
         const date = new Date(note.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-        html += `<div class="note-espace-wrap" data-note-id="${note.id}"><button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button><div class="note-espace-actions"><button type="button" class="note-espace-action" onclick="App.openNoteModal('${pid}','${note.id}')" aria-label="Modifier la note" title="Modifier">✎</button><button type="button" class="note-espace-action delete" onclick="App.deleteNote('${note.id}')" aria-label="Supprimer la note" title="Supprimer">×</button></div></div>`;
+        html += `<div class="note-espace-wrap" data-note-id="${this.esc(note.id)}"><button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button><div class="note-espace-actions"><button type="button" class="note-espace-action" onclick="App.openNoteModal('${pid}','${note.id}')" aria-label="Modifier la note" title="Modifier">✎</button><button type="button" class="note-espace-action delete" onclick="App.deleteNote('${note.id}')" aria-label="Supprimer la note" title="Supprimer">×</button></div></div>`;
       });
     }
     if (!readCount && !hlCount && !noteCount) {
@@ -5803,7 +5936,7 @@ const App = {
       'Signalement de texte — La Vierge Marie dans le Royaume de la Divine Volonté',
       `App: v${APP_VERSION}`,
       `Corpus: ${CORPUS_VERSION}`,
-      `Corpus fingerprint: ${CORPUS_FINGERPRINT_SHA256}`,
+      `Corpus fingerprint: ${State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256}`,
       `Unité: ${hit.unit.unit_id}`,
       `Paragraphe: ${pid}`,
       `Section: ${section}`,
@@ -5843,7 +5976,7 @@ const App = {
       'Diagnostics MJV (sans contenu personnel)',
       `app_version=${APP_VERSION}`,
       `corpus_version=${CORPUS_VERSION}`,
-      `corpus_fingerprint=${CORPUS_FINGERPRINT_SHA256}`,
+      `corpus_fingerprint=${State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256}`,
       `sw_shell_cache=mjv-shell-v${APP_VERSION}`,
       'sw_content_cache=mjv-content-v1',
       `sw_control=${swCtl}`,
@@ -5920,7 +6053,7 @@ const App = {
   // data in the app to recreate. This shows the outcome with an Annuler action
   // and holds it longer than a normal toast so there's time to react.
   showUndoToast(msg, restore) {
-    const t = document.getElementById('toast');
+    const t = document.getElementById('undo-toast');
     clearTimeout(t._timer);
     t.textContent = '';
     t.classList.add('with-action', 'show');
@@ -5932,9 +6065,9 @@ const App = {
     btn.className = 'toast-undo-btn';
     btn.textContent = 'Annuler';
     btn.onclick = () => {
-      clearTimeout(t._timer);
-      t.classList.remove('show', 'with-action');
-      try { restore(); } catch(e) {}
+      let ok=false;
+      try { ok=restore()!==false; } catch(e) { ok=false; }
+      if (ok) { clearTimeout(t._timer); t.classList.remove('show','with-action'); }
     };
     t.appendChild(label);
     t.appendChild(btn);
