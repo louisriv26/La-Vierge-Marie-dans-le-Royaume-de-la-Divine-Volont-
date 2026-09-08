@@ -1,20 +1,20 @@
 # La Vierge Marie dans le Royaume de la Divine Volonté
 
-## v2.17.16 — H.9-R1 four-pass Help reconciliation
+## v2.17.19 — R5 authorized corpus · cross-version backup hardening
 
-H.9-R1 supersedes the earlier v2.17.16 H.9 candidate after a strict four-pass audit found stale current-release README evidence and a responsive Help-navigation ID collision risk. It preserves the exact v1.0.0 corpus and the governed v2.17.15 runtime baseline while keeping all changes inside Help/release-documentation scope plus the required shell-cache version coupling.
+v2.17.19 keeps the exact authorized R5 corpus 1.0.1 and exact-span migration asset byte-identical. A new adversarial four-pass audit found that v2.17.18 could reject a valid v1.0.0 backup before governed migration when a selected-note range extended beyond a shortened v1.0.1 paragraph. v2.17.19 fixes only that restore-validation path and strengthens build/report reproducibility; no devotional text changes.
 
 Progressive Web App for *La Vierge Marie dans le Royaume de la Divine Volonté* by Luisa Piccarreta: **31 main days + 6 appendices**.
 
 ## Current release
 
-### v2.17.16 — H.9-R1 four-pass Help reconciliation
+### v2.17.19 — R5 authorized corpus · cross-version backup hardening
 
-This is a Help-only successor to the governed v2.17.15 runtime baseline. It reorganises Aide into seven semantic sections with an in-page index; clarifies Aujourd’hui / Activer / Terminé / “Pour aujourd’hui”; documents February Days 29–31, note edit/delete, Fermer, Share/Link behaviour, replacement-mode restore, stronger backup guidance, and historical highlight recovery; adds dedicated Help callout styling and semantic headings; and uses container-specific Help navigation targets so mobile/wide Help instances cannot collide after a responsive layout change.
+Corpus version **1.0.1**, SHA-256 `884b83aaf28e51d2eb6318f4f044e6d58568211f41d6df25c0ef43d4bb8560b8`, authorization ledger `c042ec076bba5804ceaecff881d89f7954c7f94f871a053ddb59dff887630ef3`, and migration asset SHA-256 `a6cd97cc65f3d607aba9760c41ba30b74bf6b65f37547cbabd971c677c7b05b8` are unchanged. The app shell advances to v2.17.19.
 
-No devotional corpus, stable ID, manifest, icon, font binary/licence, storage schema, search, reader/navigation, highlight/note implementation, orientation, offline strategy or service-worker fetch strategy changes are introduced. Runtime changes are limited to `APP_VERSION`/shell-cache versioning needed to deliver the revised Help.
+When restoring an exact corpus-1.0.0 backup, selected-note ranges on changed paragraphs are now validated against the authenticated predecessor mapping, proven against reconstructed predecessor text, and normalized into current v1.0.1 offsets before commit. Exact-predecessor highlights use the same governed map during backup validation. Backups from unrelated corpus fingerprints do not receive this privileged migration path.
 
-The user reported that the v2.17.15 application had been tested and appeared to work correctly; no formal per-device H.8 evidence matrix was completed. Because v2.17.16 changes the Help UI and release cache only, a short post-deploy Help/open-close/update smoke test remains prudent.
+Current caches are `mjv-shell-v2.17.19` and `mjv-content-v3`; content generation is unchanged because neither corpus nor migration bytes changed. v2.17.17 and v2.17.18 are superseded deploy candidates. A real installed-PWA update/restore smoke test remains required after deployment.
 
 ### v2.17.14 — H.6 Aide / À propos public-release reconciliation (historical baseline)
 
@@ -22,21 +22,21 @@ This narrow successor reconciles the user-facing Aide/À propos content with the
 
 No devotional corpus, stable ID, manifest, icon, font binary/licence, selection/highlight, note, backup-schema, search, navigation, orientation, or service-worker strategy change is introduced. Only `index.html`, `README.md`, and the service-worker release version change.
 
-Current PWA caches are `mjv-shell-v2.17.16` and `mjv-content-v1`. The former `mjv-fonts-v1` cache remains historical only and normal `mjv-` cache cleanup removes obsolete app-scoped caches after upgrade.
+Current PWA caches are `mjv-shell-v2.17.19` and `mjv-content-v3`. The former `mjv-fonts-v1` cache remains historical only and normal `mjv-` cache cleanup removes obsolete app-scoped caches after upgrade.
 
 Historical baseline: v2.17.13 / H5R supplied the deep four-pass pre-public hardening that this Help-only stage documents; its protected runtime contracts are inherited unchanged.
 
-- App version: **v2.17.16**
-- Corpus version: **1.0.0**
+- App version: **v2.17.19**
+- Corpus version: **1.0.1**
 - Corpus structure: **37 units / 753 paragraphs**
 - Architecture: plain static files; no npm, bundler, login, server, or cloud database
 - User data: localStorage only
 
 ## Deployment
 
-GitHub Pages publishes the repository from **branch `main`, folder `/root`**.
+Configured GitHub Pages deployment target (not live-origin-verified by this package audit): **branch `main`, folder `/root`**.
 
-Live origin: `https://louisriv26.github.io/La-Vierge-Marie-dans-le-Royaume-de-la-Divine-Volont-/`
+Configured origin: `https://louisriv26.github.io/La-Vierge-Marie-dans-le-Royaume-de-la-Divine-Volont-/`
 
 ## Release/version contract
 
@@ -51,8 +51,8 @@ Do **not** use a blind global replacement of old version strings: historical dat
 
 Current cache buckets:
 
-- `mjv-shell-v2.17.16` — release-specific app shell
-- `mjv-content-v1` — corpus content; bump only when the governed corpus changes
+- `mjv-shell-v2.17.19` — release-specific app shell
+- `mjv-content-v3` — governed corpus 1.0.1 + authenticated exact-span predecessor→successor migration map
 
 The service worker deletes only `mjv-`-prefixed obsolete caches.
 
@@ -79,7 +79,7 @@ Favourites are intentionally retired: legacy favourites migrate once into gold h
 
 ## Data and corpus contract
 
-`corpus/days.json` is read-only in app-harmonisation work.
+`corpus/days.json` is now the locked R5-authorized **corpus 1.0.1** successor. Further text changes require a new governed mutation ledger; ordinary app-harmonisation work must treat it as read-only.
 
 - `unit_id` and `paragraph_id` are stable identifiers and must not be renamed casually.
 - Paragraph order and meditative sequence are protected.
@@ -95,20 +95,17 @@ Favourites are intentionally retired: legacy favourites migrate once into gold h
 - Overlapping ranges resolve first-wins; nested `<mark>` elements are not allowed.
 - A range commit rerenders only the affected paragraph (`renderParagraph(pid)`), not the whole reader.
 - Android exact-range highlighting remains disabled unless physical-device evidence supports a future redesign.
-- Pure logic lives behind the `Pure` test seam. `App.selfTest()` currently contains **131 assertions**.
+- Pure logic lives behind the `Pure` test seam. `App.selfTest()` currently contains **150 assertions**.
 
 ## Pre-deploy checks
 
-Run the encoding guard first, then syntax/self-tests and version checks:
+Use the executable verifier shipped in the corresponding master/handover package:
 
 ```bash
-python scripts/run_exact_encoding_guard.py
-# Then verify the live strings deliberately, not by global replace:
-grep -n "APP_VERSION = \|mobile-version\|version-badge" index.html  # badges are runtime-derived; no badge literal edits
-grep -n "const VERSION = " sw.js
+python 06_BUILD_SCRIPTS/verify_v21719_package.py --package-root .
 ```
 
-Also verify JavaScript/service-worker syntax, corpus counts/IDs, and `App.selfTest()` before release.
+That verifier checks the pinned build inputs, deploy/file hashes, JavaScript syntax, corpus/authorization invariants, exact-span migration behavior, cross-version backup normalization and byte-exact portable rebuild. The standalone deploy ZIP intentionally does not contain the master validation scripts.
 
 ## Device-validation boundary
 
@@ -125,7 +122,8 @@ Static/browser-harness checks do not prove physical Safari or installed-PWA beha
 ├── .nojekyll
 ├── corpus/
 │   ├── days.json
-│   └── manifest.json
+│   ├── manifest.json
+│   └── migrations-v1.0.0-to-v1.0.1.json
 ├── fonts/
 │   ├── crimson-text-400.woff2
 │   ├── crimson-text-600.woff2
@@ -155,7 +153,7 @@ MJV-C migrates `mjv_notes` from the historical one-note-per-paragraph object to 
 - The primary note flow is contextual: select text (or target a paragraph on Android) and choose **Note**. Existing notes expose ID-specific edit/delete actions. A keyboard/fine-pointer paragraph-note fallback remains available without being permanently visible.
 - Mon Espace lists every note (no silent cap), newest first, with day/appendix context and separate edit/delete actions.
 - Note deletion retains the existing Undo flow and only changes in-memory state after persistence succeeds.
-- MJV-C introduced machine backup schema v2. Current v2.17.16 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
+- MJV-C introduced machine backup schema v2. Current v2.17.19 uses schema v4 because reading positions are semantic records; v2.11.0/MJV-B schema-v1, v2.12.0/MJV-C schema-v2 and v2.13.0/MJV-D schema-v3 backups remain accepted and normalized during validation.
 - Human-readable journal export lists every record separately.
 - Favourites remain retired; cycle reset still preserves notes and highlights.
 
