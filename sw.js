@@ -1,11 +1,11 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '2.17.19';
+const VERSION = '2.17.16';
 
 // H5 uses two app-scoped buckets. Local OFL fonts ship with the release shell.
 //   SHELL   — bumped per app version (index.html, manifest, icons, local fonts)
-//   CONTENT — bumped when governed corpus or migration assets change
+//   CONTENT — bumped only when the governed corpus itself changes
 const SHELL_CACHE   = 'mjv-shell-v' + VERSION;
-const CONTENT_CACHE = 'mjv-content-v3';   // corpus 1.0.1 + hardened migration generation
+const CONTENT_CACHE = 'mjv-content-v1';   // bump only when corpus/days.json changes
 const ALL_CACHES = [SHELL_CACHE, CONTENT_CACHE];
 
 // Icons are precached too: without them a first-run-offline install showed
@@ -36,9 +36,8 @@ const OPTIONAL_SHELL_ASSETS = [
 ];
 
 const CONTENT_ASSETS = [
-  './corpus/manifest.json?cv=1.0.1',
-  './corpus/days.json?cv=1.0.1',
-  './corpus/migrations-v1.0.0-to-v1.0.1.json?mv=2.17.18'
+  './corpus/manifest.json',
+  './corpus/days.json'
 ];
 
 

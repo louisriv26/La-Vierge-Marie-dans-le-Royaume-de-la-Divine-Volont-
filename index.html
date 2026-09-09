@@ -1993,19 +1993,17 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.17.19';
+const APP_VERSION = '2.17.16';
 
-// MJV-B backup contract. The governed corpus is immutable within this release,
-// so its exact SHA-256 is the content identity for v1.0.1. Backups from the
-// predecessor corpus remain restorable after stable-ID and anchor reconciliation.
+// MJV-B backup contract. The corpus is read-only in this roadmap, so its exact
+// SHA-256 is a stable identity for this release. A future corpus generation may
+// still restore a v1 backup only after every referenced stable ID reconciles.
 const BACKUP_FORMAT = 'MJV_LOCAL_BACKUP';
 const BACKUP_SCHEMA_VERSION = 4;
 const BACKUP_MAX_BYTES = 2 * 1024 * 1024;
 const CORPUS_ID = 'VM_DV';
-const CORPUS_VERSION = '1.0.1';
-const CORPUS_FINGERPRINT_SHA256 = '884b83aaf28e51d2eb6318f4f044e6d58568211f41d6df25c0ef43d4bb8560b8';
-const CORPUS_MIGRATION_SHA256 = 'a6cd97cc65f3d607aba9760c41ba30b74bf6b65f37547cbabd971c677c7b05b8';
-const CORPUS_MIGRATION_TIMEOUT_MS = 2500;
+const CORPUS_VERSION = '1.0.0';
+const CORPUS_FINGERPRINT_SHA256 = '63211c89125db278a971dbf1bd658d5fb9b7bd1a2128f130f930ed6783a14364';
 const INITIAL_ROUTE_SEARCH = window.location.search;
 const RESTORE_TARGET_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.NOTES, SK.HIGHLIGHTS, SK.SCROLL, SK.THEME, SK.TEXT_SIZE, SK.TEXT_SIZE_SCHEMA, SK.ONBOARDED, SK.HL_COLOR, SK.FAV_MIGRATED, SK.FAVORITES]);
 const USER_STATE_TXN_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.SCROLL]);
@@ -2293,7 +2291,7 @@ const Pure = {
   // identify the exact current paragraph text. The function never guesses:
   // range recovery succeeds only when the saved phrase occurs exactly once.
   // A stale record is returned, not discarded.
-  reconcileHighlightRecord(text, currentFingerprint, currentCorpusVersion, record, migration=null) {
+  reconcileHighlightRecord(text, currentFingerprint, currentCorpusVersion, record) {
     const src=String(text||'');
     const h=Object.assign({},record||{});
     h.text=typeof h.text==='string'?h.text:'';
@@ -2326,18 +2324,6 @@ const Pure = {
     }
     if (!oldRange) return stale();
 
-    const mapOk=migration && oldFp && currentFingerprint &&
-      migration.from_fingerprint_sha256===oldFp &&
-      migration.to_fingerprint_sha256===currentFingerprint &&
-      Pure.validGovernedMigration(migration,src,currentFingerprint);
-    if (mapOk) {
-      const mapped=Pure.migrateRangeByGovernedSpan(oldRange,migration,src.length);
-      if (mapped) {
-        const recovery={from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}};
-        return bind(mapped,'recovered',recovery,src.slice(mapped.start,mapped.end));
-      }
-    }
-
     const inBounds=oldRange.end<=src.length;
     const slice=inBounds?src.slice(oldRange.start,oldRange.end):'';
     const snap=h.text;
@@ -2353,22 +2339,18 @@ const Pure = {
 
     // Same fingerprint but snapshot mismatch means the saved record itself is
     // inconsistent; still apply the same unique-match rule rather than trust it.
-    if (snap) {
-      let first=src.indexOf(snap), second=-1;
-      if (first!==-1) second=src.indexOf(snap,first+1);
-      if (first!==-1 && second===-1) {
-        const recovery={from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}};
-        return bind({start:first,end:first+snap.length},'recovered',recovery,snap);
-      }
+    if (!snap) return stale();
+    let first=src.indexOf(snap), second=-1;
+    if (first!==-1) second=src.indexOf(snap,first+1);
+    if (first!==-1 && second===-1) {
+      const recovery={from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}};
+      return bind({start:first,end:first+snap.length},'recovered',recovery,snap);
     }
-
-    // No exact predecessor proof and no unique current-text recovery: keep the
-    // record stale rather than guess across unrelated corpus generations.
     return stale();
   },
 
-  reconcileHighlightList(text, currentFingerprint, currentCorpusVersion, records, migration=null) {
-    return Pure.dedupeHls((records||[]).map(h=>Pure.reconcileHighlightRecord(text,currentFingerprint,currentCorpusVersion,h,migration)));
+  reconcileHighlightList(text, currentFingerprint, currentCorpusVersion, records) {
+    return Pure.dedupeHls((records||[]).map(h=>Pure.reconcileHighlightRecord(text,currentFingerprint,currentCorpusVersion,h)));
   },
 
   // A range is only usable if both offsets are non-negative integers and
@@ -2379,102 +2361,6 @@ const Pure = {
     if (!Number.isInteger(s) || !Number.isInteger(e)) return null;
     if (s < 0 || e <= s) return null;
     return { start: s, end: e };
-  },
-
-  // R5 corpus 1.0.0 -> 1.0.1 exact governed-span migration.
-  // The authorization ledger already gives the one contiguous old/new span in
-  // every changed paragraph, so migration must use that semantic boundary
-  // directly rather than trying to rediscover it with character similarity.
-  validGovernedMigration(mapping, currentText, currentFingerprint=null) {
-    if (!mapping || typeof mapping!=='object') return false;
-    const ints=['old_length','new_length','replacement_start','replacement_end','new_span_start','new_span_end','delta'];
-    if (!ints.every(k=>Number.isInteger(mapping[k]))) return false;
-    if (typeof mapping.old_span!=='string' || typeof mapping.new_span!=='string') return false;
-    if (typeof mapping.from_fingerprint_sha256!=='string' || typeof mapping.to_fingerprint_sha256!=='string') return false;
-    const s=mapping.replacement_start,e=mapping.replacement_end,ns=mapping.new_span_start,ne=mapping.new_span_end;
-    if (s<0 || e<s || ns!==s || ne!==s+mapping.new_span.length) return false;
-    if (mapping.old_length + mapping.delta !== mapping.new_length) return false;
-    if (mapping.delta !== mapping.new_span.length-(e-s)) return false;
-    const src=String(currentText||'');
-    if (src.length!==mapping.new_length || ne>src.length || src.slice(ns,ne)!==mapping.new_span) return false;
-    if (currentFingerprint && mapping.to_fingerprint_sha256!==currentFingerprint) return false;
-    return true;
-  },
-
-  // Map a predecessor range through the exact authorized replacement. Ranges
-  // wholly before the edit stay unchanged; ranges wholly after shift by the
-  // exact delta. Any range touching the governed old span expands
-  // conservatively to include the complete governed new span. For insertion
-  // loci, a range crossing the insertion point likewise includes the insertion.
-  migrateRangeByGovernedSpan(range, mapping, newTextLength) {
-    const r=Pure.validRange(range);
-    if (!r || !mapping || typeof mapping!=='object') return null;
-    const s=mapping.replacement_start,e=mapping.replacement_end;
-    const ns=mapping.new_span_start,ne=mapping.new_span_end,delta=mapping.delta;
-    if (![s,e,ns,ne,delta].every(Number.isInteger)) return null;
-    if (s<0 || e<s || ns!==s || ne<ns) return null;
-    const max=Number.isInteger(newTextLength)&&newTextLength>=0?newTextLength:mapping.new_length;
-    let a,b;
-    if (s===e) {
-      // Pure insertion. A range ending at the insertion boundary is before it;
-      // a range starting at the boundary is after it; only a range that
-      // strictly crosses the boundary semantically contains the new insertion.
-      if (r.end<=s) { a=r.start; b=r.end; }
-      else if (r.start>=s) { a=r.start+delta; b=r.end+delta; }
-      else { a=r.start; b=r.end+delta; }
-    } else if (r.end<=s) { a=r.start; b=r.end; }
-    else if (r.start>=e) { a=r.start+delta; b=r.end+delta; }
-    else {
-      a=r.start<=s?r.start:ns;
-      b=r.end>=e?r.end+delta:ne;
-    }
-    a=Math.max(0,Math.min(a,max)); b=Math.max(0,Math.min(b,max));
-    return b>a?{start:a,end:b}:null;
-  },
-
-  // Reconstruct the exact predecessor paragraph from the successor and the
-  // authorized span. This gives selected-note anchors a predecessor proof even
-  // though historical note records did not store paragraph fingerprints.
-  predecessorTextFromMigration(currentText, mapping, currentFingerprint=null) {
-    const src=String(currentText||'');
-    if (!Pure.validGovernedMigration(mapping,src,currentFingerprint)) return null;
-    const s=mapping.new_span_start,ne=mapping.new_span_end;
-    const old=src.slice(0,s)+mapping.old_span+src.slice(ne);
-    if (old.length!==mapping.old_length) return null;
-    return old;
-  },
-
-  reconcileNoteRecord(text, currentFingerprint, record, migration) {
-    const src=String(text||''), n=Object.assign({},record||{});
-    const r=n.range===null?null:Pure.validRange(n.range);
-    if (!r) return n;
-    const snap=typeof n.selected_text==='string'?n.selected_text:'';
-    // Exact current binding wins and needs no migration.
-    if (r.end<=src.length && snap && src.slice(r.start,r.end)===snap) return n;
-    // A unique exact current-text occurrence is also safe.
-    if (snap) {
-      const first=src.indexOf(snap), second=first===-1?-1:src.indexOf(snap,first+1);
-      if (first!==-1 && second===-1) return Object.assign({},n,{range:{start:first,end:first+snap.length}});
-    }
-    // Governed fallback is permitted only if the note proves it was bound to
-    // the exact predecessor paragraph at the exact saved offsets.
-    const predecessor=Pure.predecessorTextFromMigration(src,migration,currentFingerprint);
-    if (!predecessor || !snap || r.end>predecessor.length || predecessor.slice(r.start,r.end)!==snap) return n;
-    const mapped=Pure.migrateRangeByGovernedSpan(r,migration,src.length);
-    if (!mapped) return n;
-    return Object.assign({},n,{range:mapped,selected_text:src.slice(mapped.start,mapped.end)});
-  },
-
-  reconcilePredecessorNoteRecord(text, currentFingerprint, record, migration) {
-    const src=String(text||''), n=Object.assign({},record||{});
-    const r=n.range===null?null:Pure.validRange(n.range);
-    const snap=typeof n.selected_text==='string'?n.selected_text:'';
-    if (!r || !snap) return null;
-    const predecessor=Pure.predecessorTextFromMigration(src,migration,currentFingerprint);
-    if (!predecessor || r.end>predecessor.length || predecessor.slice(r.start,r.end)!==snap) return null;
-    const mapped=Pure.migrateRangeByGovernedSpan(r,migration,src.length);
-    if (!mapped) return null;
-    return Object.assign({},n,{range:mapped,selected_text:src.slice(mapped.start,mapped.end)});
   },
 
   // Small stable hash, used only to synthesise ids for records that predate
@@ -2724,11 +2610,6 @@ const Pure = {
     const colors = ctx.colors || new Set();
     const levels = ctx.textLevels || new Set();
     const n = { read:[], active_day:null, active_appendix:null, notes:{}, highlights:{}, scroll:{}, theme:'system', text_size:'normal', onboarded:false, highlight_color:'gold', favorites_migrated:true };
-    const sourceMigration = ctx.corpusMigration && env.corpus &&
-      ctx.corpusMigration.from_corpus_version===env.corpus.version &&
-      ctx.corpusMigration.from_corpus_sha256===env.corpus.fingerprint_sha256 &&
-      ctx.corpusMigration.to_corpus_version===ctx.corpusVersion &&
-      ctx.corpusMigration.to_corpus_sha256===ctx.corpusFingerprint ? ctx.corpusMigration : null;
 
     if (!Array.isArray(st.read)) fail('read:not_array');
     else {
@@ -2759,22 +2640,13 @@ const Pure = {
         if (!Pure.validRecordId(id) || !Pure.isPlainObject(note) || !Pure.exactKeys(note,['id','paragraph_id','unit_id','text','created_at','updated_at','selected_text','range'])) { fail('notes:v2_record_shape'); break; }
         const pid=note.paragraph_id;
         if (note.id!==id || !validParas.has(pid) || note.unit_id!==paraUnits[pid]) { fail('notes:v2_id_mismatch'); break; }
-        const migration=sourceMigration?.mappings?.[pid]||null;
-        const sourceMax=migration && Number.isInteger(migration.old_length)?migration.old_length:(paraLengths[pid]||0);
-        if (typeof note.text!=='string' || note.text.length>1000 || typeof note.created_at!=='number' || !Number.isFinite(note.created_at) || note.created_at<0 || typeof note.updated_at!=='number' || !Number.isFinite(note.updated_at) || note.updated_at<note.created_at || (note.selected_text!==null && (typeof note.selected_text!=='string' || note.selected_text.length>sourceMax))) { fail('notes:v2_value'); break; }
+        if (typeof note.text!=='string' || note.text.length>1000 || typeof note.created_at!=='number' || !Number.isFinite(note.created_at) || note.created_at<0 || typeof note.updated_at!=='number' || !Number.isFinite(note.updated_at) || note.updated_at<note.created_at || (note.selected_text!==null && (typeof note.selected_text!=='string' || note.selected_text.length>(paraLengths[pid]||0)))) { fail('notes:v2_value'); break; }
         let range=null;
         if (note.range!==null) {
-          if (!Pure.isPlainObject(note.range) || !Pure.exactKeys(note.range,['start','end']) || !Number.isInteger(note.range.start) || !Number.isInteger(note.range.end) || note.range.start<0 || note.range.end<=note.range.start || note.range.end>sourceMax) { fail('notes:v2_range'); break; }
+          if (!Pure.isPlainObject(note.range) || !Pure.exactKeys(note.range,['start','end']) || !Number.isInteger(note.range.start) || !Number.isInteger(note.range.end) || note.range.start<0 || note.range.end<=note.range.start || note.range.end>(paraLengths[pid]||0)) { fail('notes:v2_range'); break; }
           range={start:note.range.start,end:note.range.end};
         }
-        let normalized={id,paragraph_id:pid,unit_id:note.unit_id,text:note.text,created_at:note.created_at,updated_at:note.updated_at,selected_text:note.selected_text,range};
-        if (migration && range!==null) {
-          normalized=Pure.reconcilePredecessorNoteRecord((ctx.paraTexts||{})[pid]||'',(ctx.paraFingerprints||{})[pid]||null,normalized,migration);
-          if (!normalized) { fail('notes:predecessor_binding'); break; }
-          const nr=Pure.validRange(normalized.range), currentText=(ctx.paraTexts||{})[pid]||'';
-          if (!nr || nr.end>(paraLengths[pid]||0) || normalized.selected_text!==currentText.slice(nr.start,nr.end)) { fail('notes:migration_result'); break; }
-        } else if (range!==null && range.end>(paraLengths[pid]||0)) { fail('notes:v2_range'); break; }
-        n.notes[id]=normalized;
+        n.notes[id]={id,paragraph_id:pid,unit_id:note.unit_id,text:note.text,created_at:note.created_at,updated_at:note.updated_at,selected_text:note.selected_text,range};
       }
     }
 
@@ -2808,8 +2680,7 @@ const Pure = {
           }
           base=Object.assign(base,{text_fingerprint:h.text_fingerprint,corpus_version:h.corpus_version,status:h.status,recovery:h.recovery});
         }
-        const hMigration=sourceMigration?.mappings?.[pid]||null;
-        const reconciled=knownPara?Pure.reconcileHighlightRecord((ctx.paraTexts||{})[pid]||'',(ctx.paraFingerprints||{})[pid]||null,ctx.corpusVersion,base,hMigration):Object.assign({},base,{status:'stale'});
+        const reconciled=knownPara?Pure.reconcileHighlightRecord((ctx.paraTexts||{})[pid]||'',(ctx.paraFingerprints||{})[pid]||null,ctx.corpusVersion,base):Object.assign({},base,{status:'stale'});
         out.push(reconciled);
       }
       if (errors.length) break;
@@ -2842,24 +2713,6 @@ const Pure = {
     eq('esc: null-safe', Pure.esc(null), '');
     eq('esc: ampersand first', Pure.esc('a & <b>'), 'a &amp; &lt;b&gt;');
     eq('esc: double quote', Pure.esc('say "hi"'), 'say &quot;hi&quot;');
-    const gm={from_fingerprint_sha256:'oldfp',to_fingerprint_sha256:'newfp',old_length:6,new_length:7,replacement_start:2,replacement_end:4,new_span_start:2,new_span_end:5,old_span:'cd',new_span:'XYZ',delta:1};
-    eq('migration: governed map valid', Pure.validGovernedMigration(gm,'abXYZef','newfp'), true);
-    eq('migration: before edit stable', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:0,end:2},gm,7)), JSON.stringify({start:0,end:2}));
-    eq('migration: after edit shifts', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:4,end:6},gm,7)), JSON.stringify({start:5,end:7}));
-    eq('migration: exact corrected span maps exactly', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:2,end:4},gm,7)), JSON.stringify({start:2,end:5}));
-    eq('migration: interior corrected selection expands to whole new span', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:3,end:4},gm,7)), JSON.stringify({start:2,end:5}));
-    eq('migration: predecessor reconstruction', Pure.predecessorTextFromMigration('abXYZef',gm,'newfp'), 'abcdef');
-    const noteMig=Pure.reconcileNoteRecord('abXYZef','newfp',{range:{start:2,end:4},selected_text:'cd'},gm);
-    eq('migration: proven note range mapped', JSON.stringify(noteMig.range), JSON.stringify({start:2,end:5}));
-    eq('migration: proven note snapshot refreshed', noteMig.selected_text, 'XYZ');
-    const badNote={range:{start:2,end:4},selected_text:'NEVER'};
-    eq('migration: unproven note range unchanged', JSON.stringify(Pure.reconcileNoteRecord('abXYZef','newfp',badNote,gm).range), JSON.stringify(badNote.range));
-    eq('migration: unproven note text unchanged', Pure.reconcileNoteRecord('abXYZef','newfp',badNote,gm).selected_text, 'NEVER');
-    const ins={from_fingerprint_sha256:'a',to_fingerprint_sha256:'b',old_length:4,new_length:6,replacement_start:2,replacement_end:2,new_span_start:2,new_span_end:4,old_span:'',new_span:'XY',delta:2};
-    eq('migration: insertion crossing range includes insertion', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:1,end:3},ins,6)), JSON.stringify({start:1,end:5}));
-    eq('migration: insertion before-boundary range unchanged', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:0,end:2},ins,6)), JSON.stringify({start:0,end:2}));
-    eq('migration: insertion after-boundary range shifts', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:2,end:4},ins,6)), JSON.stringify({start:4,end:6}));
-
     eq('record id: generated id accepted', Pure.validRecordId('n_abc-123'), true);
     eq('record id: quote rejected', Pure.validRecordId('x" onmouseover="evil'), false);
     eq('record id: apostrophe rejected', Pure.validRecordId("x'bad"), false);
@@ -3060,17 +2913,6 @@ const Pure = {
     eq('backup: dangerous key detector', Pure.hasDangerousKey(JSON.parse('{"a":{"__proto__":{"x":1}}}')), true);
     eq('backup: v3 numeric scroll remains accepted', (()=>{const x=benv();x.schema_version=3;x.app.version='2.13.0';x.state.scroll={D1:50};return Pure.validateBackupEnvelope(x,bctx).ok})(), true);
     eq('backup: v4 numeric scroll rejected', (()=>{const x=benv();x.state.scroll={D1:50};return Pure.validateBackupEnvelope(x,bctx).errors.includes('scroll:v4_shape')})(), true);
-    const oldCF='1'.repeat(64),newCF='2'.repeat(64),oldPF='3'.repeat(64),newPF='4'.repeat(64);
-    const xgm={from_fingerprint_sha256:oldPF,to_fingerprint_sha256:newPF,old_length:9,new_length:7,replacement_start:2,replacement_end:5,new_span_start:2,new_span_end:3,old_span:'cde',new_span:'X',delta:-2};
-    const xmig={schema_version:2,from_corpus_version:'1.0.0',to_corpus_version:'1.0.1',from_corpus_sha256:oldCF,to_corpus_sha256:newCF,mappings:{P1:xgm}};
-    const xctx={...bctx,corpusVersion:'1.0.1',corpusFingerprint:newCF,corpusMigration:xmig,paraLengths:{P1:7},paraTexts:{P1:'abXfghi'},paraFingerprints:{P1:newPF}};
-    const xenv=()=>{const x=benv();x.corpus.version='1.0.0';x.corpus.fingerprint_sha256=oldCF;x.state.notes[noteId]={...x.state.notes[noteId],selected_text:'hi',range:{start:7,end:9}};x.state.highlights.P1[0]={...x.state.highlights.P1[0],range:{start:7,end:9},text:'hi',text_fingerprint:oldPF,corpus_version:'1.0.0'};return x;};
-    eq('backup: predecessor shrinking note accepted', Pure.validateBackupEnvelope(xenv(),xctx).ok, true);
-    eq('backup: predecessor note migrated into current bounds', JSON.stringify(Pure.validateBackupEnvelope(xenv(),xctx).normalized.notes[noteId].range), JSON.stringify({start:5,end:7}));
-    eq('backup: predecessor note snapshot refreshed', Pure.validateBackupEnvelope(xenv(),xctx).normalized.notes[noteId].selected_text, 'hi');
-    eq('backup: predecessor highlight uses governed map', JSON.stringify(Pure.validateBackupEnvelope(xenv(),xctx).normalized.highlights.P1[0].range), JSON.stringify({start:5,end:7}));
-    eq('backup: false predecessor note binding rejected', (()=>{const x=xenv();x.state.notes[noteId].selected_text='NO';return Pure.validateBackupEnvelope(x,xctx).errors.includes('notes:predecessor_binding')})(), true);
-    eq('backup: current corpus out-of-range note still rejected', (()=>{const x=benv();x.state.notes[noteId]={...x.state.notes[noteId],selected_text:'x',range:{start:19,end:21}};return Pure.validateBackupEnvelope(x,bctx).errors.includes('notes:v2_range')})(), true);
 
     eq('mje: search accent/case', Pure.normalizeSearch('ÉTERNEL'), 'eternel');
     eq('mje: search oe ligature', Pure.normalizeSearch('cœur'), 'coeur');
@@ -3107,7 +2949,7 @@ const Pure = {
 if (typeof module !== 'undefined' && module.exports) module.exports = Pure;
 
 const State = {
-  corpus: null, corpusMigration: null, loadedCorpusFingerprint: null, storageRecoveryFailed: false, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
+  corpus: null, loadedCorpusFingerprint: null, storageRecoveryFailed: false, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
   read: new Set(), notes: {}, textSize: 'normal',
   // Map<paragraph_id, colourKey>. Was a Set of ids before v2.7.0; the loader
@@ -3487,8 +3329,7 @@ const App = {
       }
       const hit=findPara(pid), para=hit&&hit.para;
       const fp=para&&typeof para.fingerprint_sha256==='string'?para.fingerprint_sha256:null;
-      const migration=State.corpusMigration?.mappings?.[pid]||null;
-      const next=Pure.reconcileHighlightList(para?para.text:'',fp,CORPUS_VERSION,records||[],migration);
+      const next=Pure.reconcileHighlightList(para?para.text:'',fp,CORPUS_VERSION,records||[]);
       cleanHl.set(pid,next);
       if (JSON.stringify(next)!==JSON.stringify(records)) highlightsChanged=true;
     });
@@ -3505,11 +3346,8 @@ const App = {
       const hit=findPara(note.paragraph_id);
       if (!hit) { notesChanged=true; continue; }
       const unitId=hit.unit.unit_id;
-      const migration=State.corpusMigration?.mappings?.[note.paragraph_id]||null;
-      let next = note.unit_id===unitId ? note : {...note,unit_id:unitId};
-      const reconciled=Pure.reconcileNoteRecord(hit.para.text||'',hit.para.fingerprint_sha256||null,next,migration);
-      if (JSON.stringify(reconciled)!==JSON.stringify(note)) notesChanged=true;
-      next=reconciled;
+      const next = note.unit_id===unitId ? note : {...note,unit_id:unitId};
+      if (next!==note) notesChanged=true;
       cleanNotes[id]=next;
     }
     if (notesChanged) {
@@ -3557,7 +3395,7 @@ const App = {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
-      const res = await fetch(window.APP_BASE + 'corpus/days.json?cv=1.0.1', { signal: controller.signal });
+      const res = await fetch(window.APP_BASE + 'corpus/days.json', { signal: controller.signal });
       clearTimeout(timeout);
       if (!res.ok) throw new Error(res.status);
       const bytes=await res.arrayBuffer();
@@ -3571,29 +3409,6 @@ const App = {
       // or crashed app deep inside renderHome/renderReaderBody.
       if (!this.isValidCorpus(parsed)) throw new Error('invalid corpus shape');
       State.corpus = parsed;
-      // Load the exact predecessor→successor map. Failure is non-fatal because
-      // stable IDs + conservative saved-text recovery remain safe fallbacks.
-      State.corpusMigration=null;
-      try {
-        const mc=new AbortController();
-        const mt=setTimeout(()=>mc.abort(),CORPUS_MIGRATION_TIMEOUT_MS);
-        try {
-          // Version-qualified URL defeats any v2.17.17 content-cache entry
-          // controlled by the old service worker on the first upgraded load.
-          const mres=await fetch(window.APP_BASE + 'corpus/migrations-v1.0.0-to-v1.0.1.json?mv=2.17.18',{signal:mc.signal,cache:'no-store'});
-          if (mres.ok) {
-            const mbytes=await mres.arrayBuffer();
-            const msha=await sha256Hex(mbytes);
-            if (msha===CORPUS_MIGRATION_SHA256) {
-              const mig=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(mbytes));
-              if (mig && mig.schema_version===2 && mig.from_corpus_sha256==='63211c89125db278a971dbf1bd658d5fb9b7bd1a2128f130f930ed6783a14364' &&
-                  mig.to_corpus_sha256===CORPUS_FINGERPRINT_SHA256 && mig.to_corpus_version===CORPUS_VERSION &&
-                  mig.authorized_mutation_ledger_sha256==='c042ec076bba5804ceaecff881d89f7954c7f94f871a053ddb59dff887630ef3' && mig.paragraphs_changed===91 &&
-                  mig.mappings && typeof mig.mappings==='object' && Object.keys(mig.mappings).length===91) State.corpusMigration=mig;
-            }
-          }
-        } finally { clearTimeout(mt); }
-      } catch(_) { State.corpusMigration=null; }
       this.buildIndexes();   // also populates dayMap
       this.reconcileStoredIds();
     } catch(e) {
@@ -5837,7 +5652,7 @@ const App = {
   backupValidationContext() {
     const paraLengths={}, paraUnits={}, paraTexts={}, paraFingerprints={};
     Object.entries(State.paraIndex || {}).forEach(([pid,hit]) => { paraLengths[pid]=(hit.para.text||'').length; paraUnits[pid]=hit.unit.unit_id; paraTexts[pid]=hit.para.text||''; paraFingerprints[pid]=hit.para.fingerprint_sha256||null; });
-    return { format:BACKUP_FORMAT, schemaVersion:BACKUP_SCHEMA_VERSION, corpusId:CORPUS_ID, corpusVersion:CORPUS_VERSION, corpusFingerprint:State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256, corpusMigration:State.corpusMigration, validUnitIds:new Set(Object.keys(State.unitIndex||{})), validParaIds:new Set(Object.keys(State.paraIndex||{})), paraLengths, paraUnits, paraTexts, paraFingerprints, colors:new Set(Object.keys(HL_COLORS)), textLevels:new Set(TEXT_LEVEL_ORDER) };
+    return { format:BACKUP_FORMAT, schemaVersion:BACKUP_SCHEMA_VERSION, corpusId:CORPUS_ID, corpusVersion:CORPUS_VERSION, corpusFingerprint:State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256, validUnitIds:new Set(Object.keys(State.unitIndex||{})), validParaIds:new Set(Object.keys(State.paraIndex||{})), paraLengths, paraUnits, paraTexts, paraFingerprints, colors:new Set(Object.keys(HL_COLORS)), textLevels:new Set(TEXT_LEVEL_ORDER) };
   },
 
   buildBackupEnvelope(nowIso) {
@@ -6148,7 +5963,7 @@ const App = {
       `corpus_version=${CORPUS_VERSION}`,
       `corpus_fingerprint=${State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256}`,
       `sw_shell_cache=mjv-shell-v${APP_VERSION}`,
-      'sw_content_cache=mjv-content-v3',
+      'sw_content_cache=mjv-content-v1',
       `sw_control=${swCtl}`,
       `storage=${storage}`,
       `theme=${mode}`,
