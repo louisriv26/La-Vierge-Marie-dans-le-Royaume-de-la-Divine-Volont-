@@ -1,11 +1,24 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '2.17.16';
+const VERSION = '27';
 
-// H5 uses two app-scoped buckets. Local OFL fonts ship with the release shell.
+// Stage 8 CACHE-SCOPE-COLL-01: Cache Storage ownership is deployment-scope
+// specific. This prevents a sibling deployment on the same origin from deleting
+// this installation's shell/content caches. Legacy unscoped mjv-* caches are
+// intentionally left untouched during the first transition.
+function scopeFingerprint(scope) {
+  let h = 2166136261;
+  const text = String(scope || '');
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+const SCOPE_FINGERPRINT = scopeFingerprint(self.registration.scope);
+const CACHE_PREFIX = `mjv-${SCOPE_FINGERPRINT}-`;
+
+// H5 uses two deployment-scoped buckets. Local OFL fonts ship with the release shell.
 //   SHELL   — bumped per app version (index.html, manifest, icons, local fonts)
-//   CONTENT — bumped only when the governed corpus itself changes
-const SHELL_CACHE   = 'mjv-shell-v' + VERSION;
-const CONTENT_CACHE = 'mjv-content-v1';   // bump only when corpus/days.json changes
+//   CONTENT — bumped when governed corpus or migration assets change
+const SHELL_CACHE   = CACHE_PREFIX + 'shell-v' + VERSION;
+const CONTENT_CACHE = CACHE_PREFIX + 'content-v3';   // corpus 1.0.1 + hardened migration generation
 const ALL_CACHES = [SHELL_CACHE, CONTENT_CACHE];
 
 // Icons are precached too: without them a first-run-offline install showed
@@ -36,8 +49,9 @@ const OPTIONAL_SHELL_ASSETS = [
 ];
 
 const CONTENT_ASSETS = [
-  './corpus/manifest.json',
-  './corpus/days.json'
+  './corpus/manifest.json?cv=1.0.1',
+  './corpus/days.json?cv=1.0.1',
+  './corpus/migrations-v1.0.0-to-v1.0.1.json?mv=2.17.18'
 ];
 
 
@@ -100,9 +114,10 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    // Only touch this app's caches — a sibling app shares this origin.
+    // Only touch older caches from this exact deployment scope. Ambiguous
+    // legacy unscoped mjv-* caches and sibling deployment caches are preserved.
     await Promise.all(
-      keys.filter(k => k.startsWith('mjv-') && !ALL_CACHES.includes(k))
+      keys.filter(k => k.startsWith(CACHE_PREFIX) && !ALL_CACHES.includes(k))
           .map(k => caches.delete(k))
     );
     await self.clients.claim();

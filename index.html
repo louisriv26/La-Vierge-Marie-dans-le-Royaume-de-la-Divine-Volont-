@@ -879,6 +879,9 @@ h1, h2, h3, h4 {
 .search-group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 14px 4px 7px; }
 .snippet-card { background: var(--white); border: 0.5px solid var(--border); border-left: 3px solid var(--primary); border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 7px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
 .snippet-card:hover { background: var(--ivory-deep); border-left-color: var(--accent); }
+.search-more { width:100%; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--white); color:var(--primary); font:600 13px var(--font-ui); padding:11px 14px; margin:3px 0 7px; cursor:pointer; }
+.search-more:hover { background:var(--ivory-deep); border-color:var(--primary); }
+.search-more:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
 .snippet-meta { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
 .snippet-text { font-family: var(--font-reader); font-size: 13.5px; color: var(--ink); line-height: 1.55; }
 .snippet-text mark { background: rgba(201,168,76,0.32); color: inherit; border-radius: 2px; padding: 0 1px; font-weight: 600; }
@@ -935,6 +938,8 @@ h1, h2, h3, h4 {
   .hero-read-btn { width: 100%; justify-content: center; }
   .hero-nav-btns { width: 100%; justify-content: space-between; }
 
+  /* Version 27: at extreme reflow widths, long French words must wrap instead of widening the reader. */
+  .reader-body p { overflow-wrap: anywhere; }
   .reader-topbar-info { display: none; }
   .reader-topbar { gap: 8px; padding-left: 8px; padding-right: 8px; }
   .reader-actionbar { flex-wrap: wrap; }
@@ -1988,25 +1993,43 @@ const THEME_LABELS = { system: 'Automatique', dark: 'Sombre', light: 'Clair' };
 const THEME_ICONS  = { system: '◑', dark: '☽', light: '☀' };
 const THEME_ORDER  = ['system', 'light', 'dark'];
 const currentThemeMode = () => {
+  if (typeof State !== 'undefined' && State && ['system','light','dark'].includes(State.themeMode)) return State.themeMode;
   const saved = localStorage.getItem('mjv_theme');
   return (saved === 'dark' || saved === 'light') ? saved : 'system';
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '2.17.16';
+const APP_VERSION = '27';
+function mjvScopeFingerprint(scope) {
+  let h = 2166136261;
+  const text = String(scope || '');
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+function mjvScopedCacheNames() {
+  const scope = new URL(window.APP_BASE, window.location.href).href;
+  const fp = mjvScopeFingerprint(scope);
+  return {scope:scope,fingerprint:fp,shell:`mjv-${fp}-shell-v${APP_VERSION}`,content:`mjv-${fp}-content-v3`};
+}
 
-// MJV-B backup contract. The corpus is read-only in this roadmap, so its exact
-// SHA-256 is a stable identity for this release. A future corpus generation may
-// still restore a v1 backup only after every referenced stable ID reconciles.
+// MJV-B backup contract. The governed corpus is immutable within this release,
+// so its exact SHA-256 is the content identity for v1.0.1. Backups from the
+// predecessor corpus remain restorable after stable-ID and anchor reconciliation.
 const BACKUP_FORMAT = 'MJV_LOCAL_BACKUP';
 const BACKUP_SCHEMA_VERSION = 4;
-const BACKUP_MAX_BYTES = 2 * 1024 * 1024;
+const BACKUP_MAX_BYTES = 24 * 1024 * 1024;
 const CORPUS_ID = 'VM_DV';
-const CORPUS_VERSION = '1.0.0';
-const CORPUS_FINGERPRINT_SHA256 = '63211c89125db278a971dbf1bd658d5fb9b7bd1a2128f130f930ed6783a14364';
+const CORPUS_VERSION = '1.0.1';
+const CORPUS_FINGERPRINT_SHA256 = '884b83aaf28e51d2eb6318f4f044e6d58568211f41d6df25c0ef43d4bb8560b8';
+const CORPUS_MIGRATION_SHA256 = 'a6cd97cc65f3d607aba9760c41ba30b74bf6b65f37547cbabd971c677c7b05b8';
+const CORPUS_MIGRATION_TIMEOUT_MS = 2500;
 const INITIAL_ROUTE_SEARCH = window.location.search;
 const RESTORE_TARGET_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.NOTES, SK.HIGHLIGHTS, SK.SCROLL, SK.THEME, SK.TEXT_SIZE, SK.TEXT_SIZE_SCHEMA, SK.ONBOARDED, SK.HL_COLOR, SK.FAV_MIGRATED, SK.FAVORITES]);
-const USER_STATE_TXN_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.SCROLL]);
+const MARIE_RESTORE_EXTERNAL_KIND = 'MJV_RESTORE_TXN_V2_EXTERNAL';
+const MARIE_BACKUP_RECOVERY_DB = 'collection-luisa-marie-backup-recovery-v1';
+const MARIE_BACKUP_RECOVERY_STORE = 'snapshots';
+const MARIE_BACKUP_RECOVERY_KEY = 'active_restore';
+const USER_STATE_TXN_KEYS = Object.freeze([SK.READ, SK.ACTIVE_DAY, SK.ACTIVE_APPENDIX, SK.SCROLL, SK.TEXT_SIZE, SK.TEXT_SIZE_SCHEMA]);
 
 
 // ── Config ────────────────────────────────────────────────────────────
@@ -2136,6 +2159,29 @@ const Pure = {
   },
 
   normalizeSearch(value) { return Pure.normalizeSearchWithMap(value).normalized; },
+
+  // Return the strongest occurrence of q within already-normalized text.
+  // tier 0 = whole word / clean phrase, tier 1 = word prefix, tier 2 = embedded substring.
+  // A normalized word character is deliberately ASCII alphanumeric: accents and
+  // ligatures have already been folded by normalizeSearchWithMap().
+  searchMatchInfo(normalized, q) {
+    const text=String(normalized||''), query=String(q||'');
+    if (!query) return null;
+    const isWord=c=>!!c && /[a-z0-9]/.test(c);
+    let from=0,best=null;
+    while (from<=text.length-query.length) {
+      const at=text.indexOf(query,from);
+      if (at<0) break;
+      const leftClean=at===0 || !isWord(text[at-1]);
+      const after=at+query.length;
+      const rightClean=after>=text.length || !isWord(text[after]);
+      const tier=leftClean && rightClean ? 0 : (leftClean ? 1 : 2);
+      if (!best || tier<best.tier) best={tier,at};
+      if (tier===0) return best; // no stronger tier exists; earliest tier-0 occurrence wins.
+      from=at+1;
+    }
+    return best;
+  },
 
   normalizeReadingPosition(unitId, raw) {
     const clamp01=n=>Number.isFinite(n)&&n>=0&&n<=1?n:null;
@@ -2291,7 +2337,7 @@ const Pure = {
   // identify the exact current paragraph text. The function never guesses:
   // range recovery succeeds only when the saved phrase occurs exactly once.
   // A stale record is returned, not discarded.
-  reconcileHighlightRecord(text, currentFingerprint, currentCorpusVersion, record) {
+  reconcileHighlightRecord(text, currentFingerprint, currentCorpusVersion, record, migration=null) {
     const src=String(text||'');
     const h=Object.assign({},record||{});
     h.text=typeof h.text==='string'?h.text:'';
@@ -2324,6 +2370,18 @@ const Pure = {
     }
     if (!oldRange) return stale();
 
+    const mapOk=migration && oldFp && currentFingerprint &&
+      migration.from_fingerprint_sha256===oldFp &&
+      migration.to_fingerprint_sha256===currentFingerprint &&
+      Pure.validGovernedMigration(migration,src,currentFingerprint);
+    if (mapOk) {
+      const mapped=Pure.migrateRangeByGovernedSpan(oldRange,migration,src.length);
+      if (mapped) {
+        const recovery={from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}};
+        return bind(mapped,'recovered',recovery,src.slice(mapped.start,mapped.end));
+      }
+    }
+
     const inBounds=oldRange.end<=src.length;
     const slice=inBounds?src.slice(oldRange.start,oldRange.end):'';
     const snap=h.text;
@@ -2339,18 +2397,22 @@ const Pure = {
 
     // Same fingerprint but snapshot mismatch means the saved record itself is
     // inconsistent; still apply the same unique-match rule rather than trust it.
-    if (!snap) return stale();
-    let first=src.indexOf(snap), second=-1;
-    if (first!==-1) second=src.indexOf(snap,first+1);
-    if (first!==-1 && second===-1) {
-      const recovery={from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}};
-      return bind({start:first,end:first+snap.length},'recovered',recovery,snap);
+    if (snap) {
+      let first=src.indexOf(snap), second=-1;
+      if (first!==-1) second=src.indexOf(snap,first+1);
+      if (first!==-1 && second===-1) {
+        const recovery={from_fingerprint:oldFp,from_range:{start:oldRange.start,end:oldRange.end}};
+        return bind({start:first,end:first+snap.length},'recovered',recovery,snap);
+      }
     }
+
+    // No exact predecessor proof and no unique current-text recovery: keep the
+    // record stale rather than guess across unrelated corpus generations.
     return stale();
   },
 
-  reconcileHighlightList(text, currentFingerprint, currentCorpusVersion, records) {
-    return Pure.dedupeHls((records||[]).map(h=>Pure.reconcileHighlightRecord(text,currentFingerprint,currentCorpusVersion,h)));
+  reconcileHighlightList(text, currentFingerprint, currentCorpusVersion, records, migration=null) {
+    return Pure.dedupeHls((records||[]).map(h=>Pure.reconcileHighlightRecord(text,currentFingerprint,currentCorpusVersion,h,migration)));
   },
 
   // A range is only usable if both offsets are non-negative integers and
@@ -2361,6 +2423,102 @@ const Pure = {
     if (!Number.isInteger(s) || !Number.isInteger(e)) return null;
     if (s < 0 || e <= s) return null;
     return { start: s, end: e };
+  },
+
+  // R5 corpus 1.0.0 -> 1.0.1 exact governed-span migration.
+  // The authorization ledger already gives the one contiguous old/new span in
+  // every changed paragraph, so migration must use that semantic boundary
+  // directly rather than trying to rediscover it with character similarity.
+  validGovernedMigration(mapping, currentText, currentFingerprint=null) {
+    if (!mapping || typeof mapping!=='object') return false;
+    const ints=['old_length','new_length','replacement_start','replacement_end','new_span_start','new_span_end','delta'];
+    if (!ints.every(k=>Number.isInteger(mapping[k]))) return false;
+    if (typeof mapping.old_span!=='string' || typeof mapping.new_span!=='string') return false;
+    if (typeof mapping.from_fingerprint_sha256!=='string' || typeof mapping.to_fingerprint_sha256!=='string') return false;
+    const s=mapping.replacement_start,e=mapping.replacement_end,ns=mapping.new_span_start,ne=mapping.new_span_end;
+    if (s<0 || e<s || ns!==s || ne!==s+mapping.new_span.length) return false;
+    if (mapping.old_length + mapping.delta !== mapping.new_length) return false;
+    if (mapping.delta !== mapping.new_span.length-(e-s)) return false;
+    const src=String(currentText||'');
+    if (src.length!==mapping.new_length || ne>src.length || src.slice(ns,ne)!==mapping.new_span) return false;
+    if (currentFingerprint && mapping.to_fingerprint_sha256!==currentFingerprint) return false;
+    return true;
+  },
+
+  // Map a predecessor range through the exact authorized replacement. Ranges
+  // wholly before the edit stay unchanged; ranges wholly after shift by the
+  // exact delta. Any range touching the governed old span expands
+  // conservatively to include the complete governed new span. For insertion
+  // loci, a range crossing the insertion point likewise includes the insertion.
+  migrateRangeByGovernedSpan(range, mapping, newTextLength) {
+    const r=Pure.validRange(range);
+    if (!r || !mapping || typeof mapping!=='object') return null;
+    const s=mapping.replacement_start,e=mapping.replacement_end;
+    const ns=mapping.new_span_start,ne=mapping.new_span_end,delta=mapping.delta;
+    if (![s,e,ns,ne,delta].every(Number.isInteger)) return null;
+    if (s<0 || e<s || ns!==s || ne<ns) return null;
+    const max=Number.isInteger(newTextLength)&&newTextLength>=0?newTextLength:mapping.new_length;
+    let a,b;
+    if (s===e) {
+      // Pure insertion. A range ending at the insertion boundary is before it;
+      // a range starting at the boundary is after it; only a range that
+      // strictly crosses the boundary semantically contains the new insertion.
+      if (r.end<=s) { a=r.start; b=r.end; }
+      else if (r.start>=s) { a=r.start+delta; b=r.end+delta; }
+      else { a=r.start; b=r.end+delta; }
+    } else if (r.end<=s) { a=r.start; b=r.end; }
+    else if (r.start>=e) { a=r.start+delta; b=r.end+delta; }
+    else {
+      a=r.start<=s?r.start:ns;
+      b=r.end>=e?r.end+delta:ne;
+    }
+    a=Math.max(0,Math.min(a,max)); b=Math.max(0,Math.min(b,max));
+    return b>a?{start:a,end:b}:null;
+  },
+
+  // Reconstruct the exact predecessor paragraph from the successor and the
+  // authorized span. This gives selected-note anchors a predecessor proof even
+  // though historical note records did not store paragraph fingerprints.
+  predecessorTextFromMigration(currentText, mapping, currentFingerprint=null) {
+    const src=String(currentText||'');
+    if (!Pure.validGovernedMigration(mapping,src,currentFingerprint)) return null;
+    const s=mapping.new_span_start,ne=mapping.new_span_end;
+    const old=src.slice(0,s)+mapping.old_span+src.slice(ne);
+    if (old.length!==mapping.old_length) return null;
+    return old;
+  },
+
+  reconcileNoteRecord(text, currentFingerprint, record, migration) {
+    const src=String(text||''), n=Object.assign({},record||{});
+    const r=n.range===null?null:Pure.validRange(n.range);
+    if (!r) return n;
+    const snap=typeof n.selected_text==='string'?n.selected_text:'';
+    // Exact current binding wins and needs no migration.
+    if (r.end<=src.length && snap && src.slice(r.start,r.end)===snap) return n;
+    // A unique exact current-text occurrence is also safe.
+    if (snap) {
+      const first=src.indexOf(snap), second=first===-1?-1:src.indexOf(snap,first+1);
+      if (first!==-1 && second===-1) return Object.assign({},n,{range:{start:first,end:first+snap.length}});
+    }
+    // Governed fallback is permitted only if the note proves it was bound to
+    // the exact predecessor paragraph at the exact saved offsets.
+    const predecessor=Pure.predecessorTextFromMigration(src,migration,currentFingerprint);
+    if (!predecessor || !snap || r.end>predecessor.length || predecessor.slice(r.start,r.end)!==snap) return n;
+    const mapped=Pure.migrateRangeByGovernedSpan(r,migration,src.length);
+    if (!mapped) return n;
+    return Object.assign({},n,{range:mapped,selected_text:src.slice(mapped.start,mapped.end)});
+  },
+
+  reconcilePredecessorNoteRecord(text, currentFingerprint, record, migration) {
+    const src=String(text||''), n=Object.assign({},record||{});
+    const r=n.range===null?null:Pure.validRange(n.range);
+    const snap=typeof n.selected_text==='string'?n.selected_text:'';
+    if (!r || !snap) return null;
+    const predecessor=Pure.predecessorTextFromMigration(src,migration,currentFingerprint);
+    if (!predecessor || r.end>predecessor.length || predecessor.slice(r.start,r.end)!==snap) return null;
+    const mapped=Pure.migrateRangeByGovernedSpan(r,migration,src.length);
+    if (!mapped) return null;
+    return Object.assign({},n,{range:mapped,selected_text:src.slice(mapped.start,mapped.end)});
   },
 
   // Small stable hash, used only to synthesise ids for records that predate
@@ -2610,6 +2768,11 @@ const Pure = {
     const colors = ctx.colors || new Set();
     const levels = ctx.textLevels || new Set();
     const n = { read:[], active_day:null, active_appendix:null, notes:{}, highlights:{}, scroll:{}, theme:'system', text_size:'normal', onboarded:false, highlight_color:'gold', favorites_migrated:true };
+    const sourceMigration = ctx.corpusMigration && env.corpus &&
+      ctx.corpusMigration.from_corpus_version===env.corpus.version &&
+      ctx.corpusMigration.from_corpus_sha256===env.corpus.fingerprint_sha256 &&
+      ctx.corpusMigration.to_corpus_version===ctx.corpusVersion &&
+      ctx.corpusMigration.to_corpus_sha256===ctx.corpusFingerprint ? ctx.corpusMigration : null;
 
     if (!Array.isArray(st.read)) fail('read:not_array');
     else {
@@ -2640,13 +2803,22 @@ const Pure = {
         if (!Pure.validRecordId(id) || !Pure.isPlainObject(note) || !Pure.exactKeys(note,['id','paragraph_id','unit_id','text','created_at','updated_at','selected_text','range'])) { fail('notes:v2_record_shape'); break; }
         const pid=note.paragraph_id;
         if (note.id!==id || !validParas.has(pid) || note.unit_id!==paraUnits[pid]) { fail('notes:v2_id_mismatch'); break; }
-        if (typeof note.text!=='string' || note.text.length>1000 || typeof note.created_at!=='number' || !Number.isFinite(note.created_at) || note.created_at<0 || typeof note.updated_at!=='number' || !Number.isFinite(note.updated_at) || note.updated_at<note.created_at || (note.selected_text!==null && (typeof note.selected_text!=='string' || note.selected_text.length>(paraLengths[pid]||0)))) { fail('notes:v2_value'); break; }
+        const migration=sourceMigration?.mappings?.[pid]||null;
+        const sourceMax=migration && Number.isInteger(migration.old_length)?migration.old_length:(paraLengths[pid]||0);
+        if (typeof note.text!=='string' || note.text.length>1000 || typeof note.created_at!=='number' || !Number.isFinite(note.created_at) || note.created_at<0 || typeof note.updated_at!=='number' || !Number.isFinite(note.updated_at) || note.updated_at<note.created_at || (note.selected_text!==null && (typeof note.selected_text!=='string' || note.selected_text.length>sourceMax))) { fail('notes:v2_value'); break; }
         let range=null;
         if (note.range!==null) {
-          if (!Pure.isPlainObject(note.range) || !Pure.exactKeys(note.range,['start','end']) || !Number.isInteger(note.range.start) || !Number.isInteger(note.range.end) || note.range.start<0 || note.range.end<=note.range.start || note.range.end>(paraLengths[pid]||0)) { fail('notes:v2_range'); break; }
+          if (!Pure.isPlainObject(note.range) || !Pure.exactKeys(note.range,['start','end']) || !Number.isInteger(note.range.start) || !Number.isInteger(note.range.end) || note.range.start<0 || note.range.end<=note.range.start || note.range.end>sourceMax) { fail('notes:v2_range'); break; }
           range={start:note.range.start,end:note.range.end};
         }
-        n.notes[id]={id,paragraph_id:pid,unit_id:note.unit_id,text:note.text,created_at:note.created_at,updated_at:note.updated_at,selected_text:note.selected_text,range};
+        let normalized={id,paragraph_id:pid,unit_id:note.unit_id,text:note.text,created_at:note.created_at,updated_at:note.updated_at,selected_text:note.selected_text,range};
+        if (migration && range!==null) {
+          normalized=Pure.reconcilePredecessorNoteRecord((ctx.paraTexts||{})[pid]||'',(ctx.paraFingerprints||{})[pid]||null,normalized,migration);
+          if (!normalized) { fail('notes:predecessor_binding'); break; }
+          const nr=Pure.validRange(normalized.range), currentText=(ctx.paraTexts||{})[pid]||'';
+          if (!nr || nr.end>(paraLengths[pid]||0) || normalized.selected_text!==currentText.slice(nr.start,nr.end)) { fail('notes:migration_result'); break; }
+        } else if (range!==null && range.end>(paraLengths[pid]||0)) { fail('notes:v2_range'); break; }
+        n.notes[id]=normalized;
       }
     }
 
@@ -2680,7 +2852,8 @@ const Pure = {
           }
           base=Object.assign(base,{text_fingerprint:h.text_fingerprint,corpus_version:h.corpus_version,status:h.status,recovery:h.recovery});
         }
-        const reconciled=knownPara?Pure.reconcileHighlightRecord((ctx.paraTexts||{})[pid]||'',(ctx.paraFingerprints||{})[pid]||null,ctx.corpusVersion,base):Object.assign({},base,{status:'stale'});
+        const hMigration=sourceMigration?.mappings?.[pid]||null;
+        const reconciled=knownPara?Pure.reconcileHighlightRecord((ctx.paraTexts||{})[pid]||'',(ctx.paraFingerprints||{})[pid]||null,ctx.corpusVersion,base,hMigration):Object.assign({},base,{status:'stale'});
         out.push(reconciled);
       }
       if (errors.length) break;
@@ -2713,6 +2886,24 @@ const Pure = {
     eq('esc: null-safe', Pure.esc(null), '');
     eq('esc: ampersand first', Pure.esc('a & <b>'), 'a &amp; &lt;b&gt;');
     eq('esc: double quote', Pure.esc('say "hi"'), 'say &quot;hi&quot;');
+    const gm={from_fingerprint_sha256:'oldfp',to_fingerprint_sha256:'newfp',old_length:6,new_length:7,replacement_start:2,replacement_end:4,new_span_start:2,new_span_end:5,old_span:'cd',new_span:'XYZ',delta:1};
+    eq('migration: governed map valid', Pure.validGovernedMigration(gm,'abXYZef','newfp'), true);
+    eq('migration: before edit stable', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:0,end:2},gm,7)), JSON.stringify({start:0,end:2}));
+    eq('migration: after edit shifts', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:4,end:6},gm,7)), JSON.stringify({start:5,end:7}));
+    eq('migration: exact corrected span maps exactly', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:2,end:4},gm,7)), JSON.stringify({start:2,end:5}));
+    eq('migration: interior corrected selection expands to whole new span', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:3,end:4},gm,7)), JSON.stringify({start:2,end:5}));
+    eq('migration: predecessor reconstruction', Pure.predecessorTextFromMigration('abXYZef',gm,'newfp'), 'abcdef');
+    const noteMig=Pure.reconcileNoteRecord('abXYZef','newfp',{range:{start:2,end:4},selected_text:'cd'},gm);
+    eq('migration: proven note range mapped', JSON.stringify(noteMig.range), JSON.stringify({start:2,end:5}));
+    eq('migration: proven note snapshot refreshed', noteMig.selected_text, 'XYZ');
+    const badNote={range:{start:2,end:4},selected_text:'NEVER'};
+    eq('migration: unproven note range unchanged', JSON.stringify(Pure.reconcileNoteRecord('abXYZef','newfp',badNote,gm).range), JSON.stringify(badNote.range));
+    eq('migration: unproven note text unchanged', Pure.reconcileNoteRecord('abXYZef','newfp',badNote,gm).selected_text, 'NEVER');
+    const ins={from_fingerprint_sha256:'a',to_fingerprint_sha256:'b',old_length:4,new_length:6,replacement_start:2,replacement_end:2,new_span_start:2,new_span_end:4,old_span:'',new_span:'XY',delta:2};
+    eq('migration: insertion crossing range includes insertion', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:1,end:3},ins,6)), JSON.stringify({start:1,end:5}));
+    eq('migration: insertion before-boundary range unchanged', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:0,end:2},ins,6)), JSON.stringify({start:0,end:2}));
+    eq('migration: insertion after-boundary range shifts', JSON.stringify(Pure.migrateRangeByGovernedSpan({start:2,end:4},ins,6)), JSON.stringify({start:4,end:6}));
+
     eq('record id: generated id accepted', Pure.validRecordId('n_abc-123'), true);
     eq('record id: quote rejected', Pure.validRecordId('x" onmouseover="evil'), false);
     eq('record id: apostrophe rejected', Pure.validRecordId("x'bad"), false);
@@ -2913,6 +3104,17 @@ const Pure = {
     eq('backup: dangerous key detector', Pure.hasDangerousKey(JSON.parse('{"a":{"__proto__":{"x":1}}}')), true);
     eq('backup: v3 numeric scroll remains accepted', (()=>{const x=benv();x.schema_version=3;x.app.version='2.13.0';x.state.scroll={D1:50};return Pure.validateBackupEnvelope(x,bctx).ok})(), true);
     eq('backup: v4 numeric scroll rejected', (()=>{const x=benv();x.state.scroll={D1:50};return Pure.validateBackupEnvelope(x,bctx).errors.includes('scroll:v4_shape')})(), true);
+    const oldCF='1'.repeat(64),newCF='2'.repeat(64),oldPF='3'.repeat(64),newPF='4'.repeat(64);
+    const xgm={from_fingerprint_sha256:oldPF,to_fingerprint_sha256:newPF,old_length:9,new_length:7,replacement_start:2,replacement_end:5,new_span_start:2,new_span_end:3,old_span:'cde',new_span:'X',delta:-2};
+    const xmig={schema_version:2,from_corpus_version:'1.0.0',to_corpus_version:'1.0.1',from_corpus_sha256:oldCF,to_corpus_sha256:newCF,mappings:{P1:xgm}};
+    const xctx={...bctx,corpusVersion:'1.0.1',corpusFingerprint:newCF,corpusMigration:xmig,paraLengths:{P1:7},paraTexts:{P1:'abXfghi'},paraFingerprints:{P1:newPF}};
+    const xenv=()=>{const x=benv();x.corpus.version='1.0.0';x.corpus.fingerprint_sha256=oldCF;x.state.notes[noteId]={...x.state.notes[noteId],selected_text:'hi',range:{start:7,end:9}};x.state.highlights.P1[0]={...x.state.highlights.P1[0],range:{start:7,end:9},text:'hi',text_fingerprint:oldPF,corpus_version:'1.0.0'};return x;};
+    eq('backup: predecessor shrinking note accepted', Pure.validateBackupEnvelope(xenv(),xctx).ok, true);
+    eq('backup: predecessor note migrated into current bounds', JSON.stringify(Pure.validateBackupEnvelope(xenv(),xctx).normalized.notes[noteId].range), JSON.stringify({start:5,end:7}));
+    eq('backup: predecessor note snapshot refreshed', Pure.validateBackupEnvelope(xenv(),xctx).normalized.notes[noteId].selected_text, 'hi');
+    eq('backup: predecessor highlight uses governed map', JSON.stringify(Pure.validateBackupEnvelope(xenv(),xctx).normalized.highlights.P1[0].range), JSON.stringify({start:5,end:7}));
+    eq('backup: false predecessor note binding rejected', (()=>{const x=xenv();x.state.notes[noteId].selected_text='NO';return Pure.validateBackupEnvelope(x,xctx).errors.includes('notes:predecessor_binding')})(), true);
+    eq('backup: current corpus out-of-range note still rejected', (()=>{const x=benv();x.state.notes[noteId]={...x.state.notes[noteId],selected_text:'x',range:{start:19,end:21}};return Pure.validateBackupEnvelope(x,bctx).errors.includes('notes:v2_range')})(), true);
 
     eq('mje: search accent/case', Pure.normalizeSearch('ÉTERNEL'), 'eternel');
     eq('mje: search oe ligature', Pure.normalizeSearch('cœur'), 'coeur');
@@ -2920,6 +3122,12 @@ const Pure = {
     eq('mje: search apostrophes', Pure.normalizeSearch("l’âme") , Pure.normalizeSearch("l'âme"));
     eq('mje: search NBSP/narrow space', Pure.normalizeSearch('Fiat\u00a0 \u202fMarie'), 'fiat marie');
     eq('mje: search map ligature source index', JSON.stringify(Pure.normalizeSearchWithMap('cœur').map), JSON.stringify([0,1,1,2,3]));
+    eq('mje: search whole word tier', Pure.searchMatchInfo('le roi vient','roi').tier, 0);
+    eq('mje: search word prefix tier', Pure.searchMatchInfo('roitelet','roi').tier, 1);
+    eq('mje: search embedded tier', Pure.searchMatchInfo('croire','roi').tier, 2);
+    eq('mje: search phrase boundary tier', Pure.searchMatchInfo('la divine volonte regne','divine volonte').tier, 0);
+    eq('mje: search strongest later occurrence wins', JSON.stringify(Pure.searchMatchInfo('croire puis roi','roi')), JSON.stringify({tier:0,at:12}));
+    eq('mje: search absent is null', Pure.searchMatchInfo('amour','roi'), null);
     eq('mje: legacy pixel position normalized', Pure.normalizeReadingPosition('D1',50).legacy_px, 50);
     eq('mje: semantic reading position kept', Pure.normalizeReadingPosition('D1',{unit_id:'D1',paragraph_id:'P1',fraction_within_paragraph:.4,unit_fraction:.5,legacy_px:90}).paragraph_id, 'P1');
     eq('mje: wrong-unit position rejected', Pure.normalizeReadingPosition('D1',{unit_id:'D2',paragraph_id:null,fraction_within_paragraph:null,unit_fraction:.5,legacy_px:90}), null);
@@ -2949,7 +3157,7 @@ const Pure = {
 if (typeof module !== 'undefined' && module.exports) module.exports = Pure;
 
 const State = {
-  corpus: null, loadedCorpusFingerprint: null, storageRecoveryFailed: false, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
+  corpus: null, corpusMigration: null, loadedCorpusFingerprint: null, storageRecoveryFailed: false, dayMap: {}, appendixMap: {}, currentSeq: 1, prevScreen: 'home',
   todayDayNum: new Date().getDate(),
   read: new Set(), notes: {}, textSize: 'normal',
   // Map<paragraph_id, colourKey>. Was a Set of ids before v2.7.0; the loader
@@ -2971,7 +3179,7 @@ const State = {
   // anchor + within-paragraph fraction, plus unit fraction and legacy pixel
   // fallback for historical/device-transition resilience.
   scrollPos: {},
-  searchContext: { query:'', mobileScroll:0, wideScroll:0, returnPending:false },
+  searchContext: { query:'', normalizedQuery:'', visiblePassages:40, mobileScroll:0, wideScroll:0, returnPending:false },
   routeTargetPid: null,
   pendingUndo: null,// { label, restore } — last destructive action, restorable via toast
   readerOpen: false,// is a unit currently displayed in the reader? drives reconcileLayout
@@ -2998,32 +3206,56 @@ const stripAccents = s => Pure.normalizeSearch(s);
 
 // Each key is parsed independently so a single corrupt entry (bad sync, quota
 // truncation, manual edit) resets only that key, not the user's entire saved state.
-// Favori was retired in v2.7.0 because highlighting serves the same purpose, and
-// the day-level heart was pinned to whichever paragraph happened to be first in
-// the lesson — opaque to the user. A saved favourite is exactly a
-// "keep this passage" marker, so each becomes a gold highlight rather than being
-// silently dropped. Runs once; the old key is only cleared after the merged
-// highlights have been written successfully, so a failed write loses nothing.
-function migrateFavoritesToHighlights() {
-  try {
-    if (localStorage.getItem(SK.FAV_MIGRATED) === '1') return;
-    const raw = localStorage.getItem(SK.FAVORITES);
-    if (raw === null) { localStorage.setItem(SK.FAV_MIGRATED, '1'); return; }
+// Version 22 adds an operation-level concurrency boundary around personal-state
+// mutations. The existing storage-event listener remains the peer-UI reconciliation
+// layer; commit integrity comes from a fresh durable read inside this app-specific
+// serialized critical section.
+const MARIE_PERSONAL_STATE_LOCK_NAME = 'collection-luisa:marie:personal-state';
+let _marieMutationQueue = Promise.resolve();
+let _marieLockDepth = 0;
 
-    const favs = JSON.parse(raw || '[]');
-    const before = State.highlights.size;
-    Pure.mergeFavorites(State.highlights, favs);
-    const added = State.highlights.size - before;
-    if (added > 0 && !saveHighlights()) return;   // retry on a later launch
-    localStorage.setItem(SK.FAV_MIGRATED, '1');
-    localStorage.removeItem(SK.FAVORITES);
-    if (added > 0) State.favMigratedCount = added; // surfaced once via a toast
-  } catch(e) { /* leave the old key in place and retry next launch */ }
+function marieLocksSupported() {
+  return typeof navigator !== 'undefined' && navigator.locks && typeof navigator.locks.request === 'function' &&
+    (typeof window === 'undefined' || window.isSecureContext !== false);
+}
+function cloneJson(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+function jsonEqual(a,b) {
+  try { return JSON.stringify(a) === JSON.stringify(b); }
+  catch(e) { return false; }
+}
+function marieConflict(key, reason, durable) {
+  return {ok:false,phase:'conflict',key,reason,conflict:true,rolled_back:true,durable:cloneJson(durable)};
+}
+function writeRawVerifiedUnlocked(key, value) {
+  let before=null;
+  try { before=localStorage.getItem(key); }
+  catch(e) { return {ok:false,phase:'snapshot',key,rolled_back:true,error:String(e)}; }
+  try {
+    if (value === null) localStorage.removeItem(key); else localStorage.setItem(key,value);
+    const after=localStorage.getItem(key);
+    if (after!==value) throw new Error('post_write_verification_failed');
+    return {ok:true,key};
+  } catch(e) {
+    let rolled=true;
+    try { if(before===null)localStorage.removeItem(key); else localStorage.setItem(key,before); }
+    catch(_) { rolled=false; }
+    return {ok:false,phase:'write',key,rolled_back:rolled,error:String(e)};
+  }
 }
 
-// MJV-B transaction recovery. A restore journal is written before the first
-// user-state key changes. If the browser/tab dies mid-restore, next launch
-// restores the exact pre-import raw values before normal state parsing.
+// MJV-B transaction recovery. These raw helpers are deliberately synchronous;
+// every protected call reachable in Version 22+ occurs inside runMarieSerialized().
+function rawSnapshotMatches(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return false;
+  try {
+    return RESTORE_TARGET_KEYS.every(key => {
+      const expected=Object.prototype.hasOwnProperty.call(snapshot,key)?snapshot[key]:null;
+      return localStorage.getItem(key)===expected;
+    });
+  } catch(e) { return false; }
+}
 function restoreRawSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') return false;
   try {
@@ -3031,8 +3263,79 @@ function restoreRawSnapshot(snapshot) {
       const value = Object.prototype.hasOwnProperty.call(snapshot,key) ? snapshot[key] : null;
       if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
     }
-    return true;
+    return rawSnapshotMatches(snapshot);
   } catch(e) { return false; }
+}
+function marieRestoreTxId() {
+  if (typeof crypto!=='undefined' && typeof crypto.randomUUID==='function') return crypto.randomUUID();
+  return 'mrv23-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+}
+function openMarieBackupRecoveryDb() {
+  return new Promise((resolve,reject)=>{
+    if (typeof indexedDB==='undefined') { reject(new Error('indexeddb_unavailable')); return; }
+    let req;
+    try { req=indexedDB.open(MARIE_BACKUP_RECOVERY_DB,1); } catch(e) { reject(e); return; }
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if (!db.objectStoreNames.contains(MARIE_BACKUP_RECOVERY_STORE)) db.createObjectStore(MARIE_BACKUP_RECOVERY_STORE);
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error('indexeddb_open_failed'));
+    req.onblocked=()=>reject(new Error('indexeddb_open_blocked'));
+  });
+}
+async function putMarieBackupRecovery(record) {
+  let db;
+  try {
+    if (!record || record.kind!=='MJV_RESTORE_RECOVERY_V2' || !record.txid || !record.snapshot || Pure.hasDangerousKey(record)) return false;
+    db=await openMarieBackupRecoveryDb();
+    const ok=await new Promise((resolve,reject)=>{
+      const tx=db.transaction(MARIE_BACKUP_RECOVERY_STORE,'readwrite');
+      const store=tx.objectStore(MARIE_BACKUP_RECOVERY_STORE);
+      store.put(record,MARIE_BACKUP_RECOVERY_KEY);
+      const get=store.get(MARIE_BACKUP_RECOVERY_KEY);
+      let verified=false;
+      get.onsuccess=()=>{ verified=JSON.stringify(get.result)===JSON.stringify(record); };
+      get.onerror=()=>{ verified=false; };
+      tx.oncomplete=()=>resolve(verified);
+      tx.onerror=()=>reject(tx.error||new Error('indexeddb_write_failed'));
+      tx.onabort=()=>reject(tx.error||new Error('indexeddb_write_aborted'));
+    });
+    return ok;
+  } catch(e) { return false; }
+  finally { try { db?.close(); } catch(_) {} }
+}
+async function getMarieBackupRecovery() {
+  let db;
+  try {
+    db=await openMarieBackupRecoveryDb();
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(MARIE_BACKUP_RECOVERY_STORE,'readonly');
+      const req=tx.objectStore(MARIE_BACKUP_RECOVERY_STORE).get(MARIE_BACKUP_RECOVERY_KEY);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error||new Error('indexeddb_read_failed'));
+    });
+  } catch(e) { return null; }
+  finally { try { db?.close(); } catch(_) {} }
+}
+async function deleteMarieBackupRecovery() {
+  let db;
+  try {
+    db=await openMarieBackupRecoveryDb();
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(MARIE_BACKUP_RECOVERY_STORE,'readwrite');
+      const store=tx.objectStore(MARIE_BACKUP_RECOVERY_STORE);
+      store.delete(MARIE_BACKUP_RECOVERY_KEY);
+      const get=store.get(MARIE_BACKUP_RECOVERY_KEY);
+      let verified=false;
+      get.onsuccess=()=>{ verified=get.result===undefined; };
+      get.onerror=()=>{ verified=false; };
+      tx.oncomplete=()=>resolve(verified);
+      tx.onerror=()=>reject(tx.error||new Error('indexeddb_delete_failed'));
+      tx.onabort=()=>reject(tx.error||new Error('indexeddb_delete_aborted'));
+    });
+  } catch(e) { return false; }
+  finally { try { db?.close(); } catch(_) {} }
 }
 function recoverInterruptedRestore() {
   let raw=null;
@@ -3040,14 +3343,42 @@ function recoverInterruptedRestore() {
   if (!raw) return true;
   try {
     const tx=JSON.parse(raw);
-    if (!tx || tx.kind!=='MJV_RESTORE_TXN_V1' || !tx.snapshot || Pure.hasDangerousKey(tx)) return false;
+    if (!tx || Pure.hasDangerousKey(tx)) return false;
+    if (tx.kind===MARIE_RESTORE_EXTERNAL_KIND) return false; // startup recovery must resolve the external journal first
+    if (tx.kind!=='MJV_RESTORE_TXN_V1' || !tx.snapshot) return false;
     const ok=restoreRawSnapshot(tx.snapshot);
-    if (ok) localStorage.removeItem(SK.RESTORE_TXN);
+    if (ok) {
+      localStorage.removeItem(SK.RESTORE_TXN);
+      if (localStorage.getItem(SK.RESTORE_TXN)!==null) return false;
+    }
     return ok;
   } catch(e) { return false; }
 }
-
-
+async function recoverExternalRestoreBeforeInit() {
+  const inside=async()=>{
+    let raw=null;
+    try { raw=localStorage.getItem(SK.RESTORE_TXN); } catch(e) { return false; }
+    if (!raw) return true;
+    let marker;
+    try { marker=JSON.parse(raw); } catch(e) { return false; }
+    if (!marker || Pure.hasDangerousKey(marker)) return false;
+    if (marker.kind==='MJV_RESTORE_TXN_V1') return recoverInterruptedRestore();
+    if (marker.kind!==MARIE_RESTORE_EXTERNAL_KIND || !marker.txid) return false;
+    const recovery=await getMarieBackupRecovery();
+    if (!recovery || recovery.kind!=='MJV_RESTORE_RECOVERY_V2' || recovery.txid!==marker.txid || !recovery.snapshot || Pure.hasDangerousKey(recovery)) return false;
+    if (!restoreRawSnapshot(recovery.snapshot)) return false;
+    try {
+      localStorage.removeItem(SK.RESTORE_TXN);
+      if (localStorage.getItem(SK.RESTORE_TXN)!==null) return false;
+    } catch(e) { return false; }
+    await deleteMarieBackupRecovery(); // stale IDB recovery without a marker is harmless and must never roll back a committed state
+    return true;
+  };
+  try {
+    if (marieLocksSupported()) return !!(await navigator.locks.request(MARIE_PERSONAL_STATE_LOCK_NAME,{mode:'exclusive'},inside));
+    return !!(await inside());
+  } catch(e) { return false; }
+}
 function restoreRawSubset(snapshot, keys) {
   if (!snapshot || typeof snapshot !== 'object' || !Array.isArray(keys)) return false;
   try {
@@ -3058,7 +3389,6 @@ function restoreRawSubset(snapshot, keys) {
     return true;
   } catch(e) { return false; }
 }
-
 function recoverInterruptedStateTransaction() {
   let raw=null;
   try { raw=localStorage.getItem(SK.STATE_TXN); } catch(e) { return false; }
@@ -3072,38 +3402,151 @@ function recoverInterruptedStateTransaction() {
   } catch(e) { return false; }
 }
 
-function atomicUserStateWrite(payload) {
+function runMarieSerialized(label, task) {
+  const execute=async()=>{
+    if (_marieLockDepth>0) return task();
+    const inside=async()=>{
+      _marieLockDepth++;
+      try {
+        if (!recoverInterruptedStateTransaction() || !recoverInterruptedRestore()) {
+          State.storageRecoveryFailed=true;
+          return {ok:false,phase:'recovery',label,rolled_back:false};
+        }
+        State.storageRecoveryFailed=false;
+        return await task();
+      } finally { _marieLockDepth--; }
+    };
+    if (marieLocksSupported()) return navigator.locks.request(MARIE_PERSONAL_STATE_LOCK_NAME,{mode:'exclusive'},inside);
+    return inside(); // best-effort only on engines below the governed support floor
+  };
+  const queued=_marieMutationQueue.then(execute,execute);
+  _marieMutationQueue=queued.then(()=>{},()=>{});
+  return queued;
+}
+
+function rawEquivalentForUserStateKey(key, a, b) {
+  if (a===b) return true;
+  try {
+    if (key===SK.ACTIVE_DAY || key===SK.ACTIVE_APPENDIX) return (a||'')===(b||'');
+    if (key===SK.READ) {
+      const aa=JSON.parse(a||'[]'), bb=JSON.parse(b||'[]');
+      if (!Array.isArray(aa)||!Array.isArray(bb)) return false;
+      return jsonEqual([...new Set(aa)].sort(),[...new Set(bb)].sort());
+    }
+    if (key===SK.SCROLL) return jsonEqual(JSON.parse(a||'{}'),JSON.parse(b||'{}'));
+  } catch(e) { return false; }
+  return false;
+}
+
+function _atomicUserStateWriteUnlocked(payload, expectedRaw=null) {
   const keys=Object.keys(payload||{});
   if (!keys.length || !keys.every(k=>USER_STATE_TXN_KEYS.includes(k))) return {ok:false,phase:'scope',rolled_back:true};
   try { if (localStorage.getItem(SK.STATE_TXN) || localStorage.getItem(SK.RESTORE_TXN)) return {ok:false,phase:'pending_recovery',rolled_back:false}; }
   catch(e) { return {ok:false,phase:'recovery_probe',rolled_back:false}; }
+  if (expectedRaw) {
+    try {
+      const currentRaw={}; keys.forEach(key=>currentRaw[key]=localStorage.getItem(key));
+      const allExpected=keys.every(key=>rawEquivalentForUserStateKey(key,currentRaw[key],Object.prototype.hasOwnProperty.call(expectedRaw,key)?expectedRaw[key]:null));
+      const allIntended=keys.every(key=>rawEquivalentForUserStateKey(key,currentRaw[key],payload[key]));
+      if (!allExpected && !allIntended) return marieConflict(keys.join(','),'transaction_state_changed',currentRaw);
+    } catch(e) { return {ok:false,phase:'snapshot',rolled_back:true,error:String(e)}; }
+  }
   const snapshot={};
   try { keys.forEach(k=>snapshot[k]=localStorage.getItem(k)); } catch(e) { return {ok:false,phase:'snapshot',rolled_back:true}; }
   const tx={kind:'MJV_STATE_TXN_V1',created_at:new Date().toISOString(),keys,snapshot};
   try { localStorage.setItem(SK.STATE_TXN,JSON.stringify(tx)); } catch(e) { return {ok:false,phase:'prepare',rolled_back:true}; }
   const written=[];
   try {
-    for (const key of keys) { const v=payload[key]; if (v===null) localStorage.removeItem(key); else localStorage.setItem(key,v); written.push(key); }
+    for (const key of keys) {
+      const v=payload[key];
+      if (v===null) localStorage.removeItem(key); else localStorage.setItem(key,v);
+      if (localStorage.getItem(key)!==v) throw new Error('post_write_verification_failed:'+key);
+      written.push(key);
+    }
     localStorage.removeItem(SK.STATE_TXN);
     return {ok:true,phase:'commit',written,rolled_back:false};
   } catch(e) {
     const rolled=restoreRawSubset(snapshot,keys);
     try { if (rolled) localStorage.removeItem(SK.STATE_TXN); } catch(_) {}
-    return {ok:false,phase:'write',written,rolled_back:rolled};
+    return {ok:false,phase:'write',written,rolled_back:rolled,error:String(e)};
   }
 }
+async function atomicUserStateWrite(payload, expectedRaw=null) {
+  return runMarieSerialized('user-state-transaction',()=>_atomicUserStateWriteUnlocked(payload,expectedRaw));
+}
 
-function loadStorage() {
-  if (!recoverInterruptedStateTransaction() || !recoverInterruptedRestore()) {
-    State.storageRecoveryFailed=true;
-    return false;
-  }
+function parseDurableReadUnlocked() {
+  try {
+    const raw=JSON.parse(localStorage.getItem(SK.READ)||'[]');
+    if (!Array.isArray(raw) || raw.some(v=>typeof v!=='string')) return {ok:false,phase:'invalid_state',key:SK.READ};
+    return {ok:true,value:new Set(raw)};
+  } catch(e) { return {ok:false,phase:'invalid_state',key:SK.READ,error:String(e)}; }
+}
+function parseDurableHighlightsUnlocked() {
+  try {
+    const raw=JSON.parse(localStorage.getItem(SK.HIGHLIGHTS)||'{}');
+    if (Pure.hasDangerousKey(raw) || (!Array.isArray(raw) && !Pure.isPlainObject(raw))) return {ok:false,phase:'invalid_state',key:SK.HIGHLIGHTS};
+    const map=Pure.parseHighlights(raw);
+    return {ok:true,value:map,migrated:!!map.migrated};
+  } catch(e) { return {ok:false,phase:'invalid_state',key:SK.HIGHLIGHTS,error:String(e)}; }
+}
+function parseDurableNotesUnlocked() {
+  try {
+    const raw=JSON.parse(localStorage.getItem(SK.NOTES)||'{}');
+    if (Pure.hasDangerousKey(raw) || (!Pure.isPlainObject(raw))) return {ok:false,phase:'invalid_state',key:SK.NOTES};
+    if (Object.prototype.hasOwnProperty.call(raw,'schema_version') && raw.schema_version!==NOTE_STORAGE_SCHEMA_VERSION) {
+      return {ok:false,phase:'future_schema',key:SK.NOTES};
+    }
+    const nr=Pure.parseNotes(raw);
+    return {ok:true,value:nr.records,migrated:!!nr.migrated};
+  } catch(e) { return {ok:false,phase:'invalid_state',key:SK.NOTES,error:String(e)}; }
+}
+function parseDurableScrollUnlocked() {
+  try {
+    const raw=JSON.parse(localStorage.getItem(SK.SCROLL)||'{}');
+    if (!Pure.isPlainObject(raw) || Pure.hasDangerousKey(raw)) return {ok:false,phase:'invalid_state',key:SK.SCROLL};
+    return {ok:true,value:raw};
+  } catch(e) { return {ok:false,phase:'invalid_state',key:SK.SCROLL,error:String(e)}; }
+}
+
+// Favori was retired in v2.7.0. Migration is now evaluated against a fresh
+// durable highlight store while the Marie lock is held, so a peer highlight
+// cannot be erased by a startup migration racing its queued storage event.
+function migrateFavoritesToHighlightsUnlocked() {
+  try {
+    const parsed=parseDurableHighlightsUnlocked();
+    if (!parsed.ok) return parsed;
+    const durable=parsed.value;
+    if (localStorage.getItem(SK.FAV_MIGRATED)==='1') return {ok:true,map:durable,added:0};
+    const raw=localStorage.getItem(SK.FAVORITES);
+    if (raw===null) {
+      const mark=writeRawVerifiedUnlocked(SK.FAV_MIGRATED,'1');
+      return mark.ok?{ok:true,map:durable,added:0}:mark;
+    }
+    const favs=JSON.parse(raw||'[]');
+    const countBefore=[...durable.values()].reduce((n,a)=>n+(a||[]).length,0);
+    const before=JSON.stringify(Object.fromEntries(durable));
+    Pure.mergeFavorites(durable,favs);
+    const after=JSON.stringify(Object.fromEntries(durable));
+    const countAfter=[...durable.values()].reduce((n,a)=>n+(a||[]).length,0);
+    const added=Math.max(0,countAfter-countBefore);
+    if (before!==after) {
+      const write=writeRawVerifiedUnlocked(SK.HIGHLIGHTS,after);
+      if (!write.ok) return write;
+    }
+    const mark=writeRawVerifiedUnlocked(SK.FAV_MIGRATED,'1');
+    if (!mark.ok) return mark;
+    const remove=writeRawVerifiedUnlocked(SK.FAVORITES,null);
+    if (!remove.ok) return remove;
+    return {ok:true,map:durable,added};
+  } catch(e) { return {ok:false,phase:'migration',key:SK.FAVORITES,error:String(e)}; }
+}
+
+function loadStorageUnlocked() {
   State.storageRecoveryFailed=false;
   try { State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]')); }
   catch(e) { State.read = new Set(); }
 
-  // Highlights: accepts both shapes. Pre-v2.7.0 stored a plain array of
-  // paragraph_ids with no colour; v2.7.0+ stores { paragraph_id: colourKey }.
   try {
     const parsedHighlights=Pure.parseHighlights(JSON.parse(localStorage.getItem(SK.HIGHLIGHTS) || '{}'));
     State.highlights = parsedHighlights;
@@ -3115,7 +3558,16 @@ function loadStorage() {
     State.lastHlColor = (c && HL_COLORS[c]) ? c : HL_DEFAULT;
   } catch(e) { State.lastHlColor = HL_DEFAULT; }
 
-  migrateFavoritesToHighlights();
+  try {
+    const t=localStorage.getItem(SK.THEME);
+    State.themeMode=(t==='dark'||t==='light')?t:'system';
+  } catch(e) { State.themeMode='system'; }
+
+  const favMigration=migrateFavoritesToHighlightsUnlocked();
+  if (favMigration.ok && favMigration.map) {
+    State.highlights=favMigration.map;
+    if (favMigration.added) State.favMigratedCount=favMigration.added;
+  }
 
   try {
     const parsed = JSON.parse(localStorage.getItem(SK.NOTES) || '{}');
@@ -3128,17 +3580,10 @@ function loadStorage() {
     const rawTextSize = localStorage.getItem(SK.TEXT_SIZE);
     const m = Pure.migrateTextLevel(rawTextSize, TEXT_LEVELS, TEXT_LEVEL_ORDER, CFG.TEXT_DEFAULT);
     State.textSize = m.level;
-    // A legacy integer or malformed historical value is rewritten once into
-    // the semantic shape. Persistence is deliberately isolated from parsing:
-    // if a quota/private-mode write fails after the in-memory migration, the
-    // current session keeps the correctly mapped level and the missing marker
-    // makes the migration retry on the next launch. The marker is written last.
     const schema = localStorage.getItem(SK.TEXT_SIZE_SCHEMA);
     if (m.migrated || (rawTextSize !== null && schema !== TEXT_SIZE_SCHEMA_VERSION)) {
-      try {
-        localStorage.setItem(SK.TEXT_SIZE, State.textSize);
-        localStorage.setItem(SK.TEXT_SIZE_SCHEMA, TEXT_SIZE_SCHEMA_VERSION);
-      } catch(e) { /* keep mapped State.textSize; retry persistence next launch */ }
+      const repaired=_atomicUserStateWriteUnlocked({[SK.TEXT_SIZE]:State.textSize,[SK.TEXT_SIZE_SCHEMA]:TEXT_SIZE_SCHEMA_VERSION});
+      if (!repaired.ok) { State.storageRecoveryFailed=true; return false; }
     }
   } catch(e) { State.textSize = CFG.TEXT_DEFAULT; }
 
@@ -3146,13 +3591,12 @@ function loadStorage() {
     const ad = parseInt(localStorage.getItem(SK.ACTIVE_DAY) || '0');
     State.activeDay = (ad >= 1 && ad <= CFG.DAYS) ? ad : null;
   } catch(e) { State.activeDay = null; }
-
   try {
     const aa = parseInt(localStorage.getItem(SK.ACTIVE_APPENDIX) || '0');
     State.activeAppendix = (aa >= 1 && aa <= CFG.APPENDICES) ? aa : null;
   } catch(e) { State.activeAppendix = null; }
   if (State.activeDay!==null && State.activeAppendix!==null) {
-    const repaired=atomicUserStateWrite({[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:String(State.activeAppendix)});
+    const repaired=_atomicUserStateWriteUnlocked({[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:String(State.activeAppendix)});
     if (repaired.ok) State.activeDay=null;
     else { State.storageRecoveryFailed=true; return false; }
   }
@@ -3169,32 +3613,206 @@ function loadStorage() {
   } catch(e) { State.scrollPos = {}; }
   return true;
 }
-// Each save* helper returns true on success, false on failure (quota exceeded,
-// private-mode restrictions, storage disabled) so callers can tell the user
-// the truth instead of showing a success toast for a write that never happened.
-const storageWritesAllowed = () => {
-  if (State.storageRecoveryFailed) return false;
-  try { return !localStorage.getItem(SK.RESTORE_TXN) && !localStorage.getItem(SK.STATE_TXN); }
-  catch(e) { return false; }
-};
-const saveRead       = (readSet=State.read) => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.READ, JSON.stringify([...readSet])); return true; } catch(e){ return false; } };
-// Persisted as an object { paragraph_id: colourKey } from v2.7.0 on.
-const saveHighlights = (map=State.highlights) => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.HIGHLIGHTS, JSON.stringify(Object.fromEntries(map))); return true; } catch(e){ return false; } };
-const saveHlColor    = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.HL_COLOR, State.lastHlColor); return true; } catch(e){ return false; } };
-const saveNotes      = (records=State.notes) => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.NOTES, JSON.stringify(Pure.noteStoreEnvelope(records))); return true; } catch(e){ return false; } };
-const saveTextSize   = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.TEXT_SIZE, State.textSize); localStorage.setItem(SK.TEXT_SIZE_SCHEMA, TEXT_SIZE_SCHEMA_VERSION); return true; } catch(e){ return false; } };
-const saveActiveDay  = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.ACTIVE_DAY, State.activeDay || ''); return true; } catch(e){ return false; } };
-const saveActiveAppendix = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.ACTIVE_APPENDIX, State.activeAppendix || ''); return true; } catch(e){ return false; } };
-const saveScrollPos  = () => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.SCROLL, JSON.stringify(State.scrollPos)); return true; } catch(e){ return false; } };
-const saveLastBackup = iso => { if(!storageWritesAllowed())return false; try { localStorage.setItem(SK.LAST_BACKUP, iso); return true; } catch(e){ return false; } };
-
-// Scroll fires rapidly — record into State immediately (cheap) but debounce the
-// localStorage write so reading never causes a write storm.
-let _scrollSaveTimer = null;
-function queueScrollSave() {
-  clearTimeout(_scrollSaveTimer);
-  _scrollSaveTimer = setTimeout(saveScrollPos, 400);
+async function loadStorage() {
+  const result=await runMarieSerialized('load-storage',()=>({ok:loadStorageUnlocked()}));
+  return !!result?.ok;
 }
+
+async function saveRead(readSet=State.read) {
+  const before=new Set(State.read), next=new Set(readSet);
+  const all=new Set([...before,...next]), changed=[...all].filter(id=>before.has(id)!==next.has(id));
+  if (changed.length!==1) return {ok:false,phase:'validation',key:SK.READ,error:'non_atomic_read_delta'};
+  const id=changed[0], expected=before.has(id), intended=next.has(id);
+  return runMarieSerialized('read:'+id,()=>{
+    const parsed=parseDurableReadUnlocked(); if(!parsed.ok)return parsed;
+    const durable=parsed.value, current=durable.has(id);
+    if (current!==expected && current!==intended) return marieConflict(SK.READ,'same_unit_changed',current);
+    if (intended) durable.add(id); else durable.delete(id);
+    const write=writeRawVerifiedUnlocked(SK.READ,JSON.stringify([...durable])); if(!write.ok)return write;
+    State.read=new Set(durable);
+    return {ok:true,value:new Set(durable),idempotent:current===intended};
+  });
+}
+
+function deriveNoteChanges(before,next) {
+  const ids=new Set([...Object.keys(before||{}),...Object.keys(next||{})]);
+  return [...ids].filter(id=>!jsonEqual(before?.[id]??null,next?.[id]??null)).map(id=>({id,expected:cloneJson(before?.[id]??null),intended:cloneJson(next?.[id]??null)}));
+}
+async function saveNoteIntent(id, expected, intended) {
+  return runMarieSerialized('note:'+id,()=>{
+    const parsed=parseDurableNotesUnlocked(); if(!parsed.ok)return parsed;
+    const durable=parsed.value, current=cloneJson(durable[id]??null);
+    if (!jsonEqual(current,expected)) {
+      if (jsonEqual(current,intended)) { State.notes=durable; return {ok:true,value:durable,idempotent:true}; }
+      return marieConflict(SK.NOTES,'same_note_changed',current);
+    }
+    if (intended===null) delete durable[id]; else durable[id]=cloneJson(intended);
+    const write=writeRawVerifiedUnlocked(SK.NOTES,JSON.stringify(Pure.noteStoreEnvelope(durable))); if(!write.ok)return write;
+    State.notes=durable; State.notesNeedPersist=false;
+    return {ok:true,value:durable};
+  });
+}
+async function saveNotes(records=State.notes) {
+  const changes=deriveNoteChanges(State.notes,records);
+  if (changes.length!==1) return {ok:false,phase:'validation',key:SK.NOTES,error:'non_atomic_note_delta',count:changes.length};
+  const intent=changes[0];
+  return saveNoteIntent(intent.id,intent.expected,intent.intended);
+}
+async function restoreDeletedNote(record) {
+  if (!record?.id) return {ok:false,phase:'validation',key:SK.NOTES};
+  return saveNoteIntent(record.id,null,record);
+}
+
+function flattenHighlights(map) {
+  const out=new Map();
+  (map instanceof Map?map:new Map()).forEach((records,pid)=>(records||[]).forEach((record,index)=>out.set(record.id,{pid,index,record:cloneJson(record)})));
+  return out;
+}
+function highlightComparable(value) { return value?{pid:value.pid,record:value.record}:null; }
+function deriveHighlightChanges(beforeMap,nextMap) {
+  const a=flattenHighlights(beforeMap), b=flattenHighlights(nextMap), ids=new Set([...a.keys(),...b.keys()]), changes=[];
+  ids.forEach(id=>{
+    const before=a.get(id)||null, next=b.get(id)||null;
+    if (!jsonEqual(highlightComparable(before),highlightComparable(next))) changes.push({id,expected:before,intended:next});
+  });
+  return changes;
+}
+function findHighlightById(map,id) {
+  let found=null;
+  map.forEach((records,pid)=>{
+    if (found) return;
+    const index=(records||[]).findIndex(h=>h.id===id);
+    if (index>=0) found={pid,index,record:cloneJson(records[index])};
+  });
+  return found;
+}
+async function saveHighlightIntents(changes) {
+  if (!Array.isArray(changes) || !changes.length) return {ok:true,value:new Map(State.highlights),idempotent:true};
+  return runMarieSerialized('highlights',()=>{
+    const parsed=parseDurableHighlightsUnlocked(); if(!parsed.ok)return parsed;
+    const durable=new Map(parsed.value);
+    for (const intent of changes) {
+      const current=findHighlightById(durable,intent.id);
+      if (!jsonEqual(highlightComparable(current),highlightComparable(intent.expected))) {
+        if (jsonEqual(highlightComparable(current),highlightComparable(intent.intended))) continue;
+        return marieConflict(SK.HIGHLIGHTS,'same_highlight_changed',current);
+      }
+    }
+    for (const intent of changes) {
+      const current=findHighlightById(durable,intent.id);
+      if (current) {
+        const arr=(durable.get(current.pid)||[]).slice(); arr.splice(current.index,1);
+        if (arr.length) durable.set(current.pid,arr); else durable.delete(current.pid);
+      }
+      if (intent.intended) {
+        const pid=intent.intended.pid, arr=(durable.get(pid)||[]).slice();
+        const at=Math.max(0,Math.min(intent.intended.index,arr.length));
+        arr.splice(at,0,cloneJson(intent.intended.record)); durable.set(pid,Pure.dedupeHls(arr));
+      }
+    }
+    const write=writeRawVerifiedUnlocked(SK.HIGHLIGHTS,JSON.stringify(Object.fromEntries(durable))); if(!write.ok)return write;
+    State.highlights=durable; State.highlightsNeedPersist=false;
+    return {ok:true,value:durable};
+  });
+}
+async function saveHighlights(nextMap=State.highlights) {
+  if (!(nextMap instanceof Map)) return {ok:false,phase:'validation',key:SK.HIGHLIGHTS};
+  return saveHighlightIntents(deriveHighlightChanges(State.highlights,nextMap));
+}
+async function restoreDeletedHighlights(pid, records) {
+  const changes=(records||[]).map((record,index)=>({id:record.id,expected:null,intended:{pid,index,record:cloneJson(record)}}));
+  return saveHighlightIntents(changes);
+}
+
+async function saveScalarPersonal(key, expectedRaw, intendedRaw, stateApply=null) {
+  return runMarieSerialized('scalar:'+key,()=>{
+    let current=null; try { current=localStorage.getItem(key); } catch(e) { return {ok:false,phase:'snapshot',key,error:String(e)}; }
+    if (current!==expectedRaw && current!==intendedRaw) return marieConflict(key,'same_scalar_changed',current);
+    const write=writeRawVerifiedUnlocked(key,intendedRaw); if(!write.ok)return write;
+    if (stateApply) stateApply();
+    return {ok:true,idempotent:current===intendedRaw};
+  });
+}
+async function saveHlColor(expected=State.lastHlColor, intended=State.lastHlColor) {
+  return saveScalarPersonal(SK.HL_COLOR,expected||null,intended||null,()=>{State.lastHlColor=intended;});
+}
+async function saveTextSize(expectedLevel, intendedLevel) {
+  return runMarieSerialized('text-size',()=>{
+    let current=null,schema=null;
+    try { current=localStorage.getItem(SK.TEXT_SIZE); schema=localStorage.getItem(SK.TEXT_SIZE_SCHEMA); }
+    catch(e) { return {ok:false,phase:'snapshot',key:SK.TEXT_SIZE,error:String(e)}; }
+    const currentLevel=Pure.migrateTextLevel(current,TEXT_LEVELS,TEXT_LEVEL_ORDER,CFG.TEXT_DEFAULT).level;
+    if (currentLevel!==expectedLevel && currentLevel!==intendedLevel) return marieConflict(SK.TEXT_SIZE,'same_text_size_changed',current);
+    if (schema!==TEXT_SIZE_SCHEMA_VERSION && schema!==null) return marieConflict(SK.TEXT_SIZE_SCHEMA,'text_size_schema_changed',schema);
+    const write=_atomicUserStateWriteUnlocked(
+      {[SK.TEXT_SIZE]:intendedLevel,[SK.TEXT_SIZE_SCHEMA]:TEXT_SIZE_SCHEMA_VERSION},
+      {[SK.TEXT_SIZE]:current,[SK.TEXT_SIZE_SCHEMA]:schema}
+    );
+    if (!write.ok) return write;
+    State.textSize=intendedLevel;
+    return {ok:true};
+  });
+}
+async function saveOnboarded(expectedRaw, intendedRaw='1') { return saveScalarPersonal(SK.ONBOARDED,expectedRaw,intendedRaw); }
+async function saveTheme(expectedRaw, intendedRaw, intendedMode) { return saveScalarPersonal(SK.THEME,expectedRaw,intendedRaw,()=>{State.themeMode=intendedMode;}); }
+
+async function saveScrollRecord(unitId, expectedPos, intendedPos) {
+  return runMarieSerialized('scroll:'+unitId,()=>{
+    const parsed=parseDurableScrollUnlocked(); if(!parsed.ok)return parsed;
+    const raw=parsed.value;
+    const current=Pure.normalizeReadingPosition(unitId,raw[unitId]??null);
+    if (!jsonEqual(current,expectedPos)) {
+      if (jsonEqual(current,intendedPos)) return {ok:true,idempotent:true,value:current};
+      if (current) State.scrollPos[unitId]=current; else delete State.scrollPos[unitId];
+      return marieConflict(SK.SCROLL,'same_scroll_record_changed',current);
+    }
+    if (intendedPos) raw[unitId]=cloneJson(intendedPos); else delete raw[unitId];
+    const write=writeRawVerifiedUnlocked(SK.SCROLL,JSON.stringify(raw)); if(!write.ok)return write;
+    if (intendedPos) State.scrollPos[unitId]=cloneJson(intendedPos); else delete State.scrollPos[unitId];
+    return {ok:true,value:cloneJson(intendedPos)};
+  });
+}
+const saveLastBackup = iso => { try { localStorage.setItem(SK.LAST_BACKUP, iso); return true; } catch(e){ return false; } };
+
+// Scroll fires rapidly. Keep one logical intent per unit. Repeated local scrolls
+// coalesce to the latest intended position while retaining the first expected
+// durable value, so the eventual locked commit never serializes a stale aggregate.
+let _scrollSaveTimer = null;
+const _pendingScrollWrites=new Map();
+function queueScrollSave(unitId, expectedPos, intendedPos) {
+  const existing=_pendingScrollWrites.get(unitId);
+  if (existing) existing.intended=cloneJson(intendedPos);
+  else _pendingScrollWrites.set(unitId,{expected:cloneJson(expectedPos),intended:cloneJson(intendedPos)});
+  clearTimeout(_scrollSaveTimer);
+  _scrollSaveTimer=setTimeout(()=>{ void flushPendingScrollSaves(); },400);
+}
+async function flushPendingScrollSaves() {
+  clearTimeout(_scrollSaveTimer); _scrollSaveTimer=null;
+  const entries=[..._pendingScrollWrites.entries()]; _pendingScrollWrites.clear();
+  let ok=true;
+  for (const [unitId,intent] of entries) {
+    const result=await saveScrollRecord(unitId,intent.expected,intent.intended);
+    if (!result?.ok) ok=false;
+  }
+  return ok;
+}
+
+function notifyMarieSaveFailure(result) {
+  console.warn('[Marie] durable save rejected:',result);
+  if (result?.phase==='future_schema') { App.showToast('Données d’une version plus récente détectées — mettez l’app à jour avant d’enregistrer.'); return; }
+  if (result?.phase==='conflict') { App.showToast('Modification non enregistrée : ces données ont changé dans une autre fenêtre.'); return; }
+  App.showToast(App.SAVE_ERROR_MSG);
+}
+
+async function captureRestoreSnapshot() {
+  return runMarieSerialized('restore-preview-snapshot',()=>{
+    const snapshot={};
+    try { RESTORE_TARGET_KEYS.forEach(k=>snapshot[k]=localStorage.getItem(k)); }
+    catch(e) { return {ok:false,phase:'snapshot',error:String(e)}; }
+    return {ok:true,snapshot};
+  });
+}
+
 
 // One-time probe: is localStorage actually usable (not full, not blocked by
 // private-mode/settings)? Used at init to warn up front rather than failing
@@ -3308,74 +3926,92 @@ const App = {
   // and persists the cleaned sets. Without this, orphaned ids inflate the
   // progress bar and stats tiles while rendering no card — permanently, since
   // the card is the only UI that can remove them.
-  reconcileStoredIds() {
-    // Reuse the indexes built in buildIndexes() rather than re-walking
-    const validUnitIds = new Set(Object.keys(State.unitIndex));
-    const validParaIds = new Set(Object.keys(State.paraIndex));
+  async reconcileStoredIds() {
+    const result=await runMarieSerialized('reconcile-stored-ids',()=>{
+      const r=parseDurableReadUnlocked(), h=parseDurableHighlightsUnlocked(), n=parseDurableNotesUnlocked(), sp=parseDurableScrollUnlocked();
+      if (!r.ok) return r; if (!h.ok) return h; if (!n.ok) return n; if (!sp.ok) return sp;
+      if (!loadStorageUnlocked()) return {ok:false,phase:'load_after_recovery'};
 
-    const cleanRead = new Set([...State.read].filter(id => validUnitIds.has(id)));
-    if (cleanRead.size !== State.read.size) { State.read = cleanRead; saveRead(); }
+      const validUnitIds = new Set(Object.keys(State.unitIndex));
+      const validParaIds = new Set(Object.keys(State.paraIndex));
 
-    const cleanHl = new Map();
-    let highlightsChanged=!!State.highlightsNeedPersist;
-    State.highlights.forEach((records,pid)=>{
-      if (!validParaIds.has(pid)) {
-        // Stable paragraph IDs are an invariant in this app. If a future corpus
-        // violates it, do not silently delete the user's saved text. Retain it
-        // as stale/orphan evidence so Mon Espace and backup can still surface it.
-        const stale=(records||[]).map(h=>Object.assign({},h,{status:'stale'}));
-        cleanHl.set(pid,stale); if (JSON.stringify(stale)!==JSON.stringify(records)) highlightsChanged=true;
-        return;
+      const cleanRead = new Set([...State.read].filter(id => validUnitIds.has(id)));
+      if (cleanRead.size !== State.read.size) {
+        const wr=writeRawVerifiedUnlocked(SK.READ,JSON.stringify([...cleanRead])); if(!wr.ok)return wr;
+        State.read=cleanRead;
       }
-      const hit=findPara(pid), para=hit&&hit.para;
-      const fp=para&&typeof para.fingerprint_sha256==='string'?para.fingerprint_sha256:null;
-      const next=Pure.reconcileHighlightList(para?para.text:'',fp,CORPUS_VERSION,records||[]);
-      cleanHl.set(pid,next);
-      if (JSON.stringify(next)!==JSON.stringify(records)) highlightsChanged=true;
+
+      const cleanHl = new Map();
+      let highlightsChanged=!!State.highlightsNeedPersist;
+      State.highlights.forEach((records,pid)=>{
+        if (!validParaIds.has(pid)) {
+          const stale=(records||[]).map(x=>Object.assign({},x,{status:'stale'}));
+          cleanHl.set(pid,stale); if (JSON.stringify(stale)!==JSON.stringify(records)) highlightsChanged=true;
+          return;
+        }
+        const hit=findPara(pid), para=hit&&hit.para;
+        const fp=para&&typeof para.fingerprint_sha256==='string'?para.fingerprint_sha256:null;
+        const migration=State.corpusMigration?.mappings?.[pid]||null;
+        const next=Pure.reconcileHighlightList(para?para.text:'',fp,CORPUS_VERSION,records||[],migration);
+        cleanHl.set(pid,next);
+        if (JSON.stringify(next)!==JSON.stringify(records)) highlightsChanged=true;
+      });
+      State.highlights=cleanHl;
+      if (highlightsChanged) {
+        const wh=writeRawVerifiedUnlocked(SK.HIGHLIGHTS,JSON.stringify(Object.fromEntries(cleanHl))); if(!wh.ok){State.highlightsNeedPersist=true;return wh;}
+        State.highlightsNeedPersist=false;
+      }
+
+      const cleanNotes = {};
+      let notesChanged = !!State.notesNeedPersist;
+      for (const [id,note] of Object.entries(State.notes)) {
+        if (!note || note.id!==id || !validParaIds.has(note.paragraph_id)) { notesChanged=true; continue; }
+        const hit=findPara(note.paragraph_id); if(!hit){notesChanged=true;continue;}
+        const unitId=hit.unit.unit_id, migration=State.corpusMigration?.mappings?.[note.paragraph_id]||null;
+        let next=note.unit_id===unitId?note:{...note,unit_id:unitId};
+        next=Pure.reconcileNoteRecord(hit.para.text||'',hit.para.fingerprint_sha256||null,next,migration);
+        if (JSON.stringify(next)!==JSON.stringify(note)) notesChanged=true;
+        cleanNotes[id]=next;
+      }
+      State.notes=cleanNotes;
+      if (notesChanged) {
+        const wn=writeRawVerifiedUnlocked(SK.NOTES,JSON.stringify(Pure.noteStoreEnvelope(cleanNotes))); if(!wn.ok){State.notesNeedPersist=true;return wn;}
+        State.notesNeedPersist=false;
+      }
+
+      const cleanScroll={}; let scrollChanged=false;
+      for (const [uid,raw] of Object.entries(State.scrollPos)) {
+        const pos=Pure.normalizeReadingPosition(uid,raw);
+        if (!validUnitIds.has(uid) || !pos) { scrollChanged=true; continue; }
+        if (pos.paragraph_id && !validParaIds.has(pos.paragraph_id)) {
+          cleanScroll[uid]={...pos,paragraph_id:null,fraction_within_paragraph:null}; scrollChanged=true;
+        } else cleanScroll[uid]=pos;
+      }
+      State.scrollPos=cleanScroll;
+      if (scrollChanged) {
+        const ws=writeRawVerifiedUnlocked(SK.SCROLL,JSON.stringify(cleanScroll)); if(!ws.ok)return ws;
+      }
+      return {ok:true};
     });
-    State.highlights=cleanHl;
-    if (highlightsChanged) {
-      if (saveHighlights()) State.highlightsNeedPersist=false;
-      else State.highlightsNeedPersist=true;
-    }
-
-    const cleanNotes = {};
-    let notesChanged = !!State.notesNeedPersist;
-    for (const [id, note] of Object.entries(State.notes)) {
-      if (!note || note.id!==id || !validParaIds.has(note.paragraph_id)) { notesChanged = true; continue; }
-      const hit=findPara(note.paragraph_id);
-      if (!hit) { notesChanged=true; continue; }
-      const unitId=hit.unit.unit_id;
-      const next = note.unit_id===unitId ? note : {...note,unit_id:unitId};
-      if (next!==note) notesChanged=true;
-      cleanNotes[id]=next;
-    }
-    if (notesChanged) {
-      if (saveNotes(cleanNotes)) { State.notes = cleanNotes; State.notesNeedPersist=false; }
-      else { State.notes = cleanNotes; State.notesNeedPersist=true; }
-    }
-
-    const cleanScroll = {};
-    let scrollChanged = false;
-    for (const [uid, raw] of Object.entries(State.scrollPos)) {
-      const pos=Pure.normalizeReadingPosition(uid,raw);
-      if (!validUnitIds.has(uid) || !pos) { scrollChanged=true; continue; }
-      if (pos.paragraph_id && !validParaIds.has(pos.paragraph_id)) {
-        cleanScroll[uid]={...pos,paragraph_id:null,fraction_within_paragraph:null}; scrollChanged=true;
-      } else cleanScroll[uid]=pos;
-    }
-    if (scrollChanged) { State.scrollPos = cleanScroll; saveScrollPos(); }
+    if (!result?.ok) console.warn('[Marie] stored-id reconciliation incomplete:',result);
+    return !!result?.ok;
   },
 
   async init() {
-    if (!loadStorage()) {
+    if (!await recoverExternalRestoreBeforeInit()) {
+      State.storageRecoveryFailed=true;
+      document.getElementById('screen-loading').innerHTML = `<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)"><div style="font-size:32px;margin-bottom:16px">✦</div><div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Récupération des données impossible</div><div style="font-size:14px;margin-bottom:24px">Une restauration interrompue n’a pas pu être récupérée en toute sécurité. Ne modifiez pas vos données personnelles ici ; réessayez après avoir vérifié le stockage du navigateur.</div><button onclick="window.location.reload()" style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button></div>`;
+      document.getElementById('screen-loading').classList.add('active');
+      return;
+    }
+    if (!await loadStorage()) {
       document.getElementById('screen-loading').innerHTML = `<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)"><div style="font-size:32px;margin-bottom:16px">✦</div><div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Récupération des données impossible</div><div style="font-size:14px;margin-bottom:24px">Une opération interrompue n’a pas pu être restaurée en toute sécurité. Ne modifiez pas vos données personnelles ici ; réessayez après avoir vérifié le stockage du navigateur.</div><button onclick="window.location.reload()" style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button></div>`;
       document.getElementById('screen-loading').classList.add('active');
       return;
     }
     setText('mobile-version','v'+APP_VERSION);
     setText('desktop-version','v'+APP_VERSION);
-    this.applyTextSize(State.textSize, false);
+    await this.applyTextSize(State.textSize, false);
     this.syncSystemTheme();  // belt-and-suspenders alongside the head-script's early pass
     this.syncThemeIcon();
     // Automatique mode must react live to the OS preference changing while
@@ -3395,7 +4031,7 @@ const App = {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
-      const res = await fetch(window.APP_BASE + 'corpus/days.json', { signal: controller.signal });
+      const res = await fetch(window.APP_BASE + 'corpus/days.json?cv=1.0.1', { signal: controller.signal });
       clearTimeout(timeout);
       if (!res.ok) throw new Error(res.status);
       const bytes=await res.arrayBuffer();
@@ -3409,8 +4045,31 @@ const App = {
       // or crashed app deep inside renderHome/renderReaderBody.
       if (!this.isValidCorpus(parsed)) throw new Error('invalid corpus shape');
       State.corpus = parsed;
+      // Load the exact predecessor→successor map. Failure is non-fatal because
+      // stable IDs + conservative saved-text recovery remain safe fallbacks.
+      State.corpusMigration=null;
+      try {
+        const mc=new AbortController();
+        const mt=setTimeout(()=>mc.abort(),CORPUS_MIGRATION_TIMEOUT_MS);
+        try {
+          // Version-qualified URL defeats any v2.17.17 content-cache entry
+          // controlled by the old service worker on the first upgraded load.
+          const mres=await fetch(window.APP_BASE + 'corpus/migrations-v1.0.0-to-v1.0.1.json?mv=2.17.18',{signal:mc.signal,cache:'no-store'});
+          if (mres.ok) {
+            const mbytes=await mres.arrayBuffer();
+            const msha=await sha256Hex(mbytes);
+            if (msha===CORPUS_MIGRATION_SHA256) {
+              const mig=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(mbytes));
+              if (mig && mig.schema_version===2 && mig.from_corpus_sha256==='63211c89125db278a971dbf1bd658d5fb9b7bd1a2128f130f930ed6783a14364' &&
+                  mig.to_corpus_sha256===CORPUS_FINGERPRINT_SHA256 && mig.to_corpus_version===CORPUS_VERSION &&
+                  mig.authorized_mutation_ledger_sha256==='c042ec076bba5804ceaecff881d89f7954c7f94f871a053ddb59dff887630ef3' && mig.paragraphs_changed===91 &&
+                  mig.mappings && typeof mig.mappings==='object' && Object.keys(mig.mappings).length===91) State.corpusMigration=mig;
+            }
+          }
+        } finally { clearTimeout(mt); }
+      } catch(_) { State.corpusMigration=null; }
       this.buildIndexes();   // also populates dayMap
-      this.reconcileStoredIds();
+      await this.reconcileStoredIds();
     } catch(e) {
       // Show error with Retry — keep loading screen visible, don't hide it
       document.getElementById('screen-loading').innerHTML = `
@@ -3470,8 +4129,8 @@ const App = {
     window.addEventListener('orientationchange', onViewportChange, { passive: true });
 
     // Remember reading position in both layouts
-    document.getElementById('reader-scroll')?.addEventListener('scroll', () => this.recordScroll('reader-scroll'), { passive: true });
-    document.getElementById('wide-reader-scroll')?.addEventListener('scroll', () => this.recordScroll('wide-reader-scroll'), { passive: true });
+    document.getElementById('reader-scroll')?.addEventListener('scroll', () => { void this.recordScroll('reader-scroll'); }, { passive: true });
+    document.getElementById('wide-reader-scroll')?.addEventListener('scroll', () => { void this.recordScroll('wide-reader-scroll'); }, { passive: true });
     // A delayed semantic-position restore must never fight a user's first
     // touch/wheel gesture. Explicit interaction cancels any pending restore;
     // scroll events caused by the restore itself are ignored until it settles.
@@ -3480,16 +4139,16 @@ const App = {
       ['pointerdown','touchstart','wheel'].forEach(type => el?.addEventListener(type, () => this.cancelReadingRestore(id), { passive: true }));
     });
     // Flush any pending offset if the app is backgrounded or closed mid-read
-    window.addEventListener('pagehide', saveScrollPos);
+    window.addEventListener('pagehide', () => { void flushPendingScrollSaves(); });
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') { saveScrollPos(); return; }
+      if (document.visibilityState === 'hidden') { void flushPendingScrollSaves(); return; }
       // Returning to a long-lived PWA: the date may have rolled over
       this.checkDateRollover();
     });
     window.addEventListener('focus', () => this.checkDateRollover());
 
     // Keep two open instances of the app in step
-    window.addEventListener('storage', e => this.handleStorageEvent(e));
+    window.addEventListener('storage', e => { void this.handleStorageEvent(e); });
 
     document.addEventListener('click', e => {
       if (!e.target.closest('#textsize-panel') && !e.target.closest('#btn-textsize')) {
@@ -3608,11 +4267,11 @@ const App = {
   // Every save writes the whole Set, so with the app open twice (installed PWA
   // plus a browser tab, or two tabs) the second writer clobbered the first
   // one's additions. Reload the affected key when another context changes it.
-  handleStorageEvent(e) {
+  async handleStorageEvent(e) {
     if (!e.key || !String(e.key).startsWith('mjv_')) return;
-    loadStorage();
+    if (!await loadStorage()) return;
     if (!State.corpus) return;
-    this.reconcileStoredIds();
+    await this.reconcileStoredIds();
     this.updateCalendar();
     this.updateWideCalendar();
     this.updateWideProgress();
@@ -3789,7 +4448,11 @@ const App = {
         if(input)input.value=State.searchContext.query||'';
         if(State.searchContext.query)this.renderSearchResults(State.searchContext.query,'wide-list-scroll','wide-search-clear');
         else {this.renderSearchLanding('wide-list-scroll');document.getElementById('wide-search-clear')?.classList.remove('visible');}
-        requestAnimationFrame(()=>{ if(State.widePanel==='search' && !State.searchContext.returnPending) input?.focus(); });
+        requestAnimationFrame(()=>{
+          if(State.widePanel!=='search') return;
+          const sc=document.getElementById('wide-list-scroll'); if(sc) sc.scrollTop=State.searchContext.wideScroll||0;
+          if(!State.searchContext.returnPending) input?.focus();
+        });
       } else {
         if(input)input.value='';
         document.getElementById('wide-search-clear')?.classList.remove('visible');
@@ -4059,10 +4722,19 @@ const App = {
 
   onSearch(query, scrollId, clearId) {
     clearTimeout(this._searchTimer);
+    const normalizedQuery=Pure.normalizeSearch(String(query||'').trim());
+    if (normalizedQuery!==State.searchContext.normalizedQuery) {
+      State.searchContext.normalizedQuery=normalizedQuery;
+      State.searchContext.visiblePassages=40;
+      State.searchContext.mobileScroll=0; State.searchContext.wideScroll=0;
+    }
     if(scrollId==='list-scroll'){State.listMode='search';State.searchContext.query=query;this.syncMobileListMode();}
     else {State.searchContext.query=query;if(State.widePanel!=='search')State.widePanel='search';}
     document.getElementById(clearId)?.classList.toggle('visible', !!query);
-    this._searchTimer = setTimeout(() => query?this.renderSearchResults(query, scrollId, clearId):this.renderSearchLanding(scrollId), 140);
+    this._searchTimer = setTimeout(() => {
+      if (query) this.renderSearchResults(query, scrollId, clearId);
+      else { this.renderSearchLanding(scrollId); this.replaceRoute({open:'search',q:''}); }
+    }, 140);
   },
 
   // ── Full-text search index ───────────────────────────────────
@@ -4093,7 +4765,8 @@ const App = {
   // Extract a readable ORIGINAL-text window around a normalized match.
   // normMap prevents ligature expansion (œ/æ) from shifting the source slice.
   buildSnippet(entry, q) {
-    const at=entry.normalized.indexOf(q);
+    const match=Pure.searchMatchInfo(entry.normalized,q);
+    const at=match?.at ?? -1;
     if (at===-1) return this.esc(entry.text.slice(0,150))+'…';
     const map=entry.normMap||[];
     const srcAt=map[at]??0;
@@ -4110,6 +4783,9 @@ const App = {
   clearSearch(inputId, scrollId, clearId) {
     const input = document.getElementById(inputId); if(input)input.value='';
     State.searchContext.query='';
+    State.searchContext.normalizedQuery='';
+    State.searchContext.visiblePassages=40;
+    State.searchContext.mobileScroll=0; State.searchContext.wideScroll=0;
     document.getElementById(clearId)?.classList.remove('visible');
     if(scrollId==='list-scroll'&&State.listMode==='search')this.renderSearchLanding(scrollId);
     else if(scrollId==='wide-list-scroll'&&State.widePanel==='search')this.renderSearchLanding(scrollId);
@@ -4118,8 +4794,9 @@ const App = {
   },
 
   // Searches unit titles AND the full text of all 753 paragraphs. Title hits
-  // are listed first as unit cards; passage hits follow as snippet cards that
-  // deep-link to the matched paragraph.
+  // are listed first as unit cards; passage hits follow as ranked snippet cards
+  // that deep-link to the matched paragraph. Passage rendering is progressive,
+  // never terminal: every matched paragraph remains reachable.
   renderSearchResults(query, scrollId, clearId) {
     const el = document.getElementById(scrollId);
     if (!el) return;
@@ -4130,21 +4807,41 @@ const App = {
       return;
     }
     const q = Pure.normalizeSearch(query.trim());
+    const BATCH_SIZE=40;
+    const sameQuery=State.searchContext.normalizedQuery===q;
+    if (!sameQuery) {
+      State.searchContext.normalizedQuery=q;
+      State.searchContext.visiblePassages=BATCH_SIZE;
+      State.searchContext.mobileScroll=0; State.searchContext.wideScroll=0;
+    }
+    State.searchContext.query=query;
     // A single character matches nearly everything — wait for a usable term.
     if (q.length < 2) {
+      State.searchContext.visiblePassages=BATCH_SIZE;
       el.innerHTML = '<div class="search-empty">Saisissez au moins deux lettres…</div>';
+      this.replaceRoute({open:'search',q:query});
       return;
     }
 
-    const titleHits = State.corpus.filter(u => Pure.normalizeSearch(u.title).includes(q));
-    // Cap passage results: the goal is finding a remembered phrase, not paging
-    // through hundreds of loose hits. When capped, the UI says so explicitly.
-    const PASSAGE_CAP = 40;
-    const allPassageHits = this.buildSearchIndex().filter(e => e.normalized.includes(q));
-    const passageHits = allPassageHits.slice(0, PASSAGE_CAP);
+    const titleHits = State.corpus
+      .map((u,corpusOrder)=>({u,corpusOrder,match:Pure.searchMatchInfo(Pure.normalizeSearch(u.title),q)}))
+      .filter(x=>x.match)
+      .sort((a,b)=>a.match.tier-b.match.tier || a.corpusOrder-b.corpusOrder)
+      .map(x=>x.u);
+    const rankedPassageHits = this.buildSearchIndex()
+      .map((e,corpusOrder)=>({e,corpusOrder,match:Pure.searchMatchInfo(e.normalized,q)}))
+      .filter(x=>x.match)
+      .sort((a,b)=>a.match.tier-b.match.tier || a.corpusOrder-b.corpusOrder)
+      .map(x=>x.e);
+    const total=rankedPassageHits.length;
+    const visibleLimit=Math.max(BATCH_SIZE,Number.isInteger(State.searchContext.visiblePassages)?State.searchContext.visiblePassages:BATCH_SIZE);
+    const shown=Math.min(total,visibleLimit);
+    const passageHits=rankedPassageHits.slice(0,shown);
+    State.searchContext.visiblePassages=shown || BATCH_SIZE;
 
     if (!titleHits.length && !passageHits.length) {
       el.innerHTML = '<div class="search-empty">Aucun r\u00e9sultat pour \u00ab ' + this.esc(query) + ' \u00bb</div>';
+      this.replaceRoute({open:'search',q:query});
       return;
     }
 
@@ -4157,26 +4854,37 @@ const App = {
     }
 
     if (passageHits.length) {
-      const shown = passageHits.length, total = allPassageHits.length;
-      const countLabel = total > shown
-        ? shown + ' premiers passages sur ' + total
+      const countLabel = shown < total
+        ? shown + ' passages affich\u00e9s sur ' + total
         : total + ' passage' + (total > 1 ? 's' : '');
       html += '<div class="search-group-label">' + countLabel + '</div>';
       html += passageHits.map(e => '<button type="button" class="snippet-card" onclick="App.openSearchResult(\'' + e.unitId + '\',\'' + e.pid + '\',\'' + scrollId + '\')">'
         + '<div class="snippet-meta">' + this.esc(e.unitLabel) + (e.sectionLabel ? ' \u00b7 ' + this.esc(e.sectionLabel) : '') + '</div>'
         + '<div class="snippet-text">' + this.buildSnippet(e, q) + '</div>'
         + '</button>').join('');
+      if (shown < total) {
+        const remaining=total-shown, next=Math.min(BATCH_SIZE,remaining);
+        html += '<button type="button" class="search-more" aria-label="Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires, ' + shown + ' sur ' + total + ' affich\u00e9s" onclick="App.showMoreSearchResults(\'' + scrollId + '\',\'' + clearId + '\')">Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires</button>';
+      }
     }
 
     html += '<div style="height:16px"></div>';
     el.innerHTML = html;
 
-    State.searchContext.query=query;
     this.replaceRoute({open:'search',q:query});
     if (!isMobile) {
       const activeUid = currentUnit()?.unit_id;
       el.querySelectorAll('.ws-list-item').forEach(item => item.classList.toggle('active', item.dataset.uid === activeUid));
     }
+  },
+
+  showMoreSearchResults(scrollId, clearId) {
+    const scroller=document.getElementById(scrollId); if(!scroller)return;
+    const before=scroller.scrollTop||0;
+    const current=Number.isInteger(State.searchContext.visiblePassages)?State.searchContext.visiblePassages:40;
+    State.searchContext.visiblePassages=current+40;
+    this.renderSearchResults(State.searchContext.query||'',scrollId,clearId);
+    requestAnimationFrame(()=>{const sc=document.getElementById(scrollId);if(sc)sc.scrollTop=before;});
   },
 
   openSearchResult(unitId, pid, scrollId) {
@@ -4427,28 +5135,25 @@ const App = {
     },80);
   },
 
-  recordScroll(scrollId, immediate=false) {
-    const el=document.getElementById(scrollId); if (!el) return;
-    // A CSS breakpoint can hide the old reader before the debounced layout
-    // reconciliation runs. Some browsers then emit a scroll event with
-    // scrollTop=0 for that now-inactive container; never let that event erase
-    // the semantic position belonging to the active unit.
+  async recordScroll(scrollId, immediate=false) {
+    const el=document.getElementById(scrollId); if (!el) return false;
     const activeScrollId=isWide()?'wide-reader-scroll':'reader-scroll';
-    if (scrollId!==activeScrollId) return;
-    // Programmatic restore/reflow scroll events must not overwrite the stable
-    // semantic anchor with a transient pixel position from the new layout.
-    // An explicit immediate capture supersedes the old restore and is allowed.
+    if (scrollId!==activeScrollId) return false;
     if (this._readingRestoreTokens[scrollId]) {
-      if (!immediate) return;
+      if (!immediate) return false;
       this.cancelReadingRestore(scrollId);
     }
-    const unit=currentUnit(); if (!unit) return;
+    const unit=currentUnit(); if (!unit) return false;
+    const uid=unit.unit_id, expected=cloneJson(State.scrollPos[uid]||null);
     const off=Math.round(el.scrollTop);
     if (off>CFG.SCROLL_MIN_SAVE) {
-      const pos=this.readingAnchorForScroller(el,unit.unit_id);
-      if (pos) State.scrollPos[unit.unit_id]=pos;
-    } else delete State.scrollPos[unit.unit_id];
-    if (immediate) saveScrollPos(); else queueScrollSave();
+      const pos=this.readingAnchorForScroller(el,uid);
+      if (pos) State.scrollPos[uid]=pos;
+    } else delete State.scrollPos[uid];
+    const intended=cloneJson(State.scrollPos[uid]||null);
+    queueScrollSave(uid,expected,intended);
+    if (immediate) return await flushPendingScrollSaves();
+    return true;
   },
 
   // ── Paragraph rendering ──────────────────────────────────────
@@ -4527,7 +5232,7 @@ const App = {
     unit.sections.forEach(sec => {
       const label = sectionLabels[sec.section_type] || sec.section_title_source || sec.section_type;
       const cls   = paraClass[sec.section_type] || 'para-mary';
-      html += `<h3 class="section-label">${this.esc(label)}</h3>`;
+      html += `<h2 class="section-label">${this.esc(label)}</h2>`;
       sec.paragraphs.forEach(p => {
         html += this.paragraphMarkup(p, cls);
         this.notesForParagraph(p.paragraph_id).forEach(note => {
@@ -4683,7 +5388,7 @@ const App = {
   },
 
   // ── Actions ──────────────────────────────────────────────────
-  toggleComplete() {
+  async toggleComplete() {
     const unit = currentUnit();
     if (!unit) return;
     const key = unit.unit_id;
@@ -4691,8 +5396,8 @@ const App = {
     const next=new Set(State.read);
     const wasRead=next.has(key);
     if (wasRead) next.delete(key); else next.add(key);
-    if (!saveRead(next)) { this.showToast(this.SAVE_ERROR_MSG); return; }
-    State.read=next;
+    const result=await saveRead(next);
+    if (!result?.ok) { notifyMarieSaveFailure(result); return; }
     this.showToast(wasRead ? 'Marqué comme non lu' : label + ' terminé ✓');
     this.updateActionBar(unit);
     this.updateWideActionBar(unit);
@@ -4725,9 +5430,13 @@ const App = {
   },
 
   // ── Active day ──────────────────────────────────────────────────
-  activateDay() {
+  async activateDay() {
     const unit = currentUnit();
     if (!unit) return;
+    const expectedRaw={
+      [SK.ACTIVE_DAY]:State.activeDay===null?'':String(State.activeDay),
+      [SK.ACTIVE_APPENDIX]:State.activeAppendix===null?'':String(State.activeAppendix)
+    };
     let nextDay=State.activeDay, nextAppendix=State.activeAppendix, successMessage='';
     if (unit.appendix_number) {
       const a=unit.appendix_number;
@@ -4738,20 +5447,14 @@ const App = {
       if (State.activeDay===d) { nextDay=null; successMessage='Jour de pratique réinitialisé'; }
       else { nextDay=d; nextAppendix=null; successMessage='Jour '+d+' activé comme jour de pratique ✦'; }
     } else return;
-    const result=atomicUserStateWrite({[SK.ACTIVE_DAY]:nextDay===null?'':String(nextDay),[SK.ACTIVE_APPENDIX]:nextAppendix===null?'':String(nextAppendix)});
-    if (!result.ok) { if(!result.rolled_back)State.storageRecoveryFailed=true; this.showToast(result.rolled_back?this.SAVE_ERROR_MSG:'Stockage incohérent — rechargez l’application pour récupérer vos données'); return; }
+    const result=await atomicUserStateWrite({[SK.ACTIVE_DAY]:nextDay===null?'':String(nextDay),[SK.ACTIVE_APPENDIX]:nextAppendix===null?'':String(nextAppendix)},expectedRaw);
+    if (!result?.ok) { if(!result?.rolled_back)State.storageRecoveryFailed=true; notifyMarieSaveFailure(result); return; }
     State.activeDay=nextDay; State.activeAppendix=nextAppendix;
+    this.updateCalendar(); this.updateWideCalendar(); this.updateAppendixRows(); this.renderTodayCard();
+    const active=currentUnit(); if(active){this.updateActionBar(active);this.updateWideActionBar(active);}
     this.showToast(successMessage);
-    this.updateAppendixRows();
-    this.updateActionBar(unit);
-    this.updateWideActionBar(unit);
-    this.updateCalendar();
-    this.updateWideCalendar();
-    this.renderTodayCard();
-    this.renderReaderBody(unit, isWide() ? 'wide-reader-body' : 'reader-body');
   },
 
-  // ── Cycle reset ───────────────────────────────────────────────
   startNewCycle() {
     const daysRead=daysReadCount(), dayTotal=mainDayTotal();
     const msg=daysRead>=dayTotal
@@ -4766,15 +5469,16 @@ const App = {
     document.getElementById('cycle-reset-modal')?.classList.remove('open');
     this.onModalClosed();
   },
-  confirmNewCycle() {
-    const notesBefore=JSON.stringify(State.notes);
-    const highlightsBefore=JSON.stringify(Object.fromEntries(State.highlights));
-    const result=atomicUserStateWrite({[SK.READ]:'[]',[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:'',[SK.SCROLL]:'{}'});
-    if (!result.ok) { if(!result.rolled_back)State.storageRecoveryFailed=true; this.showToast(result.rolled_back?this.SAVE_ERROR_MSG:'Stockage incohérent — rechargez l’application pour récupérer vos données'); return; }
+  async confirmNewCycle() {
+    const expectedRaw={
+      [SK.READ]:JSON.stringify([...State.read]),
+      [SK.ACTIVE_DAY]:State.activeDay===null?'':String(State.activeDay),
+      [SK.ACTIVE_APPENDIX]:State.activeAppendix===null?'':String(State.activeAppendix),
+      [SK.SCROLL]:JSON.stringify(State.scrollPos)
+    };
+    const result=await atomicUserStateWrite({[SK.READ]:'[]',[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:'',[SK.SCROLL]:'{}'},expectedRaw);
+    if (!result?.ok) { if(!result?.rolled_back)State.storageRecoveryFailed=true; notifyMarieSaveFailure(result); return; }
     State.read=new Set(); State.activeDay=null; State.activeAppendix=null; State.scrollPos={};
-    if (JSON.stringify(State.notes)!==notesBefore || JSON.stringify(Object.fromEntries(State.highlights))!==highlightsBefore) {
-      this.showToast('Réinitialisation annulée — protection des notes/surlignages'); return;
-    }
     document.getElementById('cycle-reset-modal')?.classList.remove('open');
     this.updateCalendar(); this.updateWideCalendar(); this.updateWideProgress(); this.updateAppendixRows();
     this.buildList(); this.buildWideList();
@@ -4782,11 +5486,8 @@ const App = {
     if(isWide()) this.renderEspace('wide-espace'); else this.renderEspace('espace-scroll');
     this.onModalClosed();
     this.showToast('Nouveau cycle commencé ✦');
-    requestPersistentStorageBestEffort();
   },
 
-
-  // ── Text size ─────────────────────────────────────────────────
   syncTextSizeControls() {
     document.querySelectorAll('[data-text-level]').forEach(btn => {
       const active = btn.dataset.textLevel === State.textSize;
@@ -4807,30 +5508,26 @@ const App = {
     btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     if (isOpen) this.syncTextSizeControls();
   },
-  applyTextSize(level, save=true) {
+  async applyTextSize(level, save=true) {
     const unit=currentUnit(), scrollId=isWide()?'wide-reader-scroll':'reader-scroll';
     let restoreToken=null;
     if (unit && State.readerOpen) {
       restoreToken=this._readingRestoreTokens[scrollId] || null;
       if (!restoreToken) {
-        this.recordScroll(scrollId,true);
-        // Lock immediately, before changing CSS variables. Reflow can emit a
-        // scroll event synchronously/next-frame while the old pixel scrollTop is
-        // still present; without this lock that event can overwrite the stable
-        // paragraph anchor with a different paragraph.
+        await this.recordScroll(scrollId,true);
         restoreToken=this.beginReadingRestore(scrollId);
       }
-      // If another text-size tap arrives before the previous reflow settles,
-      // keep the original semantic anchor instead of re-sampling transient
-      // geometry. restoreScroll() extends the settle window for this token.
     }
+    const previous=State.textSize;
     level = normalizeTextLevel(level);
-    State.textSize = level;
     const spec = TEXT_LEVELS[level];
+    if (save) {
+      const result=await saveTextSize(previous,level);
+      if (!result?.ok) { notifyMarieSaveFailure(result); return; }
+    } else State.textSize=level;
     document.documentElement.style.setProperty('--reader-size', spec.px + 'px');
     document.documentElement.style.setProperty('--reader-lh', String(spec.lineHeight));
     this.syncTextSizeControls();
-    if (save) saveTextSize();
     if (unit && State.readerOpen) requestAnimationFrame(()=>this.restoreScroll(scrollId,unit.unit_id,restoreToken));
   },
 
@@ -4842,7 +5539,7 @@ const App = {
   MODALS: [
     { id: 'theme-picker',  close: function(){ App.closeThemePicker(); } },
     { id: 'hl-picker',     close: function(){ App.closeHlPicker(); } },
-    { id: 'onboard-modal', close: function(){ App.finishOnboarding(false); } },
+    { id: 'onboard-modal', close: function(){ void App.finishOnboarding(false); } },
     { id: 'note-modal',    close: function(){ App.closeNoteModal(); } },
     { id: 'restore-modal', close: function(){ App.closeRestoreModal(); } },
     { id: 'cycle-reset-modal', close: function(){ App.closeCycleResetModal(); } },
@@ -4985,17 +5682,15 @@ const App = {
     // banner visible; the reader explicitly chooses Actualiser when safe.
     if (document.getElementById('update-banner')) showUpdateBanner();
   },
-  saveNote() {
+  async saveNote() {
     const pid = State.noteTargetPid; if (!pid) return;
     const raw = document.getElementById('note-textarea').value;
     const unit = findPara(pid)?.unit || null;
     if (!unit) return;
     const editId=State.noteEditId;
     const previous = editId ? State.notes[editId] : null;
-    // Empty new note = cancel. Empty edited note preserves the historical
-    // "clear to delete" behavior, but still uses ID-specific safe deletion.
     if (!raw.trim()) {
-      if (editId && previous) { this.closeNoteModal(); this.deleteNote(editId); }
+      if (editId && previous) { this.closeNoteModal(); await this.deleteNote(editId); }
       else this.closeNoteModal();
       return;
     }
@@ -5006,9 +5701,8 @@ const App = {
       ? {...previous,text:raw,updated_at:now}
       : {id,paragraph_id:pid,unit_id:unit.unit_id,text:raw,created_at:now,updated_at:now,selected_text:ctx?.selected_text||null,range:ctx?.range?{start:ctx.range.start,end:ctx.range.end}:null};
     const next={...State.notes,[id]:record};
-    const ok=saveNotes(next);
-    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
-    State.notes=next; State.notesNeedPersist=false;
+    const result=await saveNotes(next);
+    if (!result?.ok) { notifyMarieSaveFailure(result); return; }
     document.getElementById('note-modal').classList.remove('open');
     State.noteTargetPid = null; State.noteEditId=null; State.noteSelectionContext=null;
     this.stopKeyboardTracking(); this.onModalClosed(); this.refreshAfterNoteChange();
@@ -5016,17 +5710,17 @@ const App = {
     requestPersistentStorageBestEffort();
     this.checkPendingReload();
   },
-  deleteNote(noteId) {
-    const removed = State.notes[noteId];
+  async deleteNote(noteId) {
+    const removed = cloneJson(State.notes[noteId]);
     if (!removed) return;
     const next={...State.notes}; delete next[noteId];
-    const ok=saveNotes(next);
-    if (!ok) { this.showToast(this.SAVE_ERROR_MSG); return; }
-    State.notes=next; State.notesNeedPersist=false; this.refreshAfterNoteChange();
-    this.showUndoToast('Note supprimée', () => {
-      const restored={...State.notes,[noteId]:removed};
-      if (!saveNotes(restored)) { this.showToast(this.SAVE_ERROR_MSG); return false; }
-      State.notes=restored; this.refreshAfterNoteChange(); this.showToast('Note rétablie ✎'); return true;
+    const result=await saveNotes(next);
+    if (!result?.ok) { notifyMarieSaveFailure(result); return; }
+    this.refreshAfterNoteChange();
+    this.showUndoToast('Note supprimée', async () => {
+      const restored=await restoreDeletedNote(removed);
+      if (!restored?.ok) { notifyMarieSaveFailure(restored); return false; }
+      this.refreshAfterNoteChange(); this.showToast('Note rétablie ✎'); return true;
     });
   },
 
@@ -5055,12 +5749,12 @@ const App = {
     this.onModalOpened('onboard-modal', 'onboard-start-btn');
   },
 
-  finishOnboarding(openAide) {
+  async finishOnboarding(openAide) {
     document.getElementById('onboard-modal')?.classList.remove('open');
     this.onModalClosed();
-    // If storage is unavailable the overlay simply shows again next launch —
-    // preferable to failing loudly on a first-run welcome screen.
-    try { localStorage.setItem(SK.ONBOARDED, '1'); } catch(e) {}
+    const expected=localStorage.getItem(SK.ONBOARDED);
+    const result=await saveOnboarded(expected,'1');
+    if (!result?.ok && result?.phase!=='conflict') console.warn('[Marie] onboarding marker not persisted:',result);
     if (openAide) this.openHelp();
   },
 
@@ -5081,10 +5775,10 @@ const App = {
   // H.7: highlight mutations use a proposed Map. Persistence must succeed
   // before State or the rendered reader changes, so a quota/storage failure can
   // never leave a highlight looking durable when it is not.
-  commitHighlights(pid, nextMap, opts) {
+  async commitHighlights(pid, nextMap, opts) {
     if (!(nextMap instanceof Map)) return false;
-    if (!saveHighlights(nextMap)) { this.showToast(this.SAVE_ERROR_MSG); return false; }
-    State.highlights=nextMap;
+    const result=await saveHighlights(nextMap);
+    if (!result?.ok) { notifyMarieSaveFailure(result); return false; }
     if (!this.renderParagraph(pid)) this.refreshAfterHighlightChange();
     this.refreshHighlightSurfaces();
     if (opts && opts.toast) this.showToast(opts.toast);
@@ -5092,7 +5786,7 @@ const App = {
     return true;
   },
 
-  applyHighlight(pid, colour) {
+  async applyHighlight(pid, colour) {
     const col=safeColor(colour);
     const recs=hlRecords(pid).map(h=>Object.assign({},h));
     const existingIndex=recs.findIndex(h=>!h.range);
@@ -5104,40 +5798,45 @@ const App = {
       recs.unshift({id:newHlId(),color:col,range:null,text:para?para.text:'',ts:Date.now(),text_fingerprint:para?.fingerprint_sha256||null,corpus_version:CORPUS_VERSION,status:'active',recovery:null});
     }
     const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(recs));
-    if (!this.commitHighlights(pid,nextMap,{toast:isNew?'Paragraphe surligné ◆':'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
-    State.lastHlColor=col; saveHlColor();
+    if (!await this.commitHighlights(pid,nextMap,{toast:isNew?'Paragraphe surligné ◆':'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
+    const oldColor=State.lastHlColor;
+    const pref=await saveHlColor(oldColor,col); if(!pref?.ok)console.warn('[Marie] highlight colour preference preserved from peer:',pref);
   },
 
-  applyRangeHighlight(pid, start, end, colour, text) {
+  async applyRangeHighlight(pid, start, end, colour, text) {
     const col=safeColor(colour), recs=hlRecords(pid).map(h=>Object.assign({},h));
     const hit=findPara(pid), para=hit&&hit.para;
     recs.push({id:newHlId(),color:col,range:{start,end},text:text||(para?para.text.slice(start,end):''),ts:Date.now(),text_fingerprint:para?.fingerprint_sha256||null,corpus_version:CORPUS_VERSION,status:'active',recovery:null});
     const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(recs));
-    if (!this.commitHighlights(pid,nextMap,{toast:'Passage surligné ◆'})) return;
-    State.lastHlColor=col; saveHlColor();
+    if (!await this.commitHighlights(pid,nextMap,{toast:'Passage surligné ◆'})) return;
+    const oldColor=State.lastHlColor;
+    const pref=await saveHlColor(oldColor,col); if(!pref?.ok)console.warn('[Marie] highlight colour preference preserved from peer:',pref);
   },
 
-  removeHighlight(pid) {
+  async removeHighlight(pid) {
     const previous=hlRecords(pid).map(h=>Object.assign({},h));
     if (!previous.length) return;
     const nextMap=new Map(State.highlights); nextMap.delete(pid);
-    if (!this.commitHighlights(pid,nextMap)) return;
-    this.showUndoToast(previous.length>1?'Surlignages retirés':'Surlignage retiré',()=>{
-      const restoredMap=new Map(State.highlights); restoredMap.set(pid,previous);
-      return this.commitHighlights(pid,restoredMap,{toast:'Surlignage rétabli ◆'});
+    if (!await this.commitHighlights(pid,nextMap)) return;
+    this.showUndoToast(previous.length>1?'Surlignages retirés':'Surlignage retiré',async()=>{
+      const restored=await restoreDeletedHighlights(pid,previous);
+      if(!restored?.ok){notifyMarieSaveFailure(restored);return false;}
+      if (!this.renderParagraph(pid)) this.refreshAfterHighlightChange(); this.refreshHighlightSurfaces(); this.showToast('Surlignage rétabli ◆'); return true;
     });
   },
 
-  removeHighlightRecord(pid, hlId) {
+  async removeHighlightRecord(pid, hlId) {
     const previous=hlRecords(pid).map(h=>Object.assign({},h));
+    const removed=previous.find(h=>h.id===hlId)||null;
     const kept=previous.filter(h=>h.id!==hlId);
-    if (kept.length===previous.length) return;
+    if (!removed) return;
     const nextMap=new Map(State.highlights);
     if (kept.length) nextMap.set(pid,kept); else nextMap.delete(pid);
-    if (!this.commitHighlights(pid,nextMap)) return;
-    this.showUndoToast('Surlignage retiré',()=>{
-      const restoredMap=new Map(State.highlights); restoredMap.set(pid,previous);
-      return this.commitHighlights(pid,restoredMap,{toast:'Surlignage rétabli ◆'});
+    if (!await this.commitHighlights(pid,nextMap)) return;
+    this.showUndoToast('Surlignage retiré',async()=>{
+      const restored=await restoreDeletedHighlights(pid,[removed]);
+      if(!restored?.ok){notifyMarieSaveFailure(restored);return false;}
+      if (!this.renderParagraph(pid)) this.refreshAfterHighlightChange(); this.refreshHighlightSurfaces(); this.showToast('Surlignage rétabli ◆'); return true;
     });
   },
 
@@ -5387,44 +6086,31 @@ const App = {
     picker.style.top  = Math.round(top) + 'px';
   },
 
-  pickHlColor(key) {
+  async pickHlColor(key) {
     const pid = State.hlPickerPid;
     const hlId = State.hlPickerHlId;
     const newSel = State.hlPickerNewSel;
     this.closeHlPicker();
     const col = safeColor(key);
-
-    // Pending selection, nothing persisted yet: create the record now.
-    if (newSel) {
-      this.applyRangeHighlight(newSel.pid, newSel.start, newSel.end, col, newSel.text);
-      return;
-    }
+    if (newSel) { await this.applyRangeHighlight(newSel.pid,newSel.start,newSel.end,col,newSel.text); return; }
     if (!pid) return;
-
-    // One specific record, from tapping a highlighted passage: recolour only
-    // that record, leaving every other highlight in the paragraph untouched.
     if (hlId) {
       const recs=hlRecords(pid);
       const next=recs.map(h=>h.id===hlId?Object.assign({},h,{color:col}):h);
       const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(next));
-      if (!this.commitHighlights(pid,nextMap,{toast:'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
-      State.lastHlColor=col; saveHlColor();
+      if (!await this.commitHighlights(pid,nextMap,{toast:'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
+      const oldColor=State.lastHlColor; const pref=await saveHlColor(oldColor,col); if(!pref?.ok)console.warn('[Marie] highlight colour preference preserved from peer:',pref);
       return;
     }
-
-    // Whole-paragraph mode (existing behaviour, unchanged).
-    const recs = hlRecords(pid);
-    const ranges = recs.filter(h => h.range);
-    // If the paragraph only carries range highlights, "change the colour"
-    // means recolour those — NOT add a whole-paragraph tint on top of them.
+    const recs = hlRecords(pid), ranges = recs.filter(h => h.range);
     if (ranges.length && !recs.some(h => !h.range)) {
       const next=recs.map(h=>h.range?Object.assign({},h,{color:col}):h);
       const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(next));
-      if (!this.commitHighlights(pid,nextMap,{toast:'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
-      State.lastHlColor=col; saveHlColor();
+      if (!await this.commitHighlights(pid,nextMap,{toast:'Couleur : '+HL_COLORS[col].label.toLowerCase()})) return;
+      const oldColor=State.lastHlColor; const pref=await saveHlColor(oldColor,col); if(!pref?.ok)console.warn('[Marie] highlight colour preference preserved from peer:',pref);
       return;
     }
-    this.applyHighlight(pid, col);
+    await this.applyHighlight(pid, col);
   },
 
   removeHighlightFromPicker() {
@@ -5433,8 +6119,8 @@ const App = {
     const isNewSel = !!State.hlPickerNewSel;
     this.closeHlPicker();
     if (isNewSel || !pid) return;  // nothing persisted yet for a new selection
-    if (hlId) this.removeHighlightRecord(pid, hlId);
-    else this.removeHighlight(pid);
+    if (hlId) void this.removeHighlightRecord(pid, hlId);
+    else void this.removeHighlight(pid);
   },
 
   closeHlPicker() {
@@ -5483,9 +6169,9 @@ const App = {
     this.onModalOpened('theme-picker');
   },
 
-  pickTheme(mode) {
+  async pickTheme(mode) {
     this.closeThemePicker();
-    this.applyTheme(mode);
+    await this.applyTheme(mode);
   },
 
   closeThemePicker() {
@@ -5494,15 +6180,15 @@ const App = {
     this.onModalClosed();
   },
 
-  applyTheme(mode) {
+  async applyTheme(mode) {
     const html = document.documentElement;
-    if (mode === 'system') {
-      try { localStorage.removeItem('mjv_theme'); } catch(e) {}
-      this.syncSystemTheme();  // resolve immediately to the OS's actual preference
-    } else {
-      html.setAttribute('data-theme', mode);
-      try { localStorage.setItem('mjv_theme', mode); } catch(e) {}
-    }
+    const expectedMode=currentThemeMode();
+    const expectedRaw=expectedMode==='system'?null:expectedMode;
+    const intendedRaw=mode==='system'?null:mode;
+    const result=await saveTheme(expectedRaw,intendedRaw,mode);
+    if (!result?.ok) { notifyMarieSaveFailure(result); return; }
+    if (mode === 'system') this.syncSystemTheme();
+    else html.setAttribute('data-theme', mode);
     this.syncThemeIcon();
     this.showToast('Thème ' + THEME_LABELS[mode].toLowerCase() + ' activé');
   },
@@ -5652,7 +6338,7 @@ const App = {
   backupValidationContext() {
     const paraLengths={}, paraUnits={}, paraTexts={}, paraFingerprints={};
     Object.entries(State.paraIndex || {}).forEach(([pid,hit]) => { paraLengths[pid]=(hit.para.text||'').length; paraUnits[pid]=hit.unit.unit_id; paraTexts[pid]=hit.para.text||''; paraFingerprints[pid]=hit.para.fingerprint_sha256||null; });
-    return { format:BACKUP_FORMAT, schemaVersion:BACKUP_SCHEMA_VERSION, corpusId:CORPUS_ID, corpusVersion:CORPUS_VERSION, corpusFingerprint:State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256, validUnitIds:new Set(Object.keys(State.unitIndex||{})), validParaIds:new Set(Object.keys(State.paraIndex||{})), paraLengths, paraUnits, paraTexts, paraFingerprints, colors:new Set(Object.keys(HL_COLORS)), textLevels:new Set(TEXT_LEVEL_ORDER) };
+    return { format:BACKUP_FORMAT, schemaVersion:BACKUP_SCHEMA_VERSION, corpusId:CORPUS_ID, corpusVersion:CORPUS_VERSION, corpusFingerprint:State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256, corpusMigration:State.corpusMigration, validUnitIds:new Set(Object.keys(State.unitIndex||{})), validParaIds:new Set(Object.keys(State.paraIndex||{})), paraLengths, paraUnits, paraTexts, paraFingerprints, colors:new Set(Object.keys(HL_COLORS)), textLevels:new Set(TEXT_LEVEL_ORDER) };
   },
 
   buildBackupEnvelope(nowIso) {
@@ -5686,9 +6372,15 @@ const App = {
     const env=this.buildBackupEnvelope(iso);
     const check=Pure.validateBackupEnvelope(env,this.backupValidationContext());
     if (!check.ok) { this.showToast('Sauvegarde impossible — validation interne échouée'); return; }
-    const text=JSON.stringify(env,null,2);
-    if (new Blob([text]).size > BACKUP_MAX_BYTES) { this.showToast('Sauvegarde trop volumineuse'); return; }
+    const text=JSON.stringify(env);
+    const bytes=new Blob([text]).size;
     const day=iso.slice(0,10);
+    if (bytes > BACKUP_MAX_BYTES) {
+      this.downloadTextFile(`Marie_archive-secours_${day}.json`,text,'application/json;charset=utf-8');
+      this.showToast('Archive de secours créée — trop volumineuse pour une restauration directe sur cette version');
+      this.renderVisibleEspace();
+      return;
+    }
     this.downloadTextFile(`Marie_sauvegarde_${day}.json`,text,'application/json;charset=utf-8');
     const persisted=saveLastBackup(iso);
     this.showToast(persisted ? 'Sauvegarde créée sur cet appareil' : 'Sauvegarde créée — date non mémorisée');
@@ -5734,12 +6426,15 @@ const App = {
     const file=event?.target?.files?.[0]; if (!file) return;
     State.pendingRestore=null; window.__mjvPendingRestorePreview=false; window.__mjvRestoreFileReading=true;
     try {
-      if (file.size > BACKUP_MAX_BYTES) { this.showToast('Fichier refusé — taille maximale 2 Mo'); return; }
+      if (file.size > BACKUP_MAX_BYTES) { this.showToast('Fichier refusé — limite de restauration directe : 24 Mo'); return; }
       let text=''; try { text=await file.text(); } catch(e) { this.showToast('Impossible de lire ce fichier'); return; }
+      if (new Blob([text]).size > BACKUP_MAX_BYTES) { this.showToast('Fichier refusé — limite de restauration directe : 24 Mo'); return; }
       let env; try { env=JSON.parse(text); } catch(e) { this.showToast('Fichier refusé — JSON invalide'); return; }
       const check=Pure.validateBackupEnvelope(env,this.backupValidationContext());
       if (!check.ok) { this.showToast(this.restoreValidationMessage(check.errors)); return; }
-      State.pendingRestore={env,normalized:check.normalized,warnings:check.warnings,sourceName:file.name};
+      const baseline=await captureRestoreSnapshot();
+      if (!baseline?.ok) { notifyMarieSaveFailure(baseline); return; }
+      State.pendingRestore={env,normalized:check.normalized,warnings:check.warnings,sourceName:file.name,initiatingSnapshot:baseline.snapshot};
       window.__mjvPendingRestorePreview=true; this.openRestorePreview();
     } finally { window.__mjvRestoreFileReading=false; }
   },
@@ -5775,33 +6470,65 @@ const App = {
     };
   },
 
-  atomicReplaceStorage(s) {
+  async atomicReplaceStorage(s, initiatingSnapshot) {
     const payload=this.restoreStoragePayload(s);
-    const snapshot={};
-    try { RESTORE_TARGET_KEYS.forEach(k=>snapshot[k]=localStorage.getItem(k)); } catch(e) { return {ok:false,phase:'snapshot',written:[],rolled_back:true}; }
-    const tx={kind:'MJV_RESTORE_TXN_V1',created_at:new Date().toISOString(),snapshot};
-    try { localStorage.setItem(SK.RESTORE_TXN,JSON.stringify(tx)); } catch(e) { return {ok:false,phase:'prepare',written:[],rolled_back:true}; }
-    const written=[];
-    try {
-      for (const key of RESTORE_TARGET_KEYS) { const v=payload[key]; if (v===null) localStorage.removeItem(key); else localStorage.setItem(key,v); written.push(key); }
-      localStorage.removeItem(SK.RESTORE_TXN);
-      return {ok:true,phase:'commit',written,rolled_back:false};
-    } catch(e) {
-      const rolled=restoreRawSnapshot(snapshot);
-      try { if (rolled) localStorage.removeItem(SK.RESTORE_TXN); } catch(_) {}
-      return {ok:false,phase:'write',written,rolled_back:rolled};
-    }
+    return runMarieSerialized('restore-replace',async()=>{
+      const snapshot={};
+      try { RESTORE_TARGET_KEYS.forEach(k=>snapshot[k]=localStorage.getItem(k)); } catch(e) { return {ok:false,phase:'snapshot',written:[],rolled_back:true}; }
+      if (initiatingSnapshot && !RESTORE_TARGET_KEYS.every(k=>snapshot[k]===initiatingSnapshot[k])) return marieConflict('restore','protected_state_advanced_since_preview',snapshot);
+      const txid=marieRestoreTxId();
+      const recovery={kind:'MJV_RESTORE_RECOVERY_V2',txid,created_at:new Date().toISOString(),snapshot};
+      if (!await putMarieBackupRecovery(recovery)) return {ok:false,phase:'prepare-recovery',written:[],rolled_back:true};
+      const marker={kind:MARIE_RESTORE_EXTERNAL_KIND,txid,created_at:recovery.created_at};
+      const markerRaw=JSON.stringify(marker);
+      try {
+        localStorage.setItem(SK.RESTORE_TXN,markerRaw);
+        if (localStorage.getItem(SK.RESTORE_TXN)!==markerRaw) throw new Error('restore_marker_verification_failed');
+      } catch(e) {
+        await deleteMarieBackupRecovery();
+        return {ok:false,phase:'prepare-marker',written:[],rolled_back:true,error:String(e)};
+      }
+      const written=[];
+      try {
+        for (const key of RESTORE_TARGET_KEYS) {
+          const v=payload[key]; if (v===null) localStorage.removeItem(key); else localStorage.setItem(key,v);
+          if (localStorage.getItem(key)!==v) throw new Error('post_write_verification_failed:'+key);
+          written.push(key);
+        }
+        localStorage.removeItem(SK.RESTORE_TXN);
+        if (localStorage.getItem(SK.RESTORE_TXN)!==null) throw new Error('restore_marker_cleanup_failed');
+        await deleteMarieBackupRecovery();
+        return {ok:true,phase:'commit',written,rolled_back:false};
+      } catch(e) {
+        const stateRolledBack=restoreRawSnapshot(snapshot);
+        let recoveryClosed=false;
+        if (stateRolledBack) {
+          try {
+            localStorage.removeItem(SK.RESTORE_TXN);
+            if (localStorage.getItem(SK.RESTORE_TXN)===null) {
+              await deleteMarieBackupRecovery();
+              recoveryClosed=true;
+            }
+          } catch(_) {}
+        }
+        return {ok:false,phase:recoveryClosed?'write':'recovery',written,rolled_back:stateRolledBack&&recoveryClosed,state_rolled_back:stateRolledBack,error:String(e)};
+      }
+    });
   },
 
-  commitRestore() {
+  async commitRestore() {
     const p=State.pendingRestore; if (!p) return;
-    // Validate again at the final boundary, not only at file selection time.
     const check=Pure.validateBackupEnvelope(p.env,this.backupValidationContext());
     if (!check.ok) { this.showToast(this.restoreValidationMessage(check.errors,'Restauration annulée')); this.closeRestoreModal(); return; }
-    const result=this.atomicReplaceStorage(check.normalized);
-    if (!result.ok) { if(!result.rolled_back)State.storageRecoveryFailed=true; this.showToast(result.rolled_back ? 'Restauration annulée — données précédentes rétablies' : 'Restauration incomplète — rechargez l’application pour récupérer vos données'); this.closeRestoreModal(); return; }
+    const result=await this.atomicReplaceStorage(check.normalized,p.initiatingSnapshot);
+    if (!result?.ok) {
+      if(!result?.rolled_back && result?.phase!=='conflict')State.storageRecoveryFailed=true;
+      if(result?.phase==='conflict') this.showToast('Restauration annulée — vos données ont changé dans une autre fenêtre');
+      else this.showToast(result?.rolled_back ? 'Restauration annulée — données précédentes rétablies' : 'Restauration incomplète — rechargez l’application pour récupérer vos données');
+      this.closeRestoreModal(); return;
+    }
     document.getElementById('restore-modal')?.classList.remove('open'); State.pendingRestore=null; window.__mjvPendingRestorePreview=false;
-    loadStorage(); this.reconcileStoredIds(); this.applyTextSize(State.textSize,false); this.syncSystemTheme(); this.syncThemeIcon();
+    await loadStorage(); await this.reconcileStoredIds(); await this.applyTextSize(State.textSize,false); this.syncSystemTheme(); this.syncThemeIcon();
     this.buildCalendar(); this.updateCalendar(); this.buildList();
     if (isWide()) { this.buildWideCalendar(); this.updateWideCalendar(); this.updateWideProgress(); this.buildWideList(); }
     this.renderVisibleEspace(); this.onModalClosed(); this.showToast('Sauvegarde restaurée');
@@ -5957,13 +6684,15 @@ const App = {
     const route=Pure.parseDeepLink(window.location.search);
     const storage=isStorageAvailable()?'available':'unavailable';
     const swCtl=navigator.serviceWorker?.controller?'controlled':'not-controlled';
+    const cacheNames=mjvScopedCacheNames();
     return [
       'Diagnostics MJV (sans contenu personnel)',
       `app_version=${APP_VERSION}`,
       `corpus_version=${CORPUS_VERSION}`,
       `corpus_fingerprint=${State.loadedCorpusFingerprint || CORPUS_FINGERPRINT_SHA256}`,
-      `sw_shell_cache=mjv-shell-v${APP_VERSION}`,
-      'sw_content_cache=mjv-content-v1',
+      `sw_scope_fingerprint=${cacheNames.fingerprint}`,
+      `sw_shell_cache=${cacheNames.shell}`,
+      `sw_content_cache=${cacheNames.content}`,
       `sw_control=${swCtl}`,
       `storage=${storage}`,
       `theme=${mode}`,
@@ -5989,11 +6718,13 @@ const App = {
   },
   showDebug() {
     // Must mirror the bucket names in sw.js (shell is the version-scoped one)
-    const swVer = 'mjv-shell-v' + APP_VERSION;
+    const cacheNames=mjvScopedCacheNames();
+    const swVer = cacheNames.shell;
     const unit = currentUnit();
     const rows = [
       ['App', APP_VERSION],
       ['SW cache', swVer],
+      ['SW contenu', cacheNames.content],
       ['Corpus', State.corpus.length + ' unités'],
       ['Lu', State.read.size + ' / ' + State.corpus.length],
       ['activeDay', State.activeDay ?? 'null'],
@@ -6042,21 +6773,15 @@ const App = {
     clearTimeout(t._timer);
     t.textContent = '';
     t.classList.add('with-action', 'show');
-
-    const label = document.createElement('span');
-    label.textContent = msg;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'toast-undo-btn';
-    btn.textContent = 'Annuler';
-    btn.onclick = () => {
-      let ok=false;
-      try { ok=restore()!==false; } catch(e) { ok=false; }
+    const label = document.createElement('span'); label.textContent = msg;
+    const btn = document.createElement('button'); btn.type='button'; btn.className='toast-undo-btn'; btn.textContent='Annuler';
+    btn.onclick = async () => {
+      let ok=false; btn.disabled=true;
+      try { ok=(await restore())!==false; } catch(e) { ok=false; }
+      btn.disabled=false;
       if (ok) { clearTimeout(t._timer); t.classList.remove('show','with-action'); }
     };
-    t.appendChild(label);
-    t.appendChild(btn);
-
+    t.appendChild(label); t.appendChild(btn);
     t._timer = setTimeout(() => t.classList.remove('show', 'with-action'), 6000);
   },
   esc(str) { return Pure.esc(str); },
