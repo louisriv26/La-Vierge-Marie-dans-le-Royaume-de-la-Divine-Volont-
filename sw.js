@@ -1,5 +1,5 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '27';
+const VERSION = '31';
 
 // Stage 8 CACHE-SCOPE-COLL-01: Cache Storage ownership is deployment-scope
 // specific. This prevents a sibling deployment on the same origin from deleting

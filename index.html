@@ -326,12 +326,16 @@ html, body {
   .ws-cal-cell.appendix { color: var(--border); cursor: default; }
   .ws-cal-cell.active-day { box-shadow: 0 0 0 2.5px var(--accent-state), 0 0 0 4.5px rgba(201,168,76,0.25); }
 
-  /* Sidebar list */
-  .ws-list-scroll { flex: 1; overflow-y: auto; padding-bottom: calc(8px + var(--safe-bottom)); }
-  /* In Jours mode this shared surface is deliberately empty.
-     Collapse it completely so removing the squeezed title list does not leave
-     a large blank flex spacer above “Pour aujourd’hui”. Search removes
-     aria-hidden and the normal flex:1 results surface returns automatically. */
+  /* Sidebar modes: Jours and Recherche deliberately own the left pane in turn.
+     Search no longer competes with calendar/progress/today for residual height. */
+  .wide-search-only { display: none; }
+  #wide-sidebar[data-mode="search"] .wide-jours-only { display: none !important; }
+  #wide-sidebar[data-mode="search"] .wide-search-only { display: block; }
+  .wide-search-heading { padding: 13px 16px 7px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+  .wide-search-title { font: 600 13px var(--font-ui); color: var(--ink); }
+  .wide-search-sub { margin-top: 2px; font: 11px/1.4 var(--font-ui); color: var(--muted); }
+  .wide-search-wrap { flex-shrink: 0; }
+  .ws-list-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px calc(8px + var(--safe-bottom)); }
   .ws-list-scroll[aria-hidden="true"] { display: none; flex: 0 0 auto; padding-bottom: 0; }
   .ws-section-label {
     font-size: 9px; text-transform: uppercase; letter-spacing: 0.09em;
@@ -877,8 +881,18 @@ h1, h2, h3, h4 {
 
 /* Full-text search results — passage snippets, distinct from unit cards */
 .search-group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 14px 4px 7px; }
+.search-status { font: 600 12px/1.45 var(--font-ui); color: var(--ink); padding: 10px 4px 8px; }
+.search-title-group { margin: 0 0 8px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--white); overflow: hidden; }
+.search-title-group > summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 11px; cursor: pointer; color: var(--primary); font: 600 12px var(--font-ui); list-style: none; }
+.search-title-group > summary::-webkit-details-marker { display:none; }
+.search-title-group > summary::after { content:'›'; font-size: 18px; line-height: 1; transform: rotate(90deg); transition: transform .12s; }
+.search-title-group[open] > summary::after { transform: rotate(-90deg); }
+.search-title-count { color: var(--muted); font-weight: 500; margin-left: auto; }
+.search-title-results { border-top: 0.5px solid var(--border); padding: 3px 0; }
 .snippet-card { background: var(--white); border: 0.5px solid var(--border); border-left: 3px solid var(--primary); border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 7px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
 .snippet-card:hover { background: var(--ivory-deep); border-left-color: var(--accent); }
+.snippet-card[aria-current="location"] { background: var(--mary-bg); border-left-color: var(--accent-state); box-shadow: inset 0 0 0 1px var(--accent-state); }
+.search-title-results [aria-current="location"] { background: var(--mary-bg); box-shadow: inset 3px 0 0 var(--accent-state); }
 .search-more { width:100%; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--white); color:var(--primary); font:600 13px var(--font-ui); padding:11px 14px; margin:3px 0 7px; cursor:pointer; }
 .search-more:hover { background:var(--ivory-deep); border-color:var(--primary); }
 .search-more:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
@@ -1363,7 +1377,8 @@ h1, h2, h3, h4 {
   border-top: 0.5px solid var(--accent);
   background: var(--practice-bg);
   padding: 12px 14px;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-height: 88px;
   max-height: 220px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1694,14 +1709,13 @@ h1, h2, h3, h4 {
   <div id="wide-body" role="main">
 
     <!-- Sidebar -->
-    <aside id="wide-sidebar">
-      <!-- Calendar -->
-      <div class="ws-cal-wrap">
+    <aside id="wide-sidebar" data-mode="jours">
+      <!-- Jours owns calendar, progress and today's practice. -->
+      <div class="ws-cal-wrap wide-jours-only">
         <div class="ws-cal-grid" id="wide-cal-grid" role="group" aria-label="Calendrier des 31 jours"></div>
         <div class="appendix-row" id="app-row-wide"></div>
       </div>
-      <!-- Progress -->
-      <div class="ws-header">
+      <div class="ws-header wide-jours-only">
         <div class="ws-title">Progression</div>
         <div class="ws-progress-row">
           <div class="ws-progress-track" id="wide-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="37" aria-label="Progression de lecture">
@@ -1710,16 +1724,20 @@ h1, h2, h3, h4 {
           <div class="ws-progress-label" id="wide-progress-label">0 / 37</div>
         </div>
       </div>
-      <!-- Search + List -->
-      <div class="search-wrap" style="padding:6px 12px 2px;">
+      <!-- Recherche owns the sidebar while active. -->
+      <div class="wide-search-heading wide-search-only">
+        <div class="wide-search-title">Recherche</div>
+        <div class="wide-search-sub">Titres et 753 paragraphes</div>
+      </div>
+      <div class="search-wrap wide-search-wrap wide-search-only" style="padding:6px 12px 8px;">
         <div class="search-row">
           <span class="search-icon">⌕</span>
-          <input class="search-input" id="wide-search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" oninput="App.onSearch(this.value,'wide-list-scroll','wide-search-clear')">
+          <input class="search-input" id="wide-search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher dans les 37 unités" oninput="App.onSearch(this.value,'wide-list-scroll','wide-search-clear')">
           <button class="search-clear" id="wide-search-clear" aria-label="Effacer" onclick="App.clearSearch('wide-search-input','wide-list-scroll','wide-search-clear')">✕</button>
         </div>
       </div>
-      <div class="ws-list-scroll" id="wide-list-scroll" aria-hidden="true"></div>
-      <button type="button" class="ws-today-card" id="ws-today-card"></button>
+      <div class="ws-list-scroll wide-search-only" id="wide-list-scroll" role="region" aria-label="Résultats de recherche" aria-hidden="true"></div>
+      <button type="button" class="ws-today-card wide-jours-only" id="ws-today-card"></button>
     </aside>
 
     <!-- Reader panel -->
@@ -1999,7 +2017,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '27';
+const APP_VERSION = '31';
 function mjvScopeFingerprint(scope) {
   let h = 2166136261;
   const text = String(scope || '');
@@ -3179,7 +3197,7 @@ const State = {
   // anchor + within-paragraph fraction, plus unit fraction and legacy pixel
   // fallback for historical/device-transition resilience.
   scrollPos: {},
-  searchContext: { query:'', normalizedQuery:'', visiblePassages:40, mobileScroll:0, wideScroll:0, returnPending:false },
+  searchContext: { query:'', normalizedQuery:'', visiblePassages:40, mobileScroll:0, wideScroll:0, returnPending:false, titlesExpanded:false, selectedUnitId:null, selectedPid:null },
   routeTargetPid: null,
   pendingUndo: null,// { label, restore } — last destructive action, restorable via toast
   readerOpen: false,// is a unit currently displayed in the reader? drives reconcileLayout
@@ -4131,6 +4149,14 @@ const App = {
     // Remember reading position in both layouts
     document.getElementById('reader-scroll')?.addEventListener('scroll', () => { void this.recordScroll('reader-scroll'); }, { passive: true });
     document.getElementById('wide-reader-scroll')?.addEventListener('scroll', () => { void this.recordScroll('wide-reader-scroll'); }, { passive: true });
+    // Search scroll is a separate navigation state: preserve it for same-query
+    // returns, but query changes explicitly reset the live scroller to the top.
+    document.getElementById('list-scroll')?.addEventListener('scroll', e => {
+      if (State.listMode==='search' && document.getElementById('screen-list')?.classList.contains('active')) State.searchContext.mobileScroll=e.currentTarget.scrollTop||0;
+    }, { passive:true });
+    document.getElementById('wide-list-scroll')?.addEventListener('scroll', e => {
+      if (isWide() && State.widePanel==='search') State.searchContext.wideScroll=e.currentTarget.scrollTop||0;
+    }, { passive:true });
     // A delayed semantic-position restore must never fight a user's first
     // touch/wheel gesture. Explicit interaction cancels any pending restore;
     // scroll events caused by the restore itself are ignored until it settles.
@@ -4303,30 +4329,79 @@ const App = {
   },
 
   // Called when the viewport crosses the wide/mobile threshold (rotation, iPad
-  // Split View, window resize). Must be symmetric: the previous version did all
-  // its work inside `if (isWide())`, so going wide→mobile did nothing at all and
-  // left the reader on whatever stale screen the mobile stack last had (Home),
-  // losing the user's place mid-meditation.
+  // Split View, window resize). Preserve the surface the user is actually on,
+  // not merely a latent Search/Jours sub-state. This matters after Search →
+  // Mon Espace / Aide: the old cross-layout hand-off could revive Search even
+  // though the user had explicitly left it.
   reconcileLayout() {
-    State.lastWide = isWide();
+    const nowWide = isWide();
+    State.lastWide = nowWide;
     const unit = currentUnit();
 
-    // Re-open the current unit into whichever layout is now active. openUnit
-    // reveals the correct containers (#wide-reader-content vs #screen-reader),
-    // writes the badges/nav/action bar, and restores the saved reading position
-    // — so both directions are handled without duplicating that logic here.
-    if (unit && State.readerOpen) this.openUnit(unit.unit_id);
-
-    if (isWide()) {
-      this.buildWideList();
+    if (nowWide) {
+      // Source is the mobile stack; its active screen is authoritative.
+      const mobileScreen = this.currentMobileScreen();
+      this.buildWideCalendar();
       this.updateWideCalendar();
       this.updateWideProgress();
       this.updateAppendixRows();
       this.renderTodayCard();
-    } else {
-      this.buildList();
-      this.updateCalendar();
+
+      if (mobileScreen === 'espace') {
+        State.widePanel='espace';
+        this.wideNav('espace');
+        return;
+      }
+      if (mobileScreen === 'aide') {
+        const back = State.helpReturnScreen || 'home';
+        const searchReaderBack = back === 'reader' && State.readerOpen && State.searchContext.returnPending && State.searchContext.query;
+        State.helpReturnWidePanel = searchReaderBack ? 'search' : (back === 'search' ? 'search' : (back === 'espace' ? 'espace' : 'jours'));
+        State.widePanel='aide';
+        this.wideNav('aide');
+        return;
+      }
+      if (mobileScreen === 'search' || (mobileScreen === 'reader' && State.searchContext.returnPending && State.searchContext.query)) {
+        State.listMode='search';
+        State.widePanel='search';
+        if (unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+        this.wideNav('search');
+        return;
+      }
+
+      State.listMode='jours';
+      State.widePanel='jours';
+      if (mobileScreen === 'reader' && unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+      this.wideNav('jours');
+      return;
     }
+
+    // Source is the wide shell; widePanel is authoritative.
+    const sourcePanel = State.widePanel || 'jours';
+    this.buildList();
+    this.updateCalendar();
+
+    if (sourcePanel === 'espace') {
+      State.listMode='jours';
+      this.showScreen('espace');
+      return;
+    }
+    if (sourcePanel === 'aide') {
+      const back = State.helpReturnWidePanel || 'jours';
+      const searchReaderBack = back === 'search' && State.readerOpen && State.searchContext.returnPending && State.searchContext.query;
+      State.helpReturnScreen = searchReaderBack ? 'reader' : (back === 'search' ? 'search' : (back === 'espace' ? 'espace' : (unit && State.readerOpen ? 'reader' : 'home')));
+      this.showScreen('aide');
+      return;
+    }
+    if (sourcePanel === 'search') {
+      State.listMode='search';
+      if (State.searchContext.returnPending && unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+      else this.openSearchNav(false);
+      return;
+    }
+
+    State.listMode='jours';
+    if (unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+    else this.showScreen('home');
   },
 
   // ── Mobile navigation ────────────────────────────────────────
@@ -4347,6 +4422,8 @@ const App = {
 
   openJours() {
     State.listMode='jours';
+    State.widePanel='jours';
+    State.searchContext.returnPending=false;
     this.showScreen('list');
     this.syncMobileListMode();
     this.buildList();
@@ -4355,19 +4432,28 @@ const App = {
 
   openSearchNav(focus=true) {
     State.listMode='search';
+    State.widePanel='search';
+    const restoreScroll=State.searchContext.mobileScroll||0;
     this.showScreen('list');
     this.syncMobileListMode();
     const input=document.getElementById('search-input');
     if(input) input.value=State.searchContext.query||'';
     if(State.searchContext.query) this.renderSearchResults(State.searchContext.query,'list-scroll','search-clear');
     else { this.renderSearchLanding('list-scroll'); document.getElementById('search-clear')?.classList.remove('visible'); }
+    State.searchContext.mobileScroll=restoreScroll;
     this.replaceRoute({open:'search',q:State.searchContext.query||''});
-    if(focus) requestAnimationFrame(()=>{ if(State.listMode==='search' && !State.searchContext.returnPending) input?.focus(); });
+    requestAnimationFrame(()=>{
+      if(State.listMode!=='search') return;
+      const sc=document.getElementById('list-scroll'); if(sc) sc.scrollTop=restoreScroll;
+      State.searchContext.mobileScroll=restoreScroll;
+      if(focus && !State.searchContext.returnPending) input?.focus();
+    });
   },
 
   currentMobileScreen() {
     if(document.getElementById('screen-reader')?.classList.contains('active'))return 'reader';
     if(document.getElementById('screen-espace')?.classList.contains('active'))return 'espace';
+    if(document.getElementById('screen-aide')?.classList.contains('active'))return 'aide';
     if(document.getElementById('screen-list')?.classList.contains('active'))return State.listMode==='search'?'search':'list';
     return 'home';
   },
@@ -4429,6 +4515,10 @@ const App = {
   // ── Wide navigation ──────────────────────────────────────────
   wideNav(panel) {
     State.widePanel = panel;
+    if(panel==='search') State.listMode='search';
+    else if(panel==='jours') { State.listMode='jours'; State.searchContext.returnPending=false; }
+    const sidebar=document.getElementById('wide-sidebar');
+    if(sidebar) sidebar.dataset.mode=panel==='search'?'search':'jours';
     document.querySelectorAll('.wt-nav-btn[data-primary-nav="true"]').forEach(b=>{b.setAttribute('aria-pressed','false');b.classList.remove('active');});
     const primary=(panel==='search'||panel==='espace'||panel==='jours')?document.getElementById('wnav-'+panel):null;
     if(primary){primary.classList.add('active');primary.setAttribute('aria-pressed','true');}
@@ -4445,21 +4535,26 @@ const App = {
       welcome.style.display=hasOpen?'none':'flex'; welcome.style.visibility='visible'; welcome.style.opacity='1';
       const input=document.getElementById('wide-search-input');
       if(panel==='search') {
+        const restoreScroll=State.searchContext.wideScroll||0;
         if(input)input.value=State.searchContext.query||'';
         if(State.searchContext.query)this.renderSearchResults(State.searchContext.query,'wide-list-scroll','wide-search-clear');
         else {this.renderSearchLanding('wide-list-scroll');document.getElementById('wide-search-clear')?.classList.remove('visible');}
+        State.searchContext.wideScroll=restoreScroll;
         requestAnimationFrame(()=>{
           if(State.widePanel!=='search') return;
-          const sc=document.getElementById('wide-list-scroll'); if(sc) sc.scrollTop=State.searchContext.wideScroll||0;
+          const sc=document.getElementById('wide-list-scroll'); if(sc) sc.scrollTop=restoreScroll;
+          State.searchContext.wideScroll=restoreScroll;
           if(!State.searchContext.returnPending) input?.focus();
         });
       } else {
-        if(input)input.value='';
         document.getElementById('wide-search-clear')?.classList.remove('visible');
         this.buildWideList();
+        const u=currentUnit();
+        if(u && State.readerOpen) this.replaceRoute({open:'unit',id:u.unit_id,pid:State.routeTargetPid||null});
+        else this.replaceRoute(null);
       }
     } else if(panel==='espace') {
-      reader.style.display='none'; espace.classList.add('active'); this.renderEspace('wide-espace');
+      reader.style.display='none'; espace.classList.add('active'); this.renderEspace('wide-espace'); this.replaceRoute(null);
     } else if(panel==='aide') {
       reader.style.display=''; readerContent.style.display='none'; welcome.style.display='none'; aide.style.display='block'; this.renderHelp('wide-aide');
     }
@@ -4727,9 +4822,13 @@ const App = {
       State.searchContext.normalizedQuery=normalizedQuery;
       State.searchContext.visiblePassages=40;
       State.searchContext.mobileScroll=0; State.searchContext.wideScroll=0;
+      State.searchContext.returnPending=false;
+      State.searchContext.titlesExpanded=false;
+      State.searchContext.selectedUnitId=null; State.searchContext.selectedPid=null;
+      const live=document.getElementById(scrollId); if(live) live.scrollTop=0;
     }
-    if(scrollId==='list-scroll'){State.listMode='search';State.searchContext.query=query;this.syncMobileListMode();}
-    else {State.searchContext.query=query;if(State.widePanel!=='search')State.widePanel='search';}
+    if(scrollId==='list-scroll'){State.listMode='search';State.widePanel='search';State.searchContext.query=query;this.syncMobileListMode();}
+    else {State.searchContext.query=query;State.widePanel='search';State.listMode='search';}
     document.getElementById(clearId)?.classList.toggle('visible', !!query);
     this._searchTimer = setTimeout(() => {
       if (query) this.renderSearchResults(query, scrollId, clearId);
@@ -4786,6 +4885,10 @@ const App = {
     State.searchContext.normalizedQuery='';
     State.searchContext.visiblePassages=40;
     State.searchContext.mobileScroll=0; State.searchContext.wideScroll=0;
+    State.searchContext.returnPending=false;
+    State.searchContext.titlesExpanded=false;
+    State.searchContext.selectedUnitId=null; State.searchContext.selectedPid=null;
+    const scroller=document.getElementById(scrollId); if(scroller) scroller.scrollTop=0;
     document.getElementById(clearId)?.classList.remove('visible');
     if(scrollId==='list-scroll'&&State.listMode==='search')this.renderSearchLanding(scrollId);
     else if(scrollId==='wide-list-scroll'&&State.widePanel==='search')this.renderSearchLanding(scrollId);
@@ -4794,9 +4897,9 @@ const App = {
   },
 
   // Searches unit titles AND the full text of all 753 paragraphs. Title hits
-  // are listed first as unit cards; passage hits follow as ranked snippet cards
-  // that deep-link to the matched paragraph. Passage rendering is progressive,
-  // never terminal: every matched paragraph remains reachable.
+  // remain available in a compact disclosure so passage matches are not buried
+  // behind a long stack of unit cards. Passage rendering is progressive, never
+  // terminal: every matched paragraph remains reachable.
   renderSearchResults(query, scrollId, clearId) {
     const el = document.getElementById(scrollId);
     if (!el) return;
@@ -4813,12 +4916,16 @@ const App = {
       State.searchContext.normalizedQuery=q;
       State.searchContext.visiblePassages=BATCH_SIZE;
       State.searchContext.mobileScroll=0; State.searchContext.wideScroll=0;
+      State.searchContext.returnPending=false;
+      State.searchContext.titlesExpanded=false;
+      State.searchContext.selectedUnitId=null; State.searchContext.selectedPid=null;
+      el.scrollTop=0;
     }
     State.searchContext.query=query;
     // A single character matches nearly everything — wait for a usable term.
     if (q.length < 2) {
       State.searchContext.visiblePassages=BATCH_SIZE;
-      el.innerHTML = '<div class="search-empty">Saisissez au moins deux lettres…</div>';
+      el.innerHTML = '<div class="search-empty" role="status" aria-live="polite">Saisissez au moins deux lettres…</div>';
       this.replaceRoute({open:'search',q:query});
       return;
     }
@@ -4840,28 +4947,38 @@ const App = {
     State.searchContext.visiblePassages=shown || BATCH_SIZE;
 
     if (!titleHits.length && !passageHits.length) {
-      el.innerHTML = '<div class="search-empty">Aucun r\u00e9sultat pour \u00ab ' + this.esc(query) + ' \u00bb</div>';
+      el.innerHTML = '<div class="search-empty" role="status" aria-live="polite">Aucun r\u00e9sultat pour \u00ab ' + this.esc(query) + ' \u00bb</div>';
       this.replaceRoute({open:'search',q:query});
       return;
     }
 
     const isMobile = scrollId === 'list-scroll';
     let html = '';
+    const statusParts=[];
+    if(titleHits.length) statusParts.push(titleHits.length + ' titre' + (titleHits.length>1?'s':'') + ' correspondant' + (titleHits.length>1?'s':''));
+    if(total) statusParts.push(total + ' passage' + (total>1?'s':'') + ' trouv\u00e9' + (total>1?'s':''));
+    if(total && shown<total) statusParts.push(shown + ' affich\u00e9s');
+    html += '<div class="search-status" role="status" aria-live="polite">' + statusParts.join(' · ') + '</div>';
 
     if (titleHits.length) {
-      html += '<div class="search-group-label">' + titleHits.length + ' titre' + (titleHits.length > 1 ? 's' : '') + '</div>';
-      html += titleHits.map(u => this.renderUnitCard(u,isMobile?this.CARD_STYLE.mobile:this.CARD_STYLE.wide,`App.openSearchResult('${u.unit_id}',null,'${scrollId}')`)).join('');
+      const selectedTitle=State.searchContext.selectedPid===null && titleHits.some(u=>u.unit_id===State.searchContext.selectedUnitId);
+      const titlesOpen=State.searchContext.titlesExpanded || !passageHits.length || selectedTitle;
+      html += '<details class="search-title-group"' + (titlesOpen?' open':'') + ' ontoggle="App.setSearchTitlesExpanded(this.open)">'
+        + '<summary><span>Titres correspondants</span><span class="search-title-count">' + titleHits.length + '</span></summary>'
+        + '<div class="search-title-results">'
+        + titleHits.map(u => this.renderUnitCard(u,isMobile?this.CARD_STYLE.mobile:this.CARD_STYLE.wide,`App.openSearchResult('${u.unit_id}',null,'${scrollId}')`)).join('')
+        + '</div></details>';
     }
 
     if (passageHits.length) {
-      const countLabel = shown < total
-        ? shown + ' passages affich\u00e9s sur ' + total
-        : total + ' passage' + (total > 1 ? 's' : '');
-      html += '<div class="search-group-label">' + countLabel + '</div>';
-      html += passageHits.map(e => '<button type="button" class="snippet-card" onclick="App.openSearchResult(\'' + e.unitId + '\',\'' + e.pid + '\',\'' + scrollId + '\')">'
-        + '<div class="snippet-meta">' + this.esc(e.unitLabel) + (e.sectionLabel ? ' \u00b7 ' + this.esc(e.sectionLabel) : '') + '</div>'
-        + '<div class="snippet-text">' + this.buildSnippet(e, q) + '</div>'
-        + '</button>').join('');
+      html += '<div class="search-group-label">Passages</div>';
+      html += passageHits.map(e => {
+        const selected=State.searchContext.selectedPid===e.pid;
+        return '<button type="button" class="snippet-card" data-pid="' + this.esc(e.pid) + '"' + (selected?' aria-current="location"':'') + ' onclick="App.openSearchResult(\'' + e.unitId + '\',\'' + e.pid + '\',\'' + scrollId + '\')">'
+          + '<div class="snippet-meta">' + this.esc(e.unitLabel) + (e.sectionLabel ? ' \u00b7 ' + this.esc(e.sectionLabel) : '') + '</div>'
+          + '<div class="snippet-text">' + this.buildSnippet(e, q) + '</div>'
+          + '</button>';
+      }).join('');
       if (shown < total) {
         const remaining=total-shown, next=Math.min(BATCH_SIZE,remaining);
         html += '<button type="button" class="search-more" aria-label="Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires, ' + shown + ' sur ' + total + ' affich\u00e9s" onclick="App.showMoreSearchResults(\'' + scrollId + '\',\'' + clearId + '\')">Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires</button>';
@@ -4876,6 +4993,22 @@ const App = {
       const activeUid = currentUnit()?.unit_id;
       el.querySelectorAll('.ws-list-item').forEach(item => item.classList.toggle('active', item.dataset.uid === activeUid));
     }
+    this.updateSearchSelection(scrollId);
+  },
+
+  setSearchTitlesExpanded(open) { State.searchContext.titlesExpanded=!!open; },
+
+  updateSearchSelection(scrollId) {
+    const el=document.getElementById(scrollId); if(!el)return;
+    el.querySelectorAll('.snippet-card[data-pid]').forEach(card=>{
+      const selected=!!State.searchContext.selectedPid && card.dataset.pid===State.searchContext.selectedPid;
+      if(selected) card.setAttribute('aria-current','location'); else card.removeAttribute('aria-current');
+    });
+    el.querySelectorAll('.search-title-results [data-uid]').forEach(card=>{
+      const selected=State.searchContext.selectedPid===null && !!State.searchContext.selectedUnitId && card.dataset.uid===State.searchContext.selectedUnitId;
+      if(selected) card.setAttribute('aria-current','location');
+      else if(card.getAttribute('aria-current')==='location') card.removeAttribute('aria-current');
+    });
   },
 
   showMoreSearchResults(scrollId, clearId) {
@@ -4893,9 +5026,12 @@ const App = {
     State.searchContext.query=q;
     if (scrollId==='list-scroll') State.searchContext.mobileScroll=scroller?.scrollTop||0;
     else State.searchContext.wideScroll=scroller?.scrollTop||0;
+    State.searchContext.selectedUnitId=unitId;
+    State.searchContext.selectedPid=pid||null;
     State.searchContext.returnPending=true;
     State.prevScreen='list';
     const opened=this.openUnit(unitId,pid||null);
+    if(opened) this.updateSearchSelection(scrollId);
     if (opened) {
       // Keyboard activation of a <button> completes its default focus action
       // after the click handler. Defer the destination focus to the next task so
@@ -6277,7 +6413,7 @@ const App = {
         <div class="help-item"><div class="help-icon">✶</div><div class="help-text"><div class="help-label">Structure d’une méditation</div><div class="help-desc">Chaque jour suit cinq parties : <strong>L’Âme</strong>, <strong>Leçon de la Reine du Ciel</strong>, <strong>Réponse de l’Âme</strong>, <strong>Petite pratique</strong> et <strong>Oraison jaculatoire</strong>.</div></div></div>
         <div class="help-item"><div class="help-icon">Aᵃ</div><div class="help-text"><div class="help-label">Taille du texte</div><div class="help-desc">Aᵃ propose Petit (16 px), Normal (19 px), Grand (22 px) et Très grand (26 px). Le réglage est mémorisé et l’application tente de préserver votre position de lecture lors du changement.</div></div></div>
         <div class="help-item"><div class="help-icon">←→</div><div class="help-text"><div class="help-label">Précédent / suivant et reprise</div><div class="help-desc">Les boutons parcourent les ${unitCount} unités dans l’ordre. Votre position de lecture est mémorisée par unité afin de tenter de vous replacer au même passage lors du retour.</div></div></div>
-        <div class="help-item"><div class="help-icon">⌕</div><div class="help-text"><div class="help-label">Recherche</div><div class="help-desc">La recherche examine les titres et les ${paraCount} paragraphes. Chaque résultat montre un extrait et ouvre directement le passage concerné. Elle ne dépend pas des accents (« eterne » peut trouver « Éternel »). Lorsque vous revenez d’un résultat, la requête et la position de la liste sont restaurées.</div></div></div>
+        <div class="help-item"><div class="help-icon">⌕</div><div class="help-text"><div class="help-label">Recherche</div><div class="help-desc">La recherche examine les titres et les ${paraCount} paragraphes. Les titres correspondants restent disponibles dans une section repliable afin que les passages apparaissent immédiatement. Chaque résultat montre un extrait et ouvre directement le passage concerné. Sur téléphone, les résultats occupent l’écran Recherche ; sur iPad et ordinateur, ils restent à gauche pendant que le passage choisi s’ouvre à droite. Elle ne dépend pas des accents (« eterne » peut trouver « Éternel »). Lorsque vous revenez d’un résultat avec la même requête, la position de la liste est restaurée ; une nouvelle requête repart du début.</div></div></div>
       </section>
 
       <section class="help-section" id="${helpPrefix}-conserver" aria-labelledby="${helpPrefix}-conserver-title">
