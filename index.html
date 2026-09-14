@@ -2017,7 +2017,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '31';
+const APP_VERSION = '35';
 function mjvScopeFingerprint(scope) {
   let h = 2166136261;
   const text = String(scope || '');
@@ -3190,7 +3190,7 @@ const State = {
   selBarInteracting: false, // guards pendingSel while iOS collapses native selection on toolbar touch
   forceRangeSupport: undefined, // test hook to override the Android gate
   noteTargetPid: null, noteEditId: null, noteSelectionContext: null, notesNeedPersist: false, widePanel: 'jours',
-  listMode: 'jours', helpReturnScreen: 'home', helpReturnWidePanel: 'jours', helpReportPid: null,
+  listMode: 'jours', helpReturnScreen: 'home', helpReturnWidePanel: 'jours', helpReportPid: null, helpOpenedWide: false,
   activeDay: null,  // devotional day — may differ from calendar day
   activeAppendix: null, // active appendix (A1-A6); mutually exclusive with activeDay
   // MJV-E semantic reading positions. Each unit stores a stable paragraph
@@ -4363,14 +4363,14 @@ const App = {
       if (mobileScreen === 'search' || (mobileScreen === 'reader' && State.searchContext.returnPending && State.searchContext.query)) {
         State.listMode='search';
         State.widePanel='search';
-        if (unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+        if (unit && State.readerOpen) this.openUnit(unit.unit_id, null);
         this.wideNav('search');
         return;
       }
 
       State.listMode='jours';
       State.widePanel='jours';
-      if (mobileScreen === 'reader' && unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+      if (mobileScreen === 'reader' && unit && State.readerOpen) this.openUnit(unit.unit_id, null);
       this.wideNav('jours');
       return;
     }
@@ -4394,13 +4394,13 @@ const App = {
     }
     if (sourcePanel === 'search') {
       State.listMode='search';
-      if (State.searchContext.returnPending && unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+      if (State.searchContext.returnPending && unit && State.readerOpen) this.openUnit(unit.unit_id, null);
       else this.openSearchNav(false);
       return;
     }
 
     State.listMode='jours';
-    if (unit && State.readerOpen) this.openUnit(unit.unit_id, State.routeTargetPid || null);
+    if (unit && State.readerOpen) this.openUnit(unit.unit_id, null);
     else this.showScreen('home');
   },
 
@@ -4472,7 +4472,16 @@ const App = {
   },
 
   openHelp() {
+    // Aide is an overlay on the reader, not a navigation reset. Capture the
+    // semantic position before hiding the active reader so a later layout-bucket
+    // crossing can reconstruct the same place instead of jumping back to the
+    // original Search arrival paragraph.
+    State.helpOpenedWide=isWide();
     State.helpReportPid=this.currentReaderParagraphId();
+    if(State.readerOpen && currentUnit()) {
+      const scrollId=isWide()?'wide-reader-scroll':'reader-scroll';
+      void this.recordScroll(scrollId,true);
+    }
     if(isWide()) {
       State.helpReturnWidePanel=(State.widePanel && State.widePanel!=='aide')?State.widePanel:'jours';
       this.wideNav('aide');
@@ -4483,12 +4492,32 @@ const App = {
   },
 
   closeHelp() {
-    if(isWide()) { this.wideNav(State.helpReturnWidePanel||'jours'); return; }
+    const sameLayout=isWide()===!!State.helpOpenedWide;
+    if(isWide()) {
+      const target=State.helpReturnWidePanel||'jours';
+      // If Aide crossed from mobile to wide, this shell has not rendered the
+      // active reader yet. Rebuild it from the captured semantic reading
+      // position (targetPid=null), then restore the intended master panel.
+      if(!sameLayout && (target==='search'||target==='jours') && State.readerOpen && currentUnit()) {
+        State.widePanel=target;
+        this.openUnit(currentUnit().unit_id,null);
+        this.wideNav(target);
+        return;
+      }
+      this.wideNav(target);
+      return;
+    }
     const target=State.helpReturnScreen||'home';
     if(target==='search') this.openSearchNav(false);
     else if(target==='list') this.openJours();
-    else if(target==='reader' && currentUnit()) this.openUnit(currentUnit().unit_id,State.routeTargetPid||null);
-    else this.showScreen(target==='espace'?'espace':'home');
+    else if(target==='reader' && currentUnit()) {
+      // Same-layout Help never needs to rebuild the reader: simply reveal the
+      // existing DOM and preserve its exact pixel/semantic position. After a
+      // wide→mobile crossing, populate the mobile reader and restore the saved
+      // semantic position rather than reusing the stale Search arrival target.
+      if(sameLayout) this.showScreen('reader');
+      else this.openUnit(currentUnit().unit_id,null);
+    } else this.showScreen(target==='espace'?'espace':'home');
   },
 
   showScreen(name, initial = false) {
@@ -5193,6 +5222,9 @@ const App = {
     if (!scroller || !target) return;
     // Offset by a little so the paragraph isn't flush against the top edge
     scroller.scrollTop = Math.max(0, target.offsetTop - 60);
+    // Capture the arrival anchor through the normal scroll-save pipeline so
+    // the in-memory position and durable expected value remain concurrency-safe.
+    void this.recordScroll(scrollId);
     target.classList.remove('para-flash');
     void target.offsetWidth; // restart the animation if the same target repeats
     target.classList.add('para-flash');
