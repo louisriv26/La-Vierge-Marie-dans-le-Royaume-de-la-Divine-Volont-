@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-RvVBcOAzm80TWwbHK8Jyx73BDVfL5lEsiTNGZ+XYkZQ='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
 // "Automatique" (no explicit saved choice) must ALSO resolve to a real
@@ -32,7 +34,7 @@ window.APP_BASE = (function() {
   return base;
 })();
 </script>
-<meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#2C4A7C" media="(prefers-color-scheme: light)">
@@ -794,6 +796,19 @@ html, body {
 .app-circle.read::after { content: '✓'; position: absolute; bottom: -1px; right: 0; font-size: 8px; line-height: 1; font-weight: 800; color: var(--accent-fg); }
 .app-circle.active { box-shadow: 0 0 0 2.5px var(--accent-state), 0 0 0 4.5px rgba(201,168,76,0.25); }
 .app-circle:hover { border-color: var(--primary); color: var(--primary); }
+/* v36 convergence: preserve the 44px appendix targets, but reflow them on
+   genuinely narrow screens instead of clipping A6 beyond the viewport. */
+@media (max-width: 350px) {
+  .appendix-row {
+    display: grid;
+    grid-template-columns: repeat(3, 45px);
+    column-gap: 5px;
+    row-gap: 5px;
+    align-items: center;
+    justify-content: start;
+  }
+  .appendix-label { grid-column: 1 / -1; margin-right: 0; }
+}
 .progress-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--accent-state); border-radius: 2px; transition: width 0.4s ease; }
 .progress-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
@@ -893,7 +908,7 @@ h1, h2, h3, h4 {
 .snippet-card:hover { background: var(--ivory-deep); border-left-color: var(--accent); }
 .snippet-card[aria-current="location"] { background: var(--mary-bg); border-left-color: var(--accent-state); box-shadow: inset 0 0 0 1px var(--accent-state); }
 .search-title-results [aria-current="location"] { background: var(--mary-bg); box-shadow: inset 3px 0 0 var(--accent-state); }
-.search-more { width:100%; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--white); color:var(--primary); font:600 13px var(--font-ui); padding:11px 14px; margin:3px 0 7px; cursor:pointer; }
+.search-more { width:100%; min-height:44px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--white); color:var(--primary); font:600 13px var(--font-ui); padding:11px 14px; margin:3px 0 7px; cursor:pointer; }
 .search-more:hover { background:var(--ivory-deep); border-color:var(--primary); }
 .search-more:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
 .snippet-meta { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
@@ -1243,6 +1258,147 @@ h1, h2, h3, h4 {
 .help-key span { display:block; color:var(--muted); font-size:12px; line-height:1.5; }
 .help-subtitle { margin:16px 0 9px; color:var(--ink); font-size:13px; font-weight:700; }
 @media (min-width: 720px) { .help-key-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+/* v36 convergence: lightweight device-transfer guidance. It deliberately
+   reuses exportBackup()/chooseRestoreFile() and stores no disclosure state. */
+.transfer-card { margin-top: 10px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: var(--white); overflow: hidden; }
+.transfer-card > summary { min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; color: var(--primary); font: 700 13px var(--font-ui); list-style: none; }
+.transfer-card > summary::-webkit-details-marker { display: none; }
+.transfer-card > summary::after { content: '›'; margin-left: auto; font-size: 18px; line-height: 1; transform: rotate(90deg); transition: transform .12s; }
+.transfer-card[open] > summary::after { transform: rotate(-90deg); }
+.transfer-body { border-top: 0.5px solid var(--border); padding: 12px 14px 14px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.transfer-body ol { padding-left: 20px; margin: 0 0 12px; }
+.transfer-body li { margin: 0 0 7px; }
+.transfer-warning { margin: 10px 0 12px; padding: 10px 12px; border: 0.5px solid var(--accent); border-radius: var(--radius-sm); background: var(--practice-bg); color: var(--ink); }
+.transfer-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.transfer-actions .backup-btn { flex: 1 1 180px; }
+
+/* v36 convergence: the existing four-level text-size preference remains
+   unchanged in storage and still maps reader text to 16/19/22/26 px. Grand
+   and Très grand additionally raise only essential operational text. */
+html[data-text-level="large"] { --ui-micro-scale:11px; --ui-small-scale:13px; --ui-body-scale:14px; --ui-control-scale:13.5px; }
+html[data-text-level="xlarge"] { --ui-micro-scale:12px; --ui-small-scale:14px; --ui-body-scale:15.5px; --ui-control-scale:14.5px; }
+
+html[data-text-level="large"] .nav-btn,
+html[data-text-level="xlarge"] .nav-btn,
+html[data-text-level="large"] .list-meta,
+html[data-text-level="xlarge"] .list-meta,
+html[data-text-level="large"] .snippet-meta,
+html[data-text-level="xlarge"] .snippet-meta,
+html[data-text-level="large"] .search-group-label,
+html[data-text-level="xlarge"] .search-group-label,
+html[data-text-level="large"] .ws-item-meta,
+html[data-text-level="xlarge"] .ws-item-meta,
+html[data-text-level="large"] .ws-section-label,
+html[data-text-level="xlarge"] .ws-section-label,
+html[data-text-level="large"] .reader-topbar-day,
+html[data-text-level="xlarge"] .reader-topbar-day,
+html[data-text-level="large"] .wrt-day,
+html[data-text-level="xlarge"] .wrt-day,
+html[data-text-level="large"] .reader-nav-center,
+html[data-text-level="xlarge"] .reader-nav-center,
+html[data-text-level="large"] .wrn-center,
+html[data-text-level="xlarge"] .wrn-center,
+html[data-text-level="large"] .espace-section-title,
+html[data-text-level="xlarge"] .espace-section-title,
+html[data-text-level="large"] .stat-label,
+html[data-text-level="xlarge"] .stat-label,
+html[data-text-level="large"] .fav-card-day,
+html[data-text-level="xlarge"] .fav-card-day,
+html[data-text-level="large"] .note-espace-meta,
+html[data-text-level="xlarge"] .note-espace-meta { font-size: var(--ui-micro-scale); }
+
+html[data-text-level="large"] .wide-search-sub,
+html[data-text-level="xlarge"] .wide-search-sub,
+html[data-text-level="large"] .search-status,
+html[data-text-level="xlarge"] .search-status,
+html[data-text-level="large"] .search-title-group > summary,
+html[data-text-level="xlarge"] .search-title-group > summary,
+html[data-text-level="large"] .backup-status,
+html[data-text-level="xlarge"] .backup-status,
+html[data-text-level="large"] .cycle-desc,
+html[data-text-level="xlarge"] .cycle-desc,
+html[data-text-level="large"] .help-nav a,
+html[data-text-level="xlarge"] .help-nav a,
+html[data-text-level="large"] .help-key span,
+html[data-text-level="xlarge"] .help-key span,
+html[data-text-level="large"] .modal-subtitle,
+html[data-text-level="xlarge"] .modal-subtitle,
+html[data-text-level="large"] .restore-warning,
+html[data-text-level="xlarge"] .restore-warning,
+html[data-text-level="large"] .restore-errors,
+html[data-text-level="xlarge"] .restore-errors,
+html[data-text-level="large"] .onb-desc,
+html[data-text-level="xlarge"] .onb-desc,
+html[data-text-level="large"] #onboard-sub,
+html[data-text-level="xlarge"] #onboard-sub { font-size: var(--ui-small-scale); }
+
+html[data-text-level="large"] .wide-search-title,
+html[data-text-level="xlarge"] .wide-search-title,
+html[data-text-level="large"] .ws-item-title,
+html[data-text-level="xlarge"] .ws-item-title,
+html[data-text-level="large"] .help-label,
+html[data-text-level="xlarge"] .help-label,
+html[data-text-level="large"] .help-desc,
+html[data-text-level="xlarge"] .help-desc,
+html[data-text-level="large"] .help-note,
+html[data-text-level="xlarge"] .help-note,
+html[data-text-level="large"] .help-tip,
+html[data-text-level="xlarge"] .help-tip,
+html[data-text-level="large"] .help-key strong,
+html[data-text-level="xlarge"] .help-key strong,
+html[data-text-level="large"] .help-subtitle,
+html[data-text-level="xlarge"] .help-subtitle,
+html[data-text-level="large"] .cycle-label,
+html[data-text-level="xlarge"] .cycle-label,
+html[data-text-level="large"] .note-espace-text,
+html[data-text-level="xlarge"] .note-espace-text,
+html[data-text-level="large"] .restore-row,
+html[data-text-level="xlarge"] .restore-row,
+html[data-text-level="large"] .transfer-card > summary,
+html[data-text-level="xlarge"] .transfer-card > summary,
+html[data-text-level="large"] .transfer-body,
+html[data-text-level="xlarge"] .transfer-body,
+html[data-text-level="large"] .update-banner,
+html[data-text-level="xlarge"] .update-banner,
+html[data-text-level="large"] .toast,
+html[data-text-level="xlarge"] .toast { font-size: var(--ui-body-scale); }
+
+html[data-text-level="large"] .wt-nav-btn,
+html[data-text-level="xlarge"] .wt-nav-btn,
+html[data-text-level="large"] .reader-nav-btn,
+html[data-text-level="xlarge"] .reader-nav-btn,
+html[data-text-level="large"] .wrn-btn,
+html[data-text-level="xlarge"] .wrn-btn,
+html[data-text-level="large"] .wrt-btn,
+html[data-text-level="xlarge"] .wrt-btn,
+html[data-text-level="large"] .action-btn,
+html[data-text-level="xlarge"] .action-btn,
+html[data-text-level="large"] .backup-btn,
+html[data-text-level="xlarge"] .backup-btn,
+html[data-text-level="large"] .cycle-btn,
+html[data-text-level="xlarge"] .cycle-btn,
+html[data-text-level="large"] .search-more,
+html[data-text-level="xlarge"] .search-more,
+html[data-text-level="large"] .update-banner button,
+html[data-text-level="xlarge"] .update-banner button,
+html[data-text-level="large"] .toast-undo-btn,
+html[data-text-level="xlarge"] .toast-undo-btn,
+html[data-text-level="large"] .textsize-option,
+html[data-text-level="xlarge"] .textsize-option { font-size: var(--ui-control-scale); }
+
+html[data-text-level="large"] .help-nav a,
+html[data-text-level="xlarge"] .help-nav a { min-height: 44px; }
+
+/* Very narrow screens need one extra row when enlarged operational text is
+   active; preserve Normal/Petit geometry unchanged. */
+@media (max-width: 350px) {
+  html[data-text-level="large"] .cycle-card,
+  html[data-text-level="xlarge"] .cycle-card { flex-wrap: wrap; }
+  html[data-text-level="large"] .cycle-btn,
+  html[data-text-level="xlarge"] .cycle-btn { width: 100%; }
+}
+
 [aria-label="Fermer l’aide"] { min-width: 44px; min-height: 44px; }
 
 /* Today card — clickable hint */
@@ -1525,6 +1681,362 @@ h1, h2, h3, h4 {
   border: none; border-radius: 8px;
   padding: 9px 12px; font-size: 13px; cursor: pointer;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   VERSION 38 — AUTHORITATIVE SEMANTIC TYPOGRAPHY / RESPONSIVE CLOSURE
+   Reader 16/19/22/26 semantics and functional state logic remain unchanged.
+   Every meaningful visible text family below maps to one governed role;
+   fixed exceptions are limited to technical version text, decorative/icon
+   glyphs, large display numerals, the Home/wide application brand, and the
+   note character counter technical micro-data.
+═══════════════════════════════════════════════════════════════════════ */
+html[data-text-level="small"] {
+  --v38-compact-devotional:14px; --v38-editable:16px; --v38-prominent:16px;
+  --v38-ui-body:13px; --v38-primary-control:13px; --v38-compact-action:12px;
+  --v38-interactive-compact:11px; --v38-meta:10px; --v38-mobile-nav:11px;
+  --v38-wide-nav:12.5px; --v38-wide-reader-title:22px;
+}
+html[data-text-level="normal"] {
+  --v38-compact-devotional:15.5px; --v38-editable:17px; --v38-prominent:17px;
+  --v38-ui-body:14px; --v38-primary-control:14px; --v38-compact-action:13px;
+  --v38-interactive-compact:12px; --v38-meta:11px; --v38-mobile-nav:12px;
+  --v38-wide-nav:13.5px; --v38-wide-reader-title:24px;
+}
+html[data-text-level="large"] {
+  --v38-compact-devotional:17.5px; --v38-editable:19px; --v38-prominent:19px;
+  --v38-ui-body:16px; --v38-primary-control:15.5px; --v38-compact-action:14.5px;
+  --v38-interactive-compact:13px; --v38-meta:12px; --v38-mobile-nav:13px;
+  --v38-wide-nav:14.5px; --v38-wide-reader-title:26px;
+}
+html[data-text-level="xlarge"] {
+  --v38-compact-devotional:19.5px; --v38-editable:21px; --v38-prominent:21px;
+  --v38-ui-body:18px; --v38-primary-control:17px; --v38-compact-action:16px;
+  --v38-interactive-compact:14px; --v38-meta:13px; --v38-mobile-nav:14px;
+  --v38-wide-nav:15.5px; --v38-wide-reader-title:28px;
+}
+
+/* Compact devotional content. */
+html[data-text-level] .hero-excerpt,
+html[data-text-level] .snippet-text,
+html[data-text-level] .fav-card-text,
+html[data-text-level] .note-excerpt,
+html[data-text-level] .tac-text,
+html[data-text-level] .tac-oraison,
+html[data-text-level] .ws-today-pratique,
+html[data-text-level] .ws-today-oraison { font-size:var(--v38-compact-devotional); }
+
+/* Full devotional content outside the ordinary reader. */
+html[data-text-level] .tmod-text,
+html[data-text-level] .tmod-oraison { font-size:var(--reader-size); line-height:var(--reader-lh); }
+
+/* Editable/input text. */
+html[data-text-level] .search-input,
+html[data-text-level] .note-textarea { font-size:var(--v38-editable); }
+
+/* Prominent screen/card/modal titles. Home and wide app brands are deliberate display exceptions. */
+html[data-text-level] #screen-list .topbar-title,
+html[data-text-level] #screen-espace .topbar-title,
+html[data-text-level] #screen-aide .topbar-title,
+html[data-text-level] .hero-title,
+html[data-text-level] .list-title,
+html[data-text-level] .ws-item-title,
+html[data-text-level] .reader-hero-title,
+html[data-text-level] .wide-search-title,
+html[data-text-level] .help-section-title,
+html[data-text-level] .modal-title,
+html[data-text-level] #onboard-title,
+html[data-text-level] .ww-text,
+html[data-text-level] .v38-recovery-title { font-size:var(--v38-prominent); }
+html[data-text-level] .wr-hero-title { font-size:var(--v38-wide-reader-title); }
+
+/* Explanatory/body interface text. */
+html[data-text-level] .loading-text,
+html[data-text-level] .search-empty,
+html[data-text-level] .search-status,
+html[data-text-level] .wide-search-sub,
+html[data-text-level] .help-label,
+html[data-text-level] .help-desc,
+html[data-text-level] .help-note,
+html[data-text-level] .help-tip,
+html[data-text-level] .help-key strong,
+html[data-text-level] .help-key span,
+html[data-text-level] .help-subtitle,
+html[data-text-level] .cycle-label,
+html[data-text-level] .cycle-desc,
+html[data-text-level] .backup-status,
+html[data-text-level] .restore-row,
+html[data-text-level] .restore-warning,
+html[data-text-level] .restore-errors,
+html[data-text-level] .transfer-card > summary,
+html[data-text-level] .transfer-body,
+html[data-text-level] .transfer-warning,
+html[data-text-level] .note-espace-text,
+html[data-text-level] .espace-empty-text,
+html[data-text-level] .para-note-text,
+html[data-text-level] .onb-desc,
+html[data-text-level] #onboard-sub,
+html[data-text-level] .update-banner,
+html[data-text-level] .toast,
+html[data-text-level] .v38-recovery-body { font-size:var(--v38-ui-body); }
+
+/* Ordinary primary controls and compact constrained titles. */
+html[data-text-level] .hero-read-btn,
+html[data-text-level] .search-title-group > summary,
+html[data-text-level] .help-nav a,
+html[data-text-level] .note-espace-action,
+html[data-text-level] .reader-nav-btn,
+html[data-text-level] .reader-topbar-title,
+html[data-text-level] .wrt-title,
+html[data-text-level] .wrt-btn,
+html[data-text-level] .wrn-btn,
+html[data-text-level] .backup-btn,
+html[data-text-level] .cycle-btn,
+html[data-text-level] .search-more,
+html[data-text-level] .textsize-option,
+html[data-text-level] .tp-btn,
+html[data-text-level] .modal-btn,
+html[data-text-level] .hlp-remove,
+html[data-text-level] .stale-hl-remove,
+html[data-text-level] #onboard-aide-btn,
+html[data-text-level] #onboard-start-btn,
+html[data-text-level] #today-modal-close,
+html[data-text-level] .update-banner button,
+html[data-text-level] .toast-undo-btn,
+html[data-text-level] .v38-help-close,
+html[data-text-level] .v38-recovery-retry { font-size:var(--v38-primary-control); }
+
+/* Reader four-across and contextual actions use the compact-action role. */
+html[data-text-level] .action-btn,
+html[data-text-level] .selbar-btn { font-size:var(--v38-compact-action); }
+
+/* Compact interactive labels live inside larger targets/cards. */
+html[data-text-level] .cal-cell,
+html[data-text-level] .app-circle,
+html[data-text-level] .list-day-circle,
+html[data-text-level] .ws-cal-cell,
+html[data-text-level] .ws-day-circle { font-size:var(--v38-interactive-compact); }
+
+/* Tertiary/meta text. */
+html[data-text-level] .topbar-sub,
+html[data-text-level] .hero-day-badge,
+html[data-text-level] .hero-ordinal,
+html[data-text-level] .calendar-label,
+html[data-text-level] .appendix-label,
+html[data-text-level] .progress-label,
+html[data-text-level] .list-section-label,
+html[data-text-level] .list-meta,
+html[data-text-level] .search-group-label,
+html[data-text-level] .snippet-meta,
+html[data-text-level] .reader-topbar-day,
+html[data-text-level] .reader-hero-badge,
+html[data-text-level] .reader-nav-center,
+html[data-text-level] .section-label,
+html[data-text-level] .textsize-panel-label,
+html[data-text-level] .stat-label,
+html[data-text-level] .espace-section-title,
+html[data-text-level] .fav-card-day,
+html[data-text-level] .note-espace-meta,
+html[data-text-level] .modal-subtitle,
+html[data-text-level] .tac-label,
+html[data-text-level] .tac-day,
+html[data-text-level] .tac-section-label,
+html[data-text-level] #today-modal-title,
+html[data-text-level] #today-modal-day,
+html[data-text-level] .tmod-label,
+html[data-text-level] .ws-title,
+html[data-text-level] .ws-progress-label,
+html[data-text-level] .ws-section-label,
+html[data-text-level] .ws-item-meta,
+html[data-text-level] .wrt-day,
+html[data-text-level] .wr-hero-badge,
+html[data-text-level] .wrn-center,
+html[data-text-level] .ws-today-label,
+html[data-text-level] .rtr-header-label,
+html[data-text-level] .rtr-section-label,
+html[data-text-level] .wt-date,
+html[data-text-level] .v38-note-count { font-size:var(--v38-meta); }
+
+/* Navigation roles. */
+html[data-text-level] .nav-btn { font-size:var(--v38-mobile-nav); }
+html[data-text-level] .wt-nav-btn { font-size:var(--v38-wide-nav); }
+@media (max-width:219px) {
+  .nav-btn { min-width:0; padding-left:0; padding-right:0; letter-spacing:0; overflow-wrap:anywhere; line-height:1.05; }
+}
+
+/* Onboarding semantic labels. */
+html[data-text-level] .onb-label { font-size:var(--v38-primary-control); }
+
+/* Help and recovery targets are important even in the smallest preset. */
+html[data-text-level] .help-nav a,
+html[data-text-level] .v38-help-close,
+html[data-text-level] .v38-recovery-retry { min-height:44px; }
+
+/* Theme choices reflow instead of shrinking their text. */
+.tp-row { flex-wrap:wrap; }
+.tp-btn { flex:1 1 82px; min-width:0; white-space:normal; justify-content:center; }
+
+/* Larger Jours/list titles gain information capacity instead of losing more to ellipsis. */
+html[data-text-level="large"] .list-title,
+html[data-text-level="xlarge"] .list-title,
+html[data-text-level="large"] .ws-item-title,
+html[data-text-level="xlarge"] .ws-item-title {
+  white-space:normal; overflow:hidden; text-overflow:clip; display:-webkit-box;
+  -webkit-box-orient:vertical; -webkit-line-clamp:2;
+}
+
+/* Calendar: seven columns remain exact from 364px upward. Below 364px the
+   number of columns reduces automatically, never allowing a track below 44px. */
+@media (max-width:363px) {
+  .calendar-grid {
+    grid-template-columns:repeat(auto-fit,minmax(44px,1fr));
+    gap:4px; justify-content:stretch;
+  }
+  .cal-cell {
+    width:auto; height:auto; min-width:44px; min-height:44px;
+    aspect-ratio:1; justify-self:stretch;
+  }
+}
+
+/* Narrow contextual actions: reflow 2×2 rather than forcing tiny one-row labels. */
+@media (max-width:360px) {
+  #sel-bar { width:calc(100vw - 24px); padding:6px 8px; }
+  #sel-bar.open { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .selbar-btn { width:100%; min-width:0; justify-content:center; gap:5px; padding:8px 8px; white-space:normal; }
+}
+
+/* Tablet pressure band: deterministic two-row app top bar. At 920px the
+   predecessor one-row topology resumes; 919/920 is a mandatory release gate. */
+@media (min-width:768px) and (max-width:919px) and (min-height:600px) {
+  #wide-topbar {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    grid-template-areas:"brand date version" "nav nav nav";
+    grid-template-rows:21px 44px;
+    align-items:center;
+    column-gap:8px; row-gap:2px;
+    height:calc(73px + var(--safe-top)); min-height:calc(73px + var(--safe-top));
+    padding:calc(var(--safe-top) + 3px) 16px 3px;
+  }
+  .wt-brand { grid-area:brand; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wt-date { grid-area:date; white-space:nowrap; }
+  #desktop-version { grid-area:version; white-space:nowrap; }
+  .wt-nav { grid-area:nav; margin-left:0; min-width:0; justify-content:flex-end; align-items:center; }
+  .wt-nav-btn { min-width:44px; padding-left:10px; padding-right:10px; white-space:nowrap; }
+  #wide-textsize-panel { top:calc(73px + var(--safe-top)); }
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   V40 bounded whole-interface semantic-scaling / responsive closure.
+   Presentation only: semantic constants and functional logic are unchanged.
+═══════════════════════════════════════════════════════════════ */
+
+/* Meaningful Help badges scale; decorative glyphs deliberately remain icons. */
+html[data-text-level] .help-icon.help-icon-text {
+  width:auto; min-width:32px; padding:0 6px; border-radius:999px;
+  font-size:var(--v38-primary-control); white-space:nowrap; line-height:1;
+}
+
+/* Cycle confirmation copy is explanatory body text, not fixed display text. */
+html[data-text-level] #cycle-reset-message {
+  font-size:var(--v38-ui-body); line-height:1.55; overflow-wrap:anywhere;
+}
+
+/* Modal subtitles contain two roles: note metadata stays meta; restore/cycle
+   instructions use explanatory body sizing. All may wrap instead of ellipsize. */
+.modal-subtitle {
+  white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere;
+}
+html[data-text-level] #note-modal-subtitle { font-size:var(--v38-meta); }
+html[data-text-level] #restore-modal-subtitle,
+html[data-text-level] #cycle-reset-modal .modal-subtitle {
+  font-size:var(--v38-ui-body); line-height:1.5;
+}
+
+/* Contextual selection actions: preserve readable labels through the phone
+   pressure range rather than forcing a one-row fit. */
+@media (max-width:440px) {
+  #sel-bar { width:calc(100vw - 24px); padding:6px 8px; }
+  #sel-bar.open { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .selbar-btn { width:100%; min-width:0; justify-content:center; gap:5px; padding:8px 8px; white-space:normal; }
+}
+/* In the narrowest wide layout, the 340px sidebar leaves the Reader column
+   with phone-class action width. Resume one row at 780px. */
+@media (min-width:768px) and (max-width:779px) and (min-height:600px) {
+  #sel-bar { width:calc(100vw - var(--sidebar-w) - 24px); }
+  #sel-bar.open { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .selbar-btn { width:100%; min-width:0; justify-content:center; gap:5px; padding:8px 8px; white-space:normal; }
+}
+
+/* Theme labels size themselves from their actual semantic text. */
+.tp-row { flex-wrap:wrap; }
+.tp-btn { flex:0 1 auto; min-width:max-content; max-width:100%; white-space:normal; justify-content:center; }
+
+/* Stale-highlight action keeps the governed touch target but is no longer a
+   44px text box. */
+.stale-hl-remove { width:auto; min-width:44px; padding-left:12px; padding-right:12px; white-space:nowrap; }
+
+/* Nouveau-cycle topology responds to the component's own available width, so
+   it works both on phones and inside the narrow tablet Mon Espace column. */
+.cycle-card { flex-wrap:wrap; }
+.cycle-text { flex:1 1 180px; min-width:0; }
+.cycle-btn { flex:0 0 auto; margin-left:auto; }
+
+/* Backup controls also live inside a narrow tablet Mon Espace column. Use
+   component-intrinsic tracks so enlarged labels are never clipped. */
+.backup-actions { grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); }
+@media (max-width:520px) { .backup-actions { grid-template-columns:1fr; } }
+
+/* Restore rows must not inherit long-filename min-content width. */
+.restore-row { min-width:0; }
+.restore-row > span,
+.restore-row > strong { min-width:0; overflow-wrap:anywhere; word-break:break-word; }
+@media (max-width:430px) {
+  .restore-row { flex-direction:column; gap:2px; }
+  .restore-row strong { text-align:left; }
+}
+
+/* Real built-in status strings can be long. Keep toasts inside the viewport
+   and allow the Undo action row to wrap while preserving its 44px control. */
+.toast {
+  max-width:calc(100vw - 24px); white-space:normal; overflow-wrap:anywhere; text-align:center;
+}
+.toast.with-action { flex-wrap:wrap; justify-content:center; padding-right:18px; }
+
+/* Help concept cards choose the number of columns that actually fits. */
+.help-key-grid { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   V41 iPhone/mobile text-size chooser physical-device closure.
+   No semantic size constants or wide-layout chooser behavior change.
+═══════════════════════════════════════════════════════════════ */
+#textsize-panel .textsize-panel-head {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-bottom:10px;
+}
+#textsize-panel .textsize-panel-head .textsize-panel-label { margin-bottom:0; }
+#textsize-panel .textsize-panel-close {
+  width:44px; height:44px; flex:0 0 44px; display:flex; align-items:center; justify-content:center;
+  border:0.5px solid var(--border); border-radius:var(--radius-sm); background:transparent;
+  color:var(--muted); font:600 16px var(--font-ui); cursor:pointer; touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+#textsize-panel .textsize-panel-close:hover,
+#textsize-panel .textsize-panel-close:focus-visible {
+  color:var(--primary); border-color:var(--primary); background:var(--mary-bg);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   V42 mobile global text-size discoverability closure.
+   The existing V41 chooser is shared by Accueil, Jours/Recherche,
+   Mon Espace and Reader; semantic size constants are unchanged.
+═══════════════════════════════════════════════════════════════ */
+.mobile-textsize-trigger.active {
+  color:var(--primary); border-color:var(--primary); background:var(--mary-bg);
+}
 </style>
 </head>
 
@@ -1544,11 +2056,12 @@ h1, h2, h3, h4 {
       <div>
         <h1 class="topbar-title">La Vierge Marie dans le Royaume de la Divine Volonté</h1>
         <div class="topbar-sub" id="home-date-label">—</div>
-        <div class="mobile-version" id="mobile-version" onclick="App.debugTap()">v—</div>
+        <div class="mobile-version" id="mobile-version" data-csp-click="App.debugTap()">v—</div>
       </div>
       <div class="topbar-actions">
-        <button class="topbar-action" id="dark-toggle-btn" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
-        <button class="topbar-action" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button>
+        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
+        <button class="topbar-action" id="dark-toggle-btn" data-csp-click="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
+        <button class="topbar-action" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
     <div class="calendar-wrap">
@@ -1559,27 +2072,30 @@ h1, h2, h3, h4 {
     <div class="progress-wrap">
       <div class="progress-row">
         <div class="progress-bar-track" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="37">
-          <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+          <div class="progress-bar-fill" id="progress-fill" data-csp-style="width:0%"></div>
         </div>
         <div class="progress-label" id="progress-label">0 / 37</div>
       </div>
     </div>
     <div class="divider"></div>
     <!-- Pour aujourd'hui: Pratique + Oraison — always visible -->
-    <div id="today-actions-wrap" style="padding:14px 16px 0;flex-shrink:0;max-height:220px;overflow-y:auto;"></div>
+    <div id="today-actions-wrap" data-csp-style="padding:14px 16px 0;flex-shrink:0;max-height:220px;overflow-y:auto;"></div>
     <div class="hero-scroll" id="hero-scroll"></div>
   </div>
 
   <div id="screen-list" class="screen" data-list-mode="jours">
     <div class="topbar">
       <div><h1 class="topbar-title" id="mobile-list-title">Les 31 Jours</h1><div class="topbar-sub" id="mobile-list-sub">31 méditations · 6 appendices</div></div>
-      <button class="topbar-action" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button>
+      <div class="topbar-actions">
+        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
+        <button class="topbar-action" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
+      </div>
     </div>
     <div class="search-wrap" id="mobile-list-search">
       <div class="search-row">
         <span class="search-icon">⌕</span>
-        <input class="search-input" id="search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" oninput="App.onSearch(this.value,'list-scroll','search-clear')">
-        <button class="search-clear" id="search-clear" aria-label="Effacer" onclick="App.clearSearch('search-input','list-scroll','search-clear')">✕</button>
+        <input class="search-input" id="search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher" data-csp-input="App.onSearch(this.value,'list-scroll','search-clear')">
+        <button class="search-clear" id="search-clear" aria-label="Effacer" data-csp-click="App.clearSearch('search-input','list-scroll','search-clear')">✕</button>
       </div>
     </div>
     <div class="list-scroll" id="list-scroll"></div>
@@ -1593,8 +2109,8 @@ h1, h2, h3, h4 {
         <div class="reader-topbar-title" id="reader-topbar-title"></div>
       </div>
       <div class="reader-topbar-actions">
-        <button class="reader-icon-btn" id="btn-textsize" onclick="App.toggleTextsizePanel()" aria-label="Taille du texte">Aᵃ</button>
-        <button class="reader-icon-btn" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button>
+        <button class="reader-icon-btn mobile-textsize-trigger" id="btn-textsize" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel">Aᵃ</button>
+        <button class="reader-icon-btn" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
     <div class="reader-scroll" id="reader-scroll" role="region" aria-label="Lecture" tabindex="-1">
@@ -1610,36 +2126,43 @@ h1, h2, h3, h4 {
       <button class="reader-nav-btn" id="reader-next" aria-label="Jour suivant" disabled><span class="nav-label" id="reader-next-label">Suivant</span> →</button>
     </div>
     <div class="reader-actionbar">
-      <button class="action-btn complete-btn" id="btn-complete" onclick="App.toggleComplete()">
+      <button class="action-btn complete-btn" id="btn-complete" data-csp-click="App.toggleComplete()">
         <span class="action-icon" id="complete-icon">○</span><span id="complete-label">Terminé</span>
       </button>
-      <button class="action-btn" id="btn-activate" onclick="App.activateDay()">
+      <button class="action-btn" id="btn-activate" data-csp-click="App.activateDay()">
         <span class="action-icon" id="activate-icon">✦</span>
         <span id="activate-label">Activer</span>
       </button>
-      <button class="action-btn" onclick="App.shareDay()" aria-label="Partager ce jour">
+      <button class="action-btn" data-csp-click="App.shareDay()" aria-label="Partager ce jour">
         <span class="action-icon" aria-hidden="true">↑</span><span>Partager</span>
       </button>
-      <button class="action-btn" onclick="App.copyCurrentLink()" aria-label="Copier le lien de ce passage">
+      <button class="action-btn" data-csp-click="App.copyCurrentLink()" aria-label="Copier le lien de ce passage">
         <span class="action-icon">↗</span><span>Lien</span>
       </button>
     </div>
-    <div class="textsize-panel" id="textsize-panel">
-      <div class="textsize-panel-label">Taille du texte</div>
-      <div class="textsize-options" role="group" aria-label="Taille du texte">
-        <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" onclick="App.applyTextSize('small')">Petit</button>
-        <button type="button" class="textsize-option" data-text-level="normal" aria-pressed="true" onclick="App.applyTextSize('normal')">Normal</button>
-        <button type="button" class="textsize-option" data-text-level="large" aria-pressed="false" onclick="App.applyTextSize('large')">Grand</button>
-        <button type="button" class="textsize-option" data-text-level="xlarge" aria-pressed="false" onclick="App.applyTextSize('xlarge')">Très grand</button>
-      </div>
-      <div class="textsize-preview">« Ma fille, écoute-moi… »</div>
-    </div>
+
   </div>
+
+    <div class="textsize-panel" id="textsize-panel" role="dialog" aria-label="Taille du texte">
+      <div class="textsize-panel-head">
+        <div class="textsize-panel-label">Taille du texte</div>
+        <button type="button" class="textsize-panel-close" data-csp-click="App.toggleTextsizePanel()" aria-label="Fermer le réglage de taille du texte">✕</button>
+      </div>
+      <div class="textsize-options" role="group" aria-label="Taille du texte">
+        <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" data-csp-click="App.applyTextSize('small')">Petit</button>
+        <button type="button" class="textsize-option" data-text-level="normal" aria-pressed="true" data-csp-click="App.applyTextSize('normal')">Normal</button>
+        <button type="button" class="textsize-option" data-text-level="large" aria-pressed="false" data-csp-click="App.applyTextSize('large')">Grand</button>
+        <button type="button" class="textsize-option" data-text-level="xlarge" aria-pressed="false" data-csp-click="App.applyTextSize('xlarge')">Très grand</button>
+      </div>
+    </div>
 
   <div id="screen-espace" class="screen">
     <div class="topbar">
       <div><h1 class="topbar-title">Mon Espace</h1><div class="topbar-sub">Surlignés · Notes · Progression</div></div>
-      <div class="topbar-actions"><button class="topbar-action" onclick="App.openHelp()" aria-label="Aide" title="Aide">?</button></div>
+      <div class="topbar-actions">
+        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
+        <button class="topbar-action" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
+      </div>
     </div>
     <div class="espace-scroll" id="espace-scroll"></div>
   </div>
@@ -1648,17 +2171,17 @@ h1, h2, h3, h4 {
     <div class="topbar">
       <div><h1 class="topbar-title">Aide</h1><div class="topbar-sub">Utilisation · Données · À propos</div></div>
       <div class="topbar-actions">
-        <button class="topbar-action" onclick="App.closeHelp()" aria-label="Fermer l’aide">✕</button>
+        <button class="topbar-action" data-csp-click="App.closeHelp()" aria-label="Fermer l’aide">✕</button>
       </div>
     </div>
-    <div class="espace-scroll" id="aide-scroll" style="padding:16px"></div>
+    <div class="espace-scroll" id="aide-scroll" data-csp-style="padding:16px"></div>
   </div>
 
   <nav class="bottom-nav" id="bottom-nav" aria-label="Navigation principale">
-    <button class="nav-btn active" id="nav-home" onclick="App.showScreen('home')" aria-label="Accueil"><span class="nav-icon">⌂</span>Accueil</button>
-    <button class="nav-btn" id="nav-list" onclick="App.openJours()" aria-label="Jours"><span class="nav-icon">◎</span>Jours</button>
-    <button class="nav-btn" id="nav-search" onclick="App.openSearchNav()" aria-label="Recherche"><span class="nav-icon">⌕</span>Recherche</button>
-    <button class="nav-btn" id="nav-espace" onclick="App.showScreen('espace')" aria-label="Mon Espace"><span class="nav-icon">♡</span>Mon Espace</button>
+    <button class="nav-btn active" id="nav-home" data-csp-click="App.showScreen('home')" aria-label="Accueil"><span class="nav-icon">⌂</span>Accueil</button>
+    <button class="nav-btn" id="nav-list" data-csp-click="App.openJours()" aria-label="Jours"><span class="nav-icon">◎</span>Jours</button>
+    <button class="nav-btn" id="nav-search" data-csp-click="App.openSearchNav()" aria-label="Recherche"><span class="nav-icon">⌕</span>Recherche</button>
+    <button class="nav-btn" id="nav-espace" data-csp-click="App.showScreen('espace')" aria-label="Mon Espace"><span class="nav-icon">♡</span>Mon Espace</button>
   </nav>
 </div>
 
@@ -1671,25 +2194,25 @@ h1, h2, h3, h4 {
   <div id="wide-topbar">
     <div class="wt-brand">La Vierge Marie dans le Royaume de la Divine Volonté</div>
     <div class="wt-date" id="wide-date-label">—</div>
-    <span class="version-badge" id="desktop-version" title="La Vierge Marie dans le Royaume de la Divine Volonté" onclick="App.debugTap()">v—</span>
+    <span class="version-badge" id="desktop-version" title="La Vierge Marie dans le Royaume de la Divine Volonté" data-csp-click="App.debugTap()">v—</span>
     <nav class="wt-nav" aria-label="Navigation principale">
-      <button class="wt-nav-btn active" data-primary-nav="true" id="wnav-jours" onclick="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
+      <button class="wt-nav-btn active" data-primary-nav="true" id="wnav-jours" data-csp-click="App.wideNav('jours')" aria-label="Jours" aria-pressed="true">
         <span class="wt-nav-icon">◎</span> Jours
       </button>
-      <button class="wt-nav-btn" data-primary-nav="true" id="wnav-search" onclick="App.wideNav('search')" aria-label="Recherche" aria-pressed="false">
+      <button class="wt-nav-btn" data-primary-nav="true" id="wnav-search" data-csp-click="App.wideNav('search')" aria-label="Recherche" aria-pressed="false">
         <span class="wt-nav-icon">⌕</span> Recherche
       </button>
-      <button class="wt-nav-btn" data-primary-nav="true" id="wnav-espace" onclick="App.wideNav('espace')" aria-label="Mon Espace" aria-pressed="false">
+      <button class="wt-nav-btn" data-primary-nav="true" id="wnav-espace" data-csp-click="App.wideNav('espace')" aria-label="Mon Espace" aria-pressed="false">
         <span class="wt-nav-icon">♡</span> Mon Espace
       </button>
-      <button class="wt-nav-btn" id="wnav-textsize" onclick="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">Aᵃ</button>
-      <button class="wt-nav-btn" id="wnav-aide" onclick="App.openHelp()" aria-label="Aide" title="Aide"><span class="wt-nav-icon">?</span></button>
-      <button class="wt-nav-btn" id="wnav-dark" onclick="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
+      <button class="wt-nav-btn" id="wnav-textsize" data-csp-click="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">Aᵃ</button>
+      <button class="wt-nav-btn" id="wnav-aide" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide"><span class="wt-nav-icon">?</span></button>
+      <button class="wt-nav-btn" id="wnav-dark" data-csp-click="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
     </nav>
   </div>
 
   <!-- Wide loading overlay -->
-  <div id="wide-loading" style="position:absolute;inset:0;background:var(--ivory);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;z-index:99;">
+  <div id="wide-loading" data-csp-style="position:absolute;inset:0;background:var(--ivory);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;z-index:99;">
     <div class="loading-crown">✦</div>
     <div class="loading-text">Chargement…</div>
   </div>
@@ -1698,10 +2221,10 @@ h1, h2, h3, h4 {
   <div id="wide-textsize-panel">
     <div class="textsize-panel-label">Taille du texte</div>
     <div class="textsize-options" role="group" aria-label="Taille du texte">
-      <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" onclick="App.applyTextSize('small')">Petit</button>
-      <button type="button" class="textsize-option" data-text-level="normal" aria-pressed="true" onclick="App.applyTextSize('normal')">Normal</button>
-      <button type="button" class="textsize-option" data-text-level="large" aria-pressed="false" onclick="App.applyTextSize('large')">Grand</button>
-      <button type="button" class="textsize-option" data-text-level="xlarge" aria-pressed="false" onclick="App.applyTextSize('xlarge')">Très grand</button>
+      <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" data-csp-click="App.applyTextSize('small')">Petit</button>
+      <button type="button" class="textsize-option" data-text-level="normal" aria-pressed="true" data-csp-click="App.applyTextSize('normal')">Normal</button>
+      <button type="button" class="textsize-option" data-text-level="large" aria-pressed="false" data-csp-click="App.applyTextSize('large')">Grand</button>
+      <button type="button" class="textsize-option" data-text-level="xlarge" aria-pressed="false" data-csp-click="App.applyTextSize('xlarge')">Très grand</button>
     </div>
     <div class="textsize-preview">« Ma fille, écoute-moi… »</div>
   </div>
@@ -1719,7 +2242,7 @@ h1, h2, h3, h4 {
         <div class="ws-title">Progression</div>
         <div class="ws-progress-row">
           <div class="ws-progress-track" id="wide-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="37" aria-label="Progression de lecture">
-            <div class="ws-progress-fill" id="wide-progress-fill" style="width:0%"></div>
+            <div class="ws-progress-fill" id="wide-progress-fill" data-csp-style="width:0%"></div>
           </div>
           <div class="ws-progress-label" id="wide-progress-label">0 / 37</div>
         </div>
@@ -1729,11 +2252,11 @@ h1, h2, h3, h4 {
         <div class="wide-search-title">Recherche</div>
         <div class="wide-search-sub">Titres et 753 paragraphes</div>
       </div>
-      <div class="search-wrap wide-search-wrap wide-search-only" style="padding:6px 12px 8px;">
+      <div class="search-wrap wide-search-wrap wide-search-only" data-csp-style="padding:6px 12px 8px;">
         <div class="search-row">
           <span class="search-icon">⌕</span>
-          <input class="search-input" id="wide-search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher dans les 37 unités" oninput="App.onSearch(this.value,'wide-list-scroll','wide-search-clear')">
-          <button class="search-clear" id="wide-search-clear" aria-label="Effacer" onclick="App.clearSearch('wide-search-input','wide-list-scroll','wide-search-clear')">✕</button>
+          <input class="search-input" id="wide-search-input" type="search" placeholder="Rechercher…" aria-label="Rechercher dans les 37 unités" data-csp-input="App.onSearch(this.value,'wide-list-scroll','wide-search-clear')">
+          <button class="search-clear" id="wide-search-clear" aria-label="Effacer" data-csp-click="App.clearSearch('wide-search-input','wide-list-scroll','wide-search-clear')">✕</button>
         </div>
       </div>
       <div class="ws-list-scroll wide-search-only" id="wide-list-scroll" role="region" aria-label="Résultats de recherche" aria-hidden="true"></div>
@@ -1749,21 +2272,21 @@ h1, h2, h3, h4 {
       </div>
 
       <!-- Reader content (hidden until a day is open) -->
-      <div id="wide-reader-content" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div id="wide-reader-content" data-csp-style="display:none;flex-direction:column;flex:1;overflow:hidden">
         <div id="wide-reader-topbar">
           <div>
             <div class="wrt-day" id="wide-reader-day-badge"></div>
             <div class="wrt-title" id="wide-reader-topbar-title"></div>
           </div>
           <div class="wrt-actions">
-            <button class="wrt-btn complete-btn" id="wide-btn-complete" onclick="App.toggleComplete()">
+            <button class="wrt-btn complete-btn" id="wide-btn-complete" data-csp-click="App.toggleComplete()">
               <span id="wide-complete-icon">○</span> <span id="wide-complete-label">Terminé</span>
             </button>
-            <button class="wrt-btn" id="wide-btn-activate" onclick="App.activateDay()">
+            <button class="wrt-btn" id="wide-btn-activate" data-csp-click="App.activateDay()">
               <span id="wide-activate-icon">✦</span> <span id="wide-activate-label">Activer</span>
             </button>
-            <button class="wrt-btn" onclick="App.shareDay()" aria-label="Partager ce jour"><span aria-hidden="true">↑</span> Partager</button>
-            <button class="wrt-btn" onclick="App.copyCurrentLink()">↗ Lien</button>
+            <button class="wrt-btn" data-csp-click="App.shareDay()" aria-label="Partager ce jour"><span aria-hidden="true">↑</span> Partager</button>
+            <button class="wrt-btn" data-csp-click="App.copyCurrentLink()">↗ Lien</button>
           </div>
         </div>
 
@@ -1783,9 +2306,9 @@ h1, h2, h3, h4 {
       </div>
 
       <!-- Aide panel (inside main, replaces reader content) -->
-      <div id="wide-aide" style="display:none;flex:1;overflow-y:auto;background:var(--ivory);">
-        <div style="position:sticky;top:0;z-index:2;background:var(--ivory);padding:10px 28px 0;display:flex;justify-content:flex-end;">
-          <button onclick="App.closeHelp()" style="background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:13px;cursor:pointer;" aria-label="Fermer l’aide">✕ Fermer</button>
+      <div id="wide-aide" data-csp-style="display:none;flex:1;overflow-y:auto;background:var(--ivory);">
+        <div data-csp-style="position:sticky;top:0;z-index:2;background:var(--ivory);padding:10px 28px 0;display:flex;justify-content:flex-end;">
+          <button class="v38-help-close" data-csp-click="App.closeHelp()" data-csp-style="background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);cursor:pointer;" aria-label="Fermer l’aide">✕ Fermer</button>
         </div>
       </div>
 
@@ -1804,7 +2327,7 @@ h1, h2, h3, h4 {
 <!-- Highlight colour picker — anchored to the tapped paragraph's control -->
 <div id="hl-picker" role="dialog" aria-modal="true" aria-label="Couleur du surlignage">
   <div class="hlp-row" id="hlp-swatches" role="radiogroup" aria-label="Couleur"></div>
-  <button type="button" class="hlp-remove" onclick="App.removeHighlightFromPicker()">✕ Retirer le surlignage</button>
+  <button type="button" class="hlp-remove" data-csp-click="App.removeHighlightFromPicker()">✕ Retirer le surlignage</button>
 </div>
 
 <!-- Theme picker — anchored to whichever theme button was tapped -->
@@ -1814,16 +2337,16 @@ h1, h2, h3, h4 {
 
 <!-- Contextual action bar — selected text on Apple/desktop, paragraph target on Android. -->
 <div id="sel-bar" role="toolbar" aria-label="Actions sur le passage">
-  <button type="button" class="selbar-btn" id="sel-action-highlight" onclick="App.highlightSelection()">
+  <button type="button" class="selbar-btn" id="sel-action-highlight" data-csp-click="App.highlightSelection()">
     <span aria-hidden="true">◆</span> Surligner
   </button>
-  <button type="button" class="selbar-btn" id="sel-action-note" onclick="App.noteSelection()">
+  <button type="button" class="selbar-btn" id="sel-action-note" data-csp-click="App.noteSelection()">
     <span aria-hidden="true">✎</span> Note
   </button>
-  <button type="button" class="selbar-btn" id="sel-action-copy" onclick="App.copySelection()">
+  <button type="button" class="selbar-btn" id="sel-action-copy" data-csp-click="App.copySelection()">
     <span aria-hidden="true">⎘</span> Copier
   </button>
-  <button type="button" class="selbar-btn" id="sel-action-close" onclick="App.closeSelectionActions()" aria-label="Fermer les actions sur le passage">
+  <button type="button" class="selbar-btn" id="sel-action-close" data-csp-click="App.closeSelectionActions()" aria-label="Fermer les actions sur le passage">
     <span aria-hidden="true">✕</span> Fermer
   </button>
 </div>
@@ -1867,36 +2390,36 @@ h1, h2, h3, h4 {
       </div>
     </div>
     <div id="onboard-foot">
-      <button id="onboard-aide-btn" type="button" onclick="App.finishOnboarding(true)">Voir l'aide</button>
-      <button id="onboard-start-btn" type="button" onclick="App.finishOnboarding(false)">Commencer</button>
+      <button id="onboard-aide-btn" type="button" data-csp-click="App.finishOnboarding(true)">Voir l'aide</button>
+      <button id="onboard-start-btn" type="button" data-csp-click="App.finishOnboarding(false)">Commencer</button>
     </div>
   </div>
 </div>
 
-<div id="today-modal" role="dialog" aria-modal="true" aria-label="Pour aujourd'hui" onclick="if(event.target===this)App.closeTodayModal()">
+<div id="today-modal" role="dialog" aria-modal="true" aria-label="Pour aujourd'hui" data-csp-click="if(event.target===this)App.closeTodayModal()">
   <div id="today-modal-box">
     <div id="today-modal-header">
       <div>
         <div id="today-modal-title">✦ Pour aujourd'hui</div>
         <div id="today-modal-day"></div>
       </div>
-      <button id="today-modal-close" onclick="App.closeTodayModal()">✕ Fermer</button>
+      <button id="today-modal-close" data-csp-click="App.closeTodayModal()">✕ Fermer</button>
     </div>
     <div id="today-modal-body"></div>
   </div>
 </div>
 
-<div id="debug-overlay" role="dialog" aria-modal="true" aria-label="Debug" onclick="if(event.target===this)App.hideDebug()">
+<div id="debug-overlay" role="dialog" aria-modal="true" aria-label="Debug" data-csp-click="if(event.target===this)App.hideDebug()">
   <div id="debug-box">
     <h3>⚙ Debug</h3>
     <table id="debug-table"></table>
-    <button type="button" onclick="App.copyDiagnostics()" style="margin-right:8px">Copier diagnostics</button><button id="debug-close" onclick="App.hideDebug()">Fermer</button>
+    <button type="button" data-csp-click="App.copyDiagnostics()" data-csp-style="margin-right:8px">Copier diagnostics</button><button id="debug-close" data-csp-click="App.hideDebug()">Fermer</button>
   </div>
 </div>
 
 <!-- Note modal (shared) -->
-<div class="modal-overlay" id="note-modal" role="dialog" aria-modal="true" aria-labelledby="note-modal-title" onclick="App.closeNoteModal(event)">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
+<div class="modal-overlay" id="note-modal" role="dialog" aria-modal="true" aria-labelledby="note-modal-title" data-csp-click="App.closeNoteModal(event)">
+  <div class="modal-sheet" data-csp-click="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div class="modal-title" id="note-modal-title">Ajouter une note</div>
@@ -1905,18 +2428,18 @@ h1, h2, h3, h4 {
     <div class="modal-body">
       <div class="note-excerpt" id="note-modal-excerpt"></div>
       <textarea class="note-textarea" id="note-textarea" aria-label="Votre réflexion personnelle" placeholder="Votre réflexion personnelle…" maxlength="1000" rows="5"></textarea>
-      <div style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px"><span id="note-char-count">0</span> / 1000</div>
+      <div data-csp-style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px"><span id="note-char-count">0</span> / 1000</div>
     </div>
     <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="App.closeNoteModal()">Annuler</button>
-      <button class="modal-btn modal-btn-save" onclick="App.saveNote()">Enregistrer</button>
+      <button class="modal-btn modal-btn-cancel" data-csp-click="App.closeNoteModal()">Annuler</button>
+      <button class="modal-btn modal-btn-save" data-csp-click="App.saveNote()">Enregistrer</button>
     </div>
   </div>
 </div>
 
-<input id="backup-file-input" type="file" accept="application/json,.json" hidden onchange="App.handleRestoreFile(event)">
-<div class="modal-overlay" id="restore-modal" role="dialog" aria-modal="true" aria-labelledby="restore-modal-title" onclick="App.closeRestoreModal(event)">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
+<input id="backup-file-input" type="file" accept="application/json,.json" hidden data-csp-change="App.handleRestoreFile(event)">
+<div class="modal-overlay" id="restore-modal" role="dialog" aria-modal="true" aria-labelledby="restore-modal-title" data-csp-click="App.closeRestoreModal(event)">
+  <div class="modal-sheet" data-csp-click="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div class="modal-title" id="restore-modal-title">Restaurer une sauvegarde</div>
@@ -1928,15 +2451,15 @@ h1, h2, h3, h4 {
       <div class="restore-errors" id="restore-errors" hidden></div>
     </div>
     <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="App.closeRestoreModal()">Annuler</button>
-      <button class="modal-btn modal-btn-save" id="restore-confirm-btn" onclick="App.commitRestore()">Remplacer mes données</button>
+      <button class="modal-btn modal-btn-cancel" data-csp-click="App.closeRestoreModal()">Annuler</button>
+      <button class="modal-btn modal-btn-save" id="restore-confirm-btn" data-csp-click="App.commitRestore()">Remplacer mes données</button>
     </div>
   </div>
 </div>
 
 <!-- H5: in-app confirmation for the destructive cycle reset; replaces the native browser confirmation. -->
-<div class="modal-overlay" id="cycle-reset-modal" role="dialog" aria-modal="true" aria-labelledby="cycle-reset-title" aria-describedby="cycle-reset-message" onclick="App.closeCycleResetModal(event)">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
+<div class="modal-overlay" id="cycle-reset-modal" role="dialog" aria-modal="true" aria-labelledby="cycle-reset-title" aria-describedby="cycle-reset-message" data-csp-click="App.closeCycleResetModal(event)">
+  <div class="modal-sheet" data-csp-click="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div class="modal-title" id="cycle-reset-title">Recommencer le cycle</div>
@@ -1944,8 +2467,8 @@ h1, h2, h3, h4 {
     </div>
     <div class="modal-body"><div id="cycle-reset-message"></div></div>
     <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="App.closeCycleResetModal()">Annuler</button>
-      <button class="modal-btn modal-btn-save" id="cycle-reset-confirm" onclick="App.confirmNewCycle()">Recommencer</button>
+      <button class="modal-btn modal-btn-cancel" data-csp-click="App.closeCycleResetModal()">Annuler</button>
+      <button class="modal-btn modal-btn-save" id="cycle-reset-confirm" data-csp-click="App.confirmNewCycle()">Recommencer</button>
     </div>
   </div>
 </div>
@@ -2017,7 +2540,175 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '35';
+const APP_VERSION = '42';
+const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
+const MARIE_CSP_ALLOWED_METHODS = new Set([
+  'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
+]);
+function marieCspEvent(event, currentTarget) {
+  return new Proxy(event, { get(target, prop) {
+    if (prop === 'currentTarget') return currentTarget;
+    const value = Reflect.get(target, prop, target);
+    return typeof value === 'function' ? value.bind(target) : value;
+  }});
+}
+function marieCspParseArgs(src, el, event) {
+  const out=[]; let i=0;
+  const ws=()=>{ while(i<src.length && /\s/.test(src[i])) i++; };
+  ws(); if (i>=src.length) return out;
+  while(i<src.length) {
+    ws();
+    if (src.startsWith('event',i)) { out.push(marieCspEvent(event,el)); i+=5; }
+    else if (src.startsWith('this.value',i)) { out.push(el.value); i+=10; }
+    else if (src.startsWith('this.open',i)) { out.push(!!el.open); i+=9; }
+    else if (src.startsWith('true',i)) { out.push(true); i+=4; }
+    else if (src.startsWith('false',i)) { out.push(false); i+=5; }
+    else if (src.startsWith('null',i)) { out.push(null); i+=4; }
+    else if (src[i]==="'" || src[i]==='"') {
+      const q=src[i++]; let v='';
+      while(i<src.length) {
+        const c=src[i++];
+        if (c===q) break;
+        if (c==='\\' && i<src.length) { const n=src[i++]; v += n==='n'?'\n':n==='r'?'\r':n==='t'?'\t':n; }
+        else v+=c;
+      }
+      out.push(v);
+    } else {
+      const m=src.slice(i).match(/^-?\d+(?:\.\d+)?/);
+      if (!m) throw new Error('CSP action argument rejected: '+src.slice(i));
+      out.push(Number(m[0])); i+=m[0].length;
+    }
+    ws();
+    if (i>=src.length) break;
+    if (src[i]!==',') throw new Error('CSP action separator rejected: '+src.slice(i));
+    i++; ws();
+  }
+  return out;
+}
+function marieCspDispatch(el, event, code) {
+  let src=String(code||'').trim();
+  if (!src) return;
+  if (src.startsWith('event.stopPropagation();')) { event.stopPropagation(); src=src.slice('event.stopPropagation();'.length).trim(); if(!src)return; }
+  if (src==='event.stopPropagation()') { event.stopPropagation(); return; }
+  let m=src.match(/^if\(event\.target===this\)(App\.[A-Za-z0-9_]+\(.*\))$/);
+  if (m) { if (event.target===el) marieCspDispatch(el,event,m[1]); return; }
+  if (src==='window.location.reload()') { window.location.reload(); return; }
+  m=src.match(/^App\.([A-Za-z0-9_]+)\((.*)\)$/s);
+  if (!m || !MARIE_CSP_ALLOWED_METHODS.has(m[1])) throw new Error('CSP action rejected: '+src);
+  const args=marieCspParseArgs(m[2],el,event);
+  switch(m[1]) {
+    case 'debugTap': return App.debugTap(...args);
+    case 'onSearch': return App.onSearch(...args);
+    case 'openThemePicker': return App.openThemePicker(...args);
+    case 'openHelp': return App.openHelp(...args);
+    case 'clearSearch': return App.clearSearch(...args);
+    case 'toggleTextsizePanel': return App.toggleTextsizePanel(...args);
+    case 'toggleComplete': return App.toggleComplete(...args);
+    case 'activateDay': return App.activateDay(...args);
+    case 'shareDay': return App.shareDay(...args);
+    case 'copyCurrentLink': return App.copyCurrentLink(...args);
+    case 'applyTextSize': return App.applyTextSize(...args);
+    case 'closeHelp': return App.closeHelp(...args);
+    case 'showScreen': return App.showScreen(...args);
+    case 'openJours': return App.openJours(...args);
+    case 'openSearchNav': return App.openSearchNav(...args);
+    case 'wideNav': return App.wideNav(...args);
+    case 'toggleWideTextsizePanel': return App.toggleWideTextsizePanel(...args);
+    case 'removeHighlightFromPicker': return App.removeHighlightFromPicker(...args);
+    case 'highlightSelection': return App.highlightSelection(...args);
+    case 'noteSelection': return App.noteSelection(...args);
+    case 'copySelection': return App.copySelection(...args);
+    case 'closeSelectionActions': return App.closeSelectionActions(...args);
+    case 'finishOnboarding': return App.finishOnboarding(...args);
+    case 'closeTodayModal': return App.closeTodayModal(...args);
+    case 'hideDebug': return App.hideDebug(...args);
+    case 'copyDiagnostics': return App.copyDiagnostics(...args);
+    case 'closeNoteModal': return App.closeNoteModal(...args);
+    case 'saveNote': return App.saveNote(...args);
+    case 'handleRestoreFile': return App.handleRestoreFile(...args);
+    case 'closeRestoreModal': return App.closeRestoreModal(...args);
+    case 'commitRestore': return App.commitRestore(...args);
+    case 'closeCycleResetModal': return App.closeCycleResetModal(...args);
+    case 'confirmNewCycle': return App.confirmNewCycle(...args);
+    case 'onMarkClick': return App.onMarkClick(...args);
+    case 'openUnit': return App.openUnit(...args);
+    case 'openTodayModal': return App.openTodayModal(...args);
+    case 'openDay': return App.openDay(...args);
+    case 'openSearchResult': return App.openSearchResult(...args);
+    case 'showMoreSearchResults': return App.showMoreSearchResults(...args);
+    case 'setSearchTitlesExpanded': return App.setSearchTitlesExpanded(...args);
+    case 'onHighlightBtn': return App.onHighlightBtn(...args);
+    case 'onParagraphContextTap': return App.onParagraphContextTap(...args);
+    case 'openNoteModal': return App.openNoteModal(...args);
+    case 'deleteNote': return App.deleteNote(...args);
+    case 'pickHlColor': return App.pickHlColor(...args);
+    case 'pickTheme': return App.pickTheme(...args);
+    case 'reportCurrentTextIssue': return App.reportCurrentTextIssue(...args);
+    case 'removeHighlightRecord': return App.removeHighlightRecord(...args);
+    case 'exportBackup': return App.exportBackup(...args);
+    case 'chooseRestoreFile': return App.chooseRestoreFile(...args);
+    case 'exportJournal': return App.exportJournal(...args);
+    case 'startNewCycle': return App.startNewCycle(...args);
+    default: throw new Error('CSP action rejected: '+src);
+  }
+}
+function marieCspHandleEvent(event, attr) {
+  let n=event.target && event.target.nodeType===1 ? event.target : event.target?.parentElement;
+  const chain=[];
+  while(n && n!==document) { if (n.hasAttribute && n.hasAttribute(attr)) chain.push(n); n=n.parentElement; }
+  for (const el of chain) {
+    marieCspDispatch(el,event,el.getAttribute(attr));
+    if (event.cancelBubble) break;
+  }
+}
+document.addEventListener('click', e=>marieCspHandleEvent(e,MARIE_CSP_ACTION_ATTRS.click));
+document.addEventListener('input', e=>marieCspHandleEvent(e,MARIE_CSP_ACTION_ATTRS.input));
+document.addEventListener('change', e=>marieCspHandleEvent(e,MARIE_CSP_ACTION_ATTRS.change));
+document.addEventListener('toggle', e=>marieCspHandleEvent(e,MARIE_CSP_ACTION_ATTRS.toggle), true);
+const MARIE_CSP_ALLOWED_STYLE_TEXT = new Set([
+  'width:0%',
+  'padding:14px 16px 0;flex-shrink:0;max-height:220px;overflow-y:auto;',
+  'padding:16px',
+  'position:absolute;inset:0;background:var(--ivory);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;z-index:99;',
+  'padding:6px 12px 8px;',
+  'display:none;flex-direction:column;flex:1;overflow:hidden',
+  'display:none;flex:1;overflow-y:auto;background:var(--ivory);',
+  'position:sticky;top:0;z-index:2;background:var(--ivory);padding:10px 28px 0;display:flex;justify-content:flex-end;',
+  'background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);cursor:pointer;',
+  'margin-right:8px',
+  'text-align:right;font-size:11px;color:var(--muted);margin-top:4px',
+  'padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)',
+  'font-size:32px;margin-bottom:16px',
+  'margin-bottom:8px;color:var(--ink)',
+  'margin-bottom:24px',
+  'padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;cursor:pointer',
+  'height:16px',
+  'margin-top:16px',
+  'height:12px',
+  'height:20px',
+  'color:var(--accent-fg);margin-left:4px',
+  'padding:16px 16px 0',
+  'margin-top:8px',
+  'margin-bottom:12px',
+  'height:32px',
+  'color:var(--highlight-accent)',
+  'margin-top:0',
+  'margin-top:24px',
+  'height:24px'
+]);
+function marieApplyCspStyle(el) {
+  if (!el || !el.getAttribute) return;
+  const raw=el.getAttribute('data-csp-style'); if (raw===null) return;
+  if (!MARIE_CSP_ALLOWED_STYLE_TEXT.has(raw)) return;
+  raw.split(';').forEach(part=>{ const at=part.indexOf(':'); if(at<1)return; const prop=part.slice(0,at).trim(), value=part.slice(at+1).trim(); if(prop&&value) el.style.setProperty(prop,value); });
+}
+function marieHydrateCspStyles(root) {
+  if (root && root.nodeType===1) marieApplyCspStyle(root);
+  const scope = root && root.querySelectorAll ? root : document;
+  scope.querySelectorAll('[data-csp-style]').forEach(marieApplyCspStyle);
+}
+marieHydrateCspStyles(document);
+new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{ if(n.nodeType===1) marieHydrateCspStyles(n); }))).observe(document.documentElement,{childList:true,subtree:true});
 function mjvScopeFingerprint(scope) {
   let h = 2166136261;
   const text = String(scope || '');
@@ -2631,7 +3322,7 @@ const Pure = {
       const cls = colorCls[Pure.safeColorKey(r.h.color)] || colorCls[HL_DEFAULT];
       // data-hlid lets openHlPicker() anchor the popover to this exact mark
       // when it's tapped; onclick does the actual dispatch.
-      const tap = pid ? ' data-hlid="' + Pure.esc(r.h.id) + '" onclick="App.onMarkClick(event,\'' + pid + '\',\'' + r.h.id + '\')"' : '';
+      const tap = pid ? ' data-hlid="' + Pure.esc(r.h.id) + '" data-csp-click="App.onMarkClick(event,\'' + pid + '\',\'' + r.h.id + '\')"' : '';
       html += '<mark class="hl-mark ' + cls + '"' + tap + '>' + Pure.formatText(src.slice(r.start, r.end)) + '</mark>';
       cursor = r.end;
     });
@@ -3029,8 +3720,8 @@ const Pure = {
     // to App.onMarkClick so tapping a highlighted passage can recolour/remove
     // just that one record.
     eq('range: pid wires onMarkClick with the record id', Pure.paragraphHtml(body, [R(3,7,'blue')], CC, 'PID1'),
-       'Le <mark class="hl-mark hl-blue" data-hlid="x" onclick="App.onMarkClick(event,\'PID1\',\'x\')">Fiat</mark> de Marie ouvre le Royaume.');
-    eq('range: no pid -> no onclick/data-hlid (unchanged output)', Pure.paragraphHtml(body, [R(3,7,'blue')], CC).indexOf('onclick'), -1);
+       'Le <mark class="hl-mark hl-blue" data-hlid="x" data-csp-click="App.onMarkClick(event,\'PID1\',\'x\')">Fiat</mark> de Marie ouvre le Royaume.');
+    eq('range: no pid -> no delegated action/data-hlid (unchanged output)', Pure.paragraphHtml(body, [R(3,7,'blue')], CC).indexOf('data-csp-click'), -1);
     // deliberately passed out of order to prove they are sorted before rendering
     eq('range: two marks, order preserved', Pure.paragraphHtml(body, [R(17,22,'rose'), R(3,7,'blue')], CC),
        'Le <mark class="hl-mark hl-blue">Fiat</mark> de Marie <mark class="hl-mark hl-rose">ouvre</mark> le Royaume.');
@@ -4018,12 +4709,12 @@ const App = {
   async init() {
     if (!await recoverExternalRestoreBeforeInit()) {
       State.storageRecoveryFailed=true;
-      document.getElementById('screen-loading').innerHTML = `<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)"><div style="font-size:32px;margin-bottom:16px">✦</div><div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Récupération des données impossible</div><div style="font-size:14px;margin-bottom:24px">Une restauration interrompue n’a pas pu être récupérée en toute sécurité. Ne modifiez pas vos données personnelles ici ; réessayez après avoir vérifié le stockage du navigateur.</div><button onclick="window.location.reload()" style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button></div>`;
+      document.getElementById('screen-loading').innerHTML = `<div data-csp-style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)"><div data-csp-style="font-size:32px;margin-bottom:16px">✦</div><div class="v38-recovery-title" data-csp-style="margin-bottom:8px;color:var(--ink)">Récupération des données impossible</div><div class="v38-recovery-body" data-csp-style="margin-bottom:24px">Une restauration interrompue n’a pas pu être récupérée en toute sécurité. Ne modifiez pas vos données personnelles ici ; réessayez après avoir vérifié le stockage du navigateur.</div><button class="v38-recovery-retry" data-csp-click="window.location.reload()" data-csp-style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;cursor:pointer">Réessayer</button></div>`;
       document.getElementById('screen-loading').classList.add('active');
       return;
     }
     if (!await loadStorage()) {
-      document.getElementById('screen-loading').innerHTML = `<div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)"><div style="font-size:32px;margin-bottom:16px">✦</div><div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Récupération des données impossible</div><div style="font-size:14px;margin-bottom:24px">Une opération interrompue n’a pas pu être restaurée en toute sécurité. Ne modifiez pas vos données personnelles ici ; réessayez après avoir vérifié le stockage du navigateur.</div><button onclick="window.location.reload()" style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button></div>`;
+      document.getElementById('screen-loading').innerHTML = `<div data-csp-style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)"><div data-csp-style="font-size:32px;margin-bottom:16px">✦</div><div class="v38-recovery-title" data-csp-style="margin-bottom:8px;color:var(--ink)">Récupération des données impossible</div><div class="v38-recovery-body" data-csp-style="margin-bottom:24px">Une opération interrompue n’a pas pu être restaurée en toute sécurité. Ne modifiez pas vos données personnelles ici ; réessayez après avoir vérifié le stockage du navigateur.</div><button class="v38-recovery-retry" data-csp-click="window.location.reload()" data-csp-style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;cursor:pointer">Réessayer</button></div>`;
       document.getElementById('screen-loading').classList.add('active');
       return;
     }
@@ -4091,11 +4782,11 @@ const App = {
     } catch(e) {
       // Show error with Retry — keep loading screen visible, don't hide it
       document.getElementById('screen-loading').innerHTML = `
-        <div style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)">
-          <div style="font-size:32px;margin-bottom:16px">✦</div>
-          <div style="font-size:16px;margin-bottom:8px;color:var(--ink)">Erreur de chargement</div>
-          <div style="font-size:14px;margin-bottom:24px">Vérifiez votre connexion et réessayez.</div>
-          <button onclick="window.location.reload()" style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;font-size:15px;cursor:pointer">Réessayer</button>
+        <div data-csp-style="padding:40px;text-align:center;font-family:Georgia,serif;color:var(--muted)">
+          <div data-csp-style="font-size:32px;margin-bottom:16px">✦</div>
+          <div class="v38-recovery-title" data-csp-style="margin-bottom:8px;color:var(--ink)">Erreur de chargement</div>
+          <div class="v38-recovery-body" data-csp-style="margin-bottom:24px">Vérifiez votre connexion et réessayez.</div>
+          <button class="v38-recovery-retry" data-csp-click="window.location.reload()" data-csp-style="padding:10px 24px;background:var(--hero-bg);color:#fff;border:none;border-radius:8px;font-family:Georgia,serif;cursor:pointer">Réessayer</button>
         </div>`;
       document.getElementById('screen-loading').classList.add('active');
       document.getElementById('wide-welcome').querySelector('.ww-text').textContent = 'Erreur de chargement. Actualisez la page.';
@@ -4177,8 +4868,8 @@ const App = {
     window.addEventListener('storage', e => { void this.handleStorageEvent(e); });
 
     document.addEventListener('click', e => {
-      if (!e.target.closest('#textsize-panel') && !e.target.closest('#btn-textsize')) {
-        document.getElementById('textsize-panel').classList.remove('open');
+      if (!e.target.closest('#textsize-panel') && !e.target.closest('.mobile-textsize-trigger')) {
+        this.closeTextsizePanel();
       }
       if (!e.target.closest('#wide-textsize-panel') && !e.target.closest('#wnav-textsize')) {
         document.getElementById('wide-textsize-panel').classList.remove('open');
@@ -4534,7 +5225,7 @@ const App = {
     if (name === 'espace') this.renderEspace('espace-scroll');
     if (name === 'aide') this.renderHelp('aide-scroll');
     if (name === 'home') this.updateCalendar();
-    if (name !== 'reader') document.getElementById('textsize-panel').classList.remove('open');
+    if (name !== 'reader') this.closeTextsizePanel();
     if (!initial && name !== 'reader' && name !== 'aide') {
       if (name==='list' && State.listMode==='search') this.replaceRoute({open:'search',q:State.searchContext.query||''});
       else this.replaceRoute(null);
@@ -4600,15 +5291,15 @@ const App = {
       progressFill: 'progress-fill', progressLabel: 'progress-label',
       progressBarSel: '#screen-home [role="progressbar"]',
       listScroll: 'list-scroll', sectionLabel: 'list-section-label',
-      appendicesLabel: 'Compléments — Appendices', listTail: '<div style="height:16px"></div>',
-      sectionLabelExtra: ' style="margin-top:16px"',
+      appendicesLabel: 'Compléments — Appendices', listTail: '<div data-csp-style="height:16px"></div>',
+      sectionLabelExtra: ' data-csp-style="margin-top:16px"',
     },
     wide: {
       calGrid: 'wide-cal-grid', calCell: 'ws-cal-cell', calKey: 'wday',
       progressFill: 'wide-progress-fill', progressLabel: 'wide-progress-label',
       progressBarSel: '#wide-progress-track',
       listScroll: 'wide-list-scroll', sectionLabel: 'ws-section-label',
-      appendicesLabel: 'Compléments', listTail: '<div style="height:12px"></div>',
+      appendicesLabel: 'Compléments', listTail: '<div data-csp-style="height:12px"></div>',
       sectionLabelExtra: '',
     },
   },
@@ -4680,7 +5371,7 @@ const App = {
         const isRead = State.read.has(u.unit_id);
         const isActive = State.activeAppendix === u.appendix_number;
         const cls = (isRead ? ' read' : '') + (isActive ? ' active' : '');
-        return '<button class="app-circle' + cls + '" title="' + this.esc(u.title) + '" aria-pressed="' + isActive + '" onclick="App.openUnit(' + "'" + u.unit_id + "'" + ')">A' + u.appendix_number + '</button>';
+        return '<button class="app-circle' + cls + '" title="' + this.esc(u.title) + '" aria-pressed="' + isActive + '" data-csp-click="App.openUnit(' + "'" + u.unit_id + "'" + ')">A' + u.appendix_number + '</button>';
       }).join('');
   },
 
@@ -4757,7 +5448,7 @@ const App = {
     const mobileWrap = document.getElementById('today-actions-wrap');
     if (mobileWrap) {
       mobileWrap.innerHTML = `
-        <button type="button" class="today-actions-card" aria-label="Pour aujourd'hui — ${this.esc(data.ordinal)} : ouvrir la pratique et l'oraison du jour" onclick="App.openTodayModal()">
+        <button type="button" class="today-actions-card" aria-label="Pour aujourd'hui — ${this.esc(data.ordinal)} : ouvrir la pratique et l'oraison du jour" data-csp-click="App.openTodayModal()">
           <div class="tac-header">
             <span class="tac-label">✦ Pour aujourd'hui</span>
             <span class="tac-day">${this.esc(data.ordinal)}</span>
@@ -4800,7 +5491,7 @@ const App = {
     const le = unit.sections.find(s => s.section_type === 'lesson');
     const excerpt = (si?.paragraphs[0]?.text) || (le?.paragraphs[0]?.text) || '';
     document.getElementById('hero-scroll').innerHTML = `
-      <div class="hero-card" onclick="App.openDay(${dayNum})">
+      <div class="hero-card" data-csp-click="App.openDay(${dayNum})">
         <div class="hero-card-header">
           <div class="hero-day-badge">✦ Aujourd'hui</div>
           <div class="hero-day-num">${dayNum}</div>
@@ -4810,15 +5501,15 @@ const App = {
           <div class="hero-title">${this.esc(unit.title)}</div>
           <div class="hero-excerpt">${this.esc(excerpt)}</div>
           <div class="hero-cta">
-            <button class="hero-read-btn" onclick="event.stopPropagation();App.openDay(${dayNum})">Lire →</button>
+            <button class="hero-read-btn" data-csp-click="event.stopPropagation();App.openDay(${dayNum})">Lire →</button>
             <div class="hero-nav-btns">
-              <button class="hero-nav-btn" ${dayNum<=1?'disabled':''} onclick="event.stopPropagation();App.openDay(${dayNum-1})" aria-label="Jour précédent">←</button>
-              <button class="hero-nav-btn" ${dayNum>=31?'disabled':''} onclick="event.stopPropagation();App.openDay(${dayNum+1})" aria-label="Jour suivant">→</button>
+              <button class="hero-nav-btn" ${dayNum<=1?'disabled':''} data-csp-click="event.stopPropagation();App.openDay(${dayNum-1})" aria-label="Jour précédent">←</button>
+              <button class="hero-nav-btn" ${dayNum>=31?'disabled':''} data-csp-click="event.stopPropagation();App.openDay(${dayNum+1})" aria-label="Jour suivant">→</button>
             </div>
           </div>
         </div>
       </div>
-      <div style="height:20px"></div>`;
+      <div data-csp-style="height:20px"></div>`;
   },
 
   // One list builder for both layouts.
@@ -4992,7 +5683,7 @@ const App = {
     if (titleHits.length) {
       const selectedTitle=State.searchContext.selectedPid===null && titleHits.some(u=>u.unit_id===State.searchContext.selectedUnitId);
       const titlesOpen=State.searchContext.titlesExpanded || !passageHits.length || selectedTitle;
-      html += '<details class="search-title-group"' + (titlesOpen?' open':'') + ' ontoggle="App.setSearchTitlesExpanded(this.open)">'
+      html += '<details class="search-title-group"' + (titlesOpen?' open':'') + ' data-csp-toggle="App.setSearchTitlesExpanded(this.open)">'
         + '<summary><span>Titres correspondants</span><span class="search-title-count">' + titleHits.length + '</span></summary>'
         + '<div class="search-title-results">'
         + titleHits.map(u => this.renderUnitCard(u,isMobile?this.CARD_STYLE.mobile:this.CARD_STYLE.wide,`App.openSearchResult('${u.unit_id}',null,'${scrollId}')`)).join('')
@@ -5003,18 +5694,18 @@ const App = {
       html += '<div class="search-group-label">Passages</div>';
       html += passageHits.map(e => {
         const selected=State.searchContext.selectedPid===e.pid;
-        return '<button type="button" class="snippet-card" data-pid="' + this.esc(e.pid) + '"' + (selected?' aria-current="location"':'') + ' onclick="App.openSearchResult(\'' + e.unitId + '\',\'' + e.pid + '\',\'' + scrollId + '\')">'
+        return '<button type="button" class="snippet-card" data-pid="' + this.esc(e.pid) + '"' + (selected?' aria-current="location"':'') + ' data-csp-click="App.openSearchResult(\'' + e.unitId + '\',\'' + e.pid + '\',\'' + scrollId + '\')">'
           + '<div class="snippet-meta">' + this.esc(e.unitLabel) + (e.sectionLabel ? ' \u00b7 ' + this.esc(e.sectionLabel) : '') + '</div>'
           + '<div class="snippet-text">' + this.buildSnippet(e, q) + '</div>'
           + '</button>';
       }).join('');
       if (shown < total) {
         const remaining=total-shown, next=Math.min(BATCH_SIZE,remaining);
-        html += '<button type="button" class="search-more" aria-label="Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires, ' + shown + ' sur ' + total + ' affich\u00e9s" onclick="App.showMoreSearchResults(\'' + scrollId + '\',\'' + clearId + '\')">Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires</button>';
+        html += '<button type="button" class="search-more" aria-label="Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires, ' + shown + ' sur ' + total + ' affich\u00e9s" data-csp-click="App.showMoreSearchResults(\'' + scrollId + '\',\'' + clearId + '\')">Afficher ' + next + ' r\u00e9sultats suppl\u00e9mentaires</button>';
       }
     }
 
-    html += '<div style="height:16px"></div>';
+    html += '<div data-csp-style="height:16px"></div>';
     el.innerHTML = html;
 
     this.replaceRoute({open:'search',q:query});
@@ -5103,7 +5794,7 @@ const App = {
       isActive: u.sequence_meditative === State.currentSeq,
       label: u.day_number ? (isToday ? '✦' : u.day_number) : 'A' + u.appendix_number,
       meta:  u.day_number ? (u.date_default || '') : 'Appendice ' + u.appendix_number,
-      badge: nc > 0 ? `<span style="font-size:10px;color:var(--accent-fg);margin-left:4px">✎${nc}</span>` : '',
+      badge: nc > 0 ? `<span class="v38-note-count" data-csp-style="color:var(--accent-fg);margin-left:4px">✎${nc}</span>` : '',
       aria:  `${ref} : ${u.title} — ${isToday ? "aujourd'hui" : (isRead ? 'lu' : 'non lu')}`,
     };
   },
@@ -5121,7 +5812,7 @@ const App = {
     const circleState = d.isToday ? st.today : (d.isRead ? st.read : '');
     const activeAttrs = (st.activeCls && d.isActive) ? ' aria-current="true"' : '';
     const activeClass = (st.activeCls && d.isActive) ? ' active' : '';
-    return `<button type="button" class="${st.card}${activeClass}" data-uid="${u.unit_id}" aria-label="${this.esc(d.aria)}"${activeAttrs} onclick="${click}">
+    return `<button type="button" class="${st.card}${activeClass}" data-uid="${u.unit_id}" aria-label="${this.esc(d.aria)}"${activeAttrs} data-csp-click="${click}">
       <div class="${st.circle} ${circleState}" aria-hidden="true">${d.label}</div>
       <div class="${st.info}">
         <div class="${st.title}">${this.esc(u.title)}${d.badge}</div>
@@ -5201,7 +5892,7 @@ const App = {
       this.renderReaderBody(unit, 'reader-body');
       this.updateReaderNav(unit);
       this.updateActionBar(unit);
-      document.getElementById('textsize-panel').classList.remove('open');
+      this.closeTextsizePanel();
       this.showScreen('reader');
       // Must come after showScreen: while #screen-reader is display:none the
       // container has no scrollable height and setting scrollTop is a no-op.
@@ -5366,12 +6057,12 @@ const App = {
       ? 'Surlignage ' + HL_COLORS[hlColorOf(pid)].label.toLowerCase() + ' — changer la couleur ou retirer'
       : 'Surligner ce paragraphe';
     const hlBtn = offerCreateViaTap
-      ? `<button class="para-hl-btn${anyHl?' active':''}" onclick="App.onHighlightBtn('${pid}')" title="${anyHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${anyHl?'true':'false'}">${anyHl?'◆':'◇'}</button>`
+      ? `<button class="para-hl-btn${anyHl?' active':''}" data-csp-click="App.onHighlightBtn('${pid}')" title="${anyHl?'Couleur du surlignage':'Surligner'}" aria-label="${hlLabel}" aria-pressed="${anyHl?'true':'false'}">${anyHl?'◆':'◇'}</button>`
       : '';
 
-    return `<p class="${cls}${wholeCls}" data-pid="${pid}" onclick="App.onParagraphContextTap(event,'${pid}')">${inner}`
+    return `<p class="${cls}${wholeCls}" data-pid="${pid}" data-csp-click="App.onParagraphContextTap(event,'${pid}')">${inner}`
       + hlBtn
-      + `<button class="para-note-btn" onclick="event.stopPropagation();App.openNoteModal('${pid}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
+      + `<button class="para-note-btn" data-csp-click="event.stopPropagation();App.openNoteModal('${pid}')" title="Ajouter une note" aria-label="Ajouter une note">&#x270E;</button></p>`;
   },
 
   // Rebuilds ONE paragraph in place instead of the whole reader body.
@@ -5404,7 +6095,7 @@ const App = {
       sec.paragraphs.forEach(p => {
         html += this.paragraphMarkup(p, cls);
         this.notesForParagraph(p.paragraph_id).forEach(note => {
-          html += `<div class="para-note" data-note-pid="${p.paragraph_id}" data-note-id="${this.esc(note.id)}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" onclick="App.openNoteModal('${p.paragraph_id}','${note.id}')" title="Modifier" aria-label="Modifier la note">✎</button><button class="para-note-del" onclick="App.deleteNote('${note.id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
+          html += `<div class="para-note" data-note-pid="${p.paragraph_id}" data-note-id="${this.esc(note.id)}"><span class="para-note-icon">✎</span><span class="para-note-text">${this.esc(note.text)}</span><button class="para-note-del" data-csp-click="App.openNoteModal('${p.paragraph_id}','${note.id}')" title="Modifier" aria-label="Modifier la note">✎</button><button class="para-note-del" data-csp-click="App.deleteNote('${note.id}')" title="Supprimer" aria-label="Supprimer la note">×</button></div>`;
         });
       });
     });
@@ -5657,16 +6348,29 @@ const App = {
   },
 
   syncTextSizeControls() {
-    document.querySelectorAll('[data-text-level]').forEach(btn => {
+    document.querySelectorAll('.textsize-option[data-text-level]').forEach(btn => {
       const active = btn.dataset.textLevel === State.textSize;
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   },
+  closeTextsizePanel() {
+    const panel = document.getElementById('textsize-panel');
+    panel?.classList.remove('open');
+    document.querySelectorAll('.mobile-textsize-trigger').forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-expanded','false');
+    });
+  },
   toggleTextsizePanel() {
     const panel = document.getElementById('textsize-panel');
-    const isOpen = panel.classList.toggle('open');
-    document.getElementById('btn-textsize').classList.toggle('active', isOpen);
-    if (isOpen) this.syncTextSizeControls();
+    if (!panel) return;
+    if (panel.classList.contains('open')) { this.closeTextsizePanel(); return; }
+    panel.classList.add('open');
+    document.querySelectorAll('.mobile-textsize-trigger').forEach(btn => {
+      btn.classList.add('active');
+      btn.setAttribute('aria-expanded','true');
+    });
+    this.syncTextSizeControls();
   },
   toggleWideTextsizePanel() {
     const panel = document.getElementById('wide-textsize-panel');
@@ -5695,6 +6399,7 @@ const App = {
     } else State.textSize=level;
     document.documentElement.style.setProperty('--reader-size', spec.px + 'px');
     document.documentElement.style.setProperty('--reader-lh', String(spec.lineHeight));
+    document.documentElement.dataset.textLevel = level;
     this.syncTextSizeControls();
     if (unit && State.readerOpen) requestAnimationFrame(()=>this.restoreScroll(scrollId,unit.unit_id,restoreToken));
   },
@@ -6188,7 +6893,7 @@ const App = {
       return `<button type="button" class="hlp-swatch ${c.sw}" role="radio"
         aria-checked="${key === current ? 'true' : 'false'}"
         aria-label="${c.label}" title="${c.label}"
-        onclick="App.pickHlColor('${key}')"></button>`;
+        data-csp-click="App.pickHlColor('${key}')"></button>`;
     }).join('');
 
     const removeBtn = picker.querySelector('.hlp-remove');
@@ -6329,7 +7034,7 @@ const App = {
     row.innerHTML = THEME_ORDER.map(key => `<button type="button" class="tp-btn" role="radio"
       aria-checked="${key === current ? 'true' : 'false'}"
       aria-label="${THEME_LABELS[key]}"
-      onclick="App.pickTheme('${key}')"><span class="tp-btn-icon" aria-hidden="true">${THEME_ICONS[key]}</span>${THEME_LABELS[key]}</button>`).join('');
+      data-csp-click="App.pickTheme('${key}')"><span class="tp-btn-icon" aria-hidden="true">${THEME_ICONS[key]}</span>${THEME_LABELS[key]}</button>`).join('');
 
     State.themePickerOpen = true;
     picker.classList.add('open');
@@ -6413,7 +7118,7 @@ const App = {
     const div = document.createElement('div');
     div.className = 'help-content';
     div.innerHTML = `
-    <div style="padding:16px 16px 0">
+    <div data-csp-style="padding:16px 16px 0">
 
       <nav class="help-nav" aria-label="Sections de l’aide">
         <a href="#${helpPrefix}-parcours">Parcours</a>
@@ -6434,8 +7139,8 @@ const App = {
           <div class="help-key"><strong>Terminé / Lu</strong><span>Une unité que vous avez explicitement marquée comme lue ; elle compte dans votre progression.</span></div>
         </div>
         <div class="help-item"><div class="help-icon">✦</div><div class="help-text"><div class="help-label">Carte « Pour aujourd’hui »</div><div class="help-desc">Par défaut, elle suit le jour calendaire. Si vous activez un autre jour ou un appendice, elle suit votre <strong>pratique active</strong> et affiche sa petite pratique et son oraison jaculatoire. Le repère « Aujourd’hui » du calendrier continue, lui, d’indiquer la date réelle.</div></div></div>
-        <div class="help-item"><div class="help-icon">1–31</div><div class="help-text"><div class="help-label">Cycle de 31 jours</div><div class="help-desc">Les ${dayCount} méditations restent toujours accessibles, même lorsque le mois civil compte moins de 31 jours. En février ou dans un mois plus court, utilisez <strong>Jours</strong> ou <strong>Activer</strong> pour poursuivre librement les Jours 29 à 31.</div></div></div>
-        <div class="help-item"><div class="help-icon">A1–A${appendixCount}</div><div class="help-text"><div class="help-label">Appendices</div><div class="help-desc">Après le Jour 31, ${appendixCount} appendices complètent le corpus. Ils peuvent être lus, activés et marqués comme terminés. Ils participent à la progression générale, mais ne sont pas nécessaires pour accomplir le cycle principal des ${dayCount} jours.</div></div></div>
+        <div class="help-item"><div class="help-icon help-icon-text">1–31</div><div class="help-text"><div class="help-label">Cycle de 31 jours</div><div class="help-desc">Les ${dayCount} méditations restent toujours accessibles, même lorsque le mois civil compte moins de 31 jours. En février ou dans un mois plus court, utilisez <strong>Jours</strong> ou <strong>Activer</strong> pour poursuivre librement les Jours 29 à 31.</div></div></div>
+        <div class="help-item"><div class="help-icon help-icon-text">A1–A${appendixCount}</div><div class="help-text"><div class="help-label">Appendices</div><div class="help-desc">Après le Jour 31, ${appendixCount} appendices complètent le corpus. Ils peuvent être lus, activés et marqués comme terminés. Ils participent à la progression générale, mais ne sont pas nécessaires pour accomplir le cycle principal des ${dayCount} jours.</div></div></div>
         <div class="help-item"><div class="help-icon">↺</div><div class="help-text"><div class="help-label">Nouveau cycle</div><div class="help-desc">Dans Mon Espace, « Nouveau cycle » remet à zéro la progression, la pratique active et les positions de lecture. Vos notes et surlignages sont conservés. Une confirmation est demandée avant l’action.</div></div></div>
       </section>
 
@@ -6443,9 +7148,9 @@ const App = {
         <h2 class="help-section-title" id="${helpPrefix}-lire-title">✶ Lire et rechercher</h2>
         <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Se repérer</div><div class="help-desc"><strong>Accueil</strong> donne accès au calendrier et à votre pratique ; <strong>Jours</strong> affiche les ${dayCount} méditations puis les ${appendixCount} appendices ; <strong>Recherche</strong> parcourt titres et texte ; <strong>Mon Espace</strong> rassemble progression, surlignages, notes et sauvegardes. Le bouton <strong>?</strong> ouvre cette Aide sans perdre votre contexte.</div></div></div>
         <div class="help-item"><div class="help-icon">✶</div><div class="help-text"><div class="help-label">Structure d’une méditation</div><div class="help-desc">Chaque jour suit cinq parties : <strong>L’Âme</strong>, <strong>Leçon de la Reine du Ciel</strong>, <strong>Réponse de l’Âme</strong>, <strong>Petite pratique</strong> et <strong>Oraison jaculatoire</strong>.</div></div></div>
-        <div class="help-item"><div class="help-icon">Aᵃ</div><div class="help-text"><div class="help-label">Taille du texte</div><div class="help-desc">Aᵃ propose Petit (16 px), Normal (19 px), Grand (22 px) et Très grand (26 px). Le réglage est mémorisé et l’application tente de préserver votre position de lecture lors du changement.</div></div></div>
+        <div class="help-item"><div class="help-icon help-icon-text">Aᵃ</div><div class="help-text"><div class="help-label">Taille du texte</div><div class="help-desc">Aᵃ propose Petit (16 px), Normal (19 px), Grand (22 px) et Très grand (26 px) pour le texte de lecture. Sur téléphone, Aᵃ est accessible depuis Accueil, Jours/Recherche, Mon Espace et le lecteur ; le bouton ✕ referme le réglage. Les quatre niveaux adaptent aussi les textes significatifs de l’interface selon leur rôle, tout en conservant une hiérarchie lisible et des commandes utilisables. Le réglage est mémorisé et l’application tente de préserver votre position de lecture lors du changement.</div></div></div>
         <div class="help-item"><div class="help-icon">←→</div><div class="help-text"><div class="help-label">Précédent / suivant et reprise</div><div class="help-desc">Les boutons parcourent les ${unitCount} unités dans l’ordre. Votre position de lecture est mémorisée par unité afin de tenter de vous replacer au même passage lors du retour.</div></div></div>
-        <div class="help-item"><div class="help-icon">⌕</div><div class="help-text"><div class="help-label">Recherche</div><div class="help-desc">La recherche examine les titres et les ${paraCount} paragraphes. Les titres correspondants restent disponibles dans une section repliable afin que les passages apparaissent immédiatement. Chaque résultat montre un extrait et ouvre directement le passage concerné. Sur téléphone, les résultats occupent l’écran Recherche ; sur iPad et ordinateur, ils restent à gauche pendant que le passage choisi s’ouvre à droite. Elle ne dépend pas des accents (« eterne » peut trouver « Éternel »). Lorsque vous revenez d’un résultat avec la même requête, la position de la liste est restaurée ; une nouvelle requête repart du début.</div></div></div>
+        <div class="help-item"><div class="help-icon">⌕</div><div class="help-text"><div class="help-label">Recherche</div><div class="help-desc">La recherche examine les titres et les ${paraCount} paragraphes. Saisissez au moins deux lettres ; les correspondances les plus directes sont présentées en priorité. Les titres correspondants restent disponibles dans une section repliable afin que les passages apparaissent immédiatement. Chaque résultat montre un extrait et ouvre directement le passage concerné. Sur téléphone, les résultats occupent l’écran Recherche ; sur iPad et ordinateur, ils restent à gauche pendant que le passage choisi s’ouvre à droite. Elle ne dépend pas des accents (« eterne » peut trouver « Éternel »). Lorsque vous revenez d’un résultat avec la même requête, la position de la liste est restaurée ; une nouvelle requête repart du début.</div></div></div>
       </section>
 
       <section class="help-section" id="${helpPrefix}-conserver" aria-labelledby="${helpPrefix}-conserver-title">
@@ -6453,7 +7158,7 @@ const App = {
         <div class="help-item"><div class="help-icon">◇</div><div class="help-text"><div class="help-label">iPhone, iPad et ordinateur</div><div class="help-desc">Sélectionnez les mots voulus <strong>dans un seul paragraphe</strong>. La barre <strong>Surligner · Note · Copier · Fermer</strong> apparaît au bas de la zone de lecture. Une sélection qui traverse plusieurs paragraphes est refusée afin d’éviter un ancrage incorrect.</div></div></div>
         <div class="help-item"><div class="help-icon">◈</div><div class="help-text"><div class="help-label">Android / Samsung</div><div class="help-desc">Le mode actuel travaille sur le <strong>paragraphe entier</strong> afin d’éviter les conflits avec les menus système de sélection. Touchez le paragraphe puis choisissez l’action voulue.</div></div></div>
         <div class="help-item"><div class="help-icon">◆</div><div class="help-text"><div class="help-label">Surlignages</div><div class="help-desc">La palette propose Jaune, Bleu, Vert, Violet et Rose. Appuyez sur un passage déjà surligné, ou sur le losange ◆ du paragraphe, pour changer sa couleur ou le retirer. Après une suppression, <strong>Annuler</strong> permet de rétablir l’élément pendant quelques secondes.</div></div></div>
-        <div class="help-item"><div class="help-icon">✎</div><div class="help-text"><div class="help-label">Notes</div><div class="help-desc">Choisissez <strong>Note</strong> depuis la barre contextuelle. Une sélection Apple/ordinateur est conservée comme contexte ; sur Android/Samsung, la note est liée au paragraphe. Dans <strong>Mon Espace</strong>, appuyez sur une note pour revenir au passage ; utilisez ✎ pour la modifier et × pour la supprimer. Plusieurs notes peuvent coexister sur un même paragraphe.</div></div></div>
+        <div class="help-item"><div class="help-icon">✎</div><div class="help-text"><div class="help-label">Notes</div><div class="help-desc">Choisissez <strong>Note</strong> depuis la barre contextuelle. Une sélection Apple/ordinateur est conservée comme contexte ; sur Android/Samsung, la note est liée au paragraphe. Dans <strong>Mon Espace</strong>, appuyez sur une note pour revenir au passage ; utilisez ✎ pour la modifier et × pour la supprimer. Après une suppression, <strong>Annuler</strong> permet de rétablir la note pendant quelques secondes. Plusieurs notes peuvent coexister sur un même paragraphe.</div></div></div>
         <div class="help-item"><div class="help-icon">⎘</div><div class="help-text"><div class="help-label">Copier</div><div class="help-desc">Copier place dans le presse-papiers le passage sélectionné sur iPhone/iPad/ordinateur, ou le paragraphe entier sur Android/Samsung.</div></div></div>
         <div class="help-item"><div class="help-icon">×</div><div class="help-text"><div class="help-label">Fermer</div><div class="help-desc">Fermer referme la barre d’actions et efface la sélection temporaire. <strong>Aucun surlignage, aucune note, aucun état de lecture ni aucune position enregistrée n’est supprimé.</strong></div></div></div>
         <div class="help-item"><div class="help-icon">↑</div><div class="help-text"><div class="help-label">Partager</div><div class="help-desc">Lorsque l’appareil le permet, Partager ouvre son interface de partage avec le nom de l’application, le jour ou l’appendice, son titre et un lien stable vers la lecture. Lorsque le paragraphe visible peut être identifié, le lien le cible. Si le partage système n’est pas disponible ou échoue, l’application tente de copier le texte de référence et le lien.</div></div></div>
@@ -6467,11 +7172,12 @@ const App = {
       <section class="help-section" id="${helpPrefix}-donnees" aria-labelledby="${helpPrefix}-donnees-title">
         <h2 class="help-section-title" id="${helpPrefix}-donnees-title">✶ Mon Espace et vos données</h2>
         <div class="help-item"><div class="help-icon">◎</div><div class="help-text"><div class="help-label">Mon Espace</div><div class="help-desc">Rassemble progression, surlignages, éléments à vérifier, notes, sauvegarde/restauration, journal et nouveau cycle.</div></div></div>
-        <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Stockage local et vie privée</div><div class="help-desc">Aucun compte n’est requis. Progression, pratique active, notes, surlignages, positions de lecture et réglages restent dans le stockage local du navigateur/appareil ; aucune synchronisation cloud automatique n’est effectuée.</div></div></div>
-        <div class="help-item"><div class="help-icon">↓</div><div class="help-text"><div class="help-label">Sauvegarder</div><div class="help-desc">« Sauvegarder » télécharge à votre demande un fichier JSON de restauration contenant vos données d’utilisation. <strong>Avant de changer d’appareil, de supprimer l’application ou d’effacer les données de Safari/Chrome, conservez une sauvegarde JSON récente dans vos propres fichiers.</strong></div></div></div>
+        <div class="help-item"><div class="help-icon">⌂</div><div class="help-text"><div class="help-label">Stockage local et vie privée</div><div class="help-desc">Aucun compte n’est requis. L’application n’envoie ni ne synchronise automatiquement vos données personnelles. Progression, pratique active, notes, surlignages, positions de lecture et réglages sont conservés dans le stockage local de ce navigateur/appareil.</div></div></div>
+        <div class="help-item"><div class="help-icon">↓</div><div class="help-text"><div class="help-label">Sauvegarder</div><div class="help-desc">« Sauvegarder » crée à votre demande un fichier JSON de restauration qui peut contenir progression, notes, surlignages, positions de lecture et réglages. Si le fichier est exceptionnellement volumineux, l’application crée à la place une archive de secours qui ne peut pas être restaurée directement sur cette version. Ce fichier n’est pas chiffré par l’application : traitez-le comme un fichier personnel. Son emplacement dépend de votre navigateur et de vos réglages de fichiers et peut, selon vos choix, se trouver dans un espace synchronisé. <strong>Avant de changer d’appareil, de supprimer l’application ou d’effacer les données de Safari/Chrome, conservez une sauvegarde JSON récente.</strong></div></div></div>
         <div class="help-item"><div class="help-icon">↥</div><div class="help-text"><div class="help-label">Restaurer — mode Remplacer</div><div class="help-desc">Choisissez une <strong>sauvegarde JSON créée précédemment par cette application</strong>. L’application valide le fichier et affiche un aperçu avant toute écriture. La restauration fonctionne en mode <strong>Remplacer</strong> : les données couvertes par la sauvegarde remplacent celles déjà présentes ; elles ne sont pas fusionnées. Si une écriture échoue, l’application tente de rétablir l’état précédent.</div></div></div>
+        <div class="help-item"><div class="help-icon">⇄</div><div class="help-text"><div class="help-label">Je change d’appareil</div><div class="help-desc">Sur l’ancien appareil, créez une sauvegarde JSON récente puis transférez ce fichier par la méthode de votre choix. Sur le nouvel appareil, ouvrez Marie une première fois, allez dans <strong>Mon Espace → Je change d’appareil</strong>, choisissez <strong>Restaurer</strong>, vérifiez l’aperçu puis confirmez <strong>Remplacer mes données</strong>. Conservez l’ancien appareil et le fichier jusqu’à avoir vérifié progression, notes, surlignages et positions de lecture. <strong>La restauration remplace les données ; elle ne les fusionne pas.</strong></div></div></div>
         <div class="help-item"><div class="help-icon">≡</div><div class="help-text"><div class="help-label">Journal lisible</div><div class="help-desc">« Exporter le journal » crée un fichier Markdown lisible avec progression, notes et passages surlignés. Il sert à la lecture ou à l’archivage ; <strong>il ne peut pas restaurer l’application</strong>.</div></div></div>
-        <div class="help-note">Même lorsque le navigateur accepte une conservation plus durable du stockage, des données locales peuvent exceptionnellement être effacées par le navigateur, le système ou une réinitialisation. La sauvegarde JSON reste votre copie de sécurité portable.</div>
+        <div class="help-note">Même lorsque le navigateur accepte une conservation plus durable du stockage, des données locales peuvent exceptionnellement être effacées par le navigateur, le système ou une réinitialisation. Une sauvegarde JSON récente reste votre copie de sécurité portable ; le lieu où elle est enregistrée est choisi par le navigateur/système et vos réglages de fichiers.</div>
       </section>
 
       <section class="help-section" id="${helpPrefix}-appareil" aria-labelledby="${helpPrefix}-appareil-title">
@@ -6485,20 +7191,20 @@ const App = {
 
       <section class="help-section" id="${helpPrefix}-assistance" aria-labelledby="${helpPrefix}-assistance-title">
         <h2 class="help-section-title" id="${helpPrefix}-assistance-title">✶ Assistance</h2>
-        <div class="help-item"><div class="help-icon">!</div><div class="help-text"><div class="help-label">Signaler un problème de texte</div><div class="help-desc">Depuis le lecteur, ouvrez Aide puis utilisez ce bouton : il prépare un signalement pour le passage qui était en cours de lecture, sans joindre vos notes ni vos surlignages.</div><button type="button" class="backup-btn" onclick="App.reportCurrentTextIssue()" style="margin-top:8px">Signaler le passage courant</button></div></div>
-        <div class="help-item"><div class="help-icon">i</div><div class="help-text"><div class="help-label">Diagnostics</div><div class="help-desc">« Copier les diagnostics » place dans le presse-papiers uniquement des informations techniques utiles au dépannage — versions, cache, stockage, thème, disposition et identifiants de navigation — sans le contenu de vos notes ou surlignages.</div><button type="button" class="backup-btn" onclick="App.copyDiagnostics()" style="margin-top:8px">Copier les diagnostics</button></div></div>
+        <div class="help-item"><div class="help-icon">!</div><div class="help-text"><div class="help-label">Signaler un problème de texte</div><div class="help-desc">Depuis le lecteur, ouvrez Aide puis utilisez ce bouton : il prépare un signalement pour le passage qui était en cours de lecture, sans joindre vos notes ni vos surlignages.</div><button type="button" class="backup-btn" data-csp-click="App.reportCurrentTextIssue()" data-csp-style="margin-top:8px">Signaler le passage courant</button></div></div>
+        <div class="help-item"><div class="help-icon help-icon-text">i</div><div class="help-text"><div class="help-label">Diagnostics</div><div class="help-desc">« Copier les diagnostics » place dans le presse-papiers uniquement des informations techniques utiles au dépannage — versions, cache, stockage, thème, disposition et identifiants de navigation — sans le contenu de vos notes ou surlignages.</div><button type="button" class="backup-btn" data-csp-click="App.copyDiagnostics()" data-csp-style="margin-top:8px">Copier les diagnostics</button></div></div>
       </section>
 
       <section class="help-section" id="${helpPrefix}-apropos" aria-labelledby="${helpPrefix}-apropos-title">
         <h2 class="help-section-title" id="${helpPrefix}-apropos-title">✶ À propos</h2>
-        <p class="help-desc" style="margin-bottom:12px"><strong>La Vierge Marie dans le Royaume de la Divine Volonté</strong> est une application de lecture et de méditation spirituelle fondée sur l’ouvrage du même titre de <strong>Luisa Piccarreta</strong>.</p>
-        <div class="help-item"><div class="help-icon">v</div><div class="help-text"><div class="help-label">Versions</div><div class="help-desc">Application <strong>v${this.esc(APP_VERSION)}</strong> · corpus <strong>v${this.esc(CORPUS_VERSION)}</strong>. Le numéro affiché ici correspond au code réellement chargé.</div></div></div>
-        <div class="help-item"><div class="help-icon">31</div><div class="help-text"><div class="help-label">Corpus intégré</div><div class="help-desc">Le manifeste identifie le corpus comme <strong>VM_DV</strong>, en français, auteur <strong>Luisa Piccarreta</strong>, version <strong>${this.esc(CORPUS_VERSION)}</strong> : ${dayCount} jours + ${appendixCount} appendices, soit ${unitCount} unités et ${paraCount} paragraphes.</div></div></div>
+        <p class="help-desc" data-csp-style="margin-bottom:12px"><strong>La Vierge Marie dans le Royaume de la Divine Volonté</strong> est une application de lecture et de méditation spirituelle fondée sur l’ouvrage du même titre de <strong>Luisa Piccarreta</strong>.</p>
+        <div class="help-item"><div class="help-icon help-icon-text">v</div><div class="help-text"><div class="help-label">Versions</div><div class="help-desc">Application <strong>v${this.esc(APP_VERSION)}</strong> · corpus <strong>v${this.esc(CORPUS_VERSION)}</strong>. Le numéro affiché ici correspond au code réellement chargé.</div></div></div>
+        <div class="help-item"><div class="help-icon help-icon-text">31</div><div class="help-text"><div class="help-label">Corpus intégré</div><div class="help-desc">Le manifeste identifie le corpus comme <strong>VM_DV</strong>, en français, auteur <strong>Luisa Piccarreta</strong>, version <strong>${this.esc(CORPUS_VERSION)}</strong> : ${dayCount} jours + ${appendixCount} appendices, soit ${unitCount} unités et ${paraCount} paragraphes.</div></div></div>
         <div class="help-item"><div class="help-icon">§</div><div class="help-text"><div class="help-label">Provenance éditoriale</div><div class="help-desc">Le manifeste fourni avec cette version ne désigne pas une édition imprimée particulière ; l’application n’en attribue donc pas une. Toute correction du texte ou de sa segmentation relève d’une validation séparée du corpus. Utilisez « Signaler le passage courant » si vous repérez une anomalie.</div></div></div>
-        <div class="help-item"><div class="help-icon">Aa</div><div class="help-text"><div class="help-label">Informations techniques</div><div class="help-desc">Les polices de lecture sont fournies localement avec l’application ; leur chargement normal ne nécessite pas Google Fonts. L’application fonctionne sans compte et ne synchronise pas automatiquement vos données personnelles.</div></div></div>
+        <div class="help-item"><div class="help-icon help-icon-text">Aa</div><div class="help-text"><div class="help-label">Informations techniques</div><div class="help-desc">Les polices de lecture sont fournies localement avec l’application ; leur chargement normal ne nécessite pas Google Fonts. L’application fonctionne sans compte et ne synchronise pas automatiquement vos données personnelles.</div></div></div>
       </section>
 
-      <div style="height:32px"></div>
+      <div data-csp-style="height:32px"></div>
     </div>`;
     el.appendChild(div);
   },
@@ -6551,7 +7257,7 @@ const App = {
     }
     this.downloadTextFile(`Marie_sauvegarde_${day}.json`,text,'application/json;charset=utf-8');
     const persisted=saveLastBackup(iso);
-    this.showToast(persisted ? 'Sauvegarde créée sur cet appareil' : 'Sauvegarde créée — date non mémorisée');
+    this.showToast(persisted ? 'Fichier de sauvegarde créé' : 'Fichier de sauvegarde créé — date non mémorisée');
     this.renderVisibleEspace();
   },
 
@@ -6729,7 +7435,7 @@ const App = {
     const readCount = State.read.size, noteCount = Object.keys(State.notes).length, hlCount = hlList.length + staleHlList.length;
     let html = `<div class="stat-grid">
       <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:var(--highlight-accent)">${hlCount}</div><div class="stat-label">Surlignés</div></div>
+      <div class="stat-card"><div class="stat-num" data-csp-style="color:var(--highlight-accent)">${hlCount}</div><div class="stat-label">Surlignés</div></div>
       <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
     </div>`;
     if (hlList.length > 0) {
@@ -6741,26 +7447,26 @@ const App = {
         const shown = ranges.length ? para.text.slice(ranges[0].start, ranges[0].end) : para.text;
         const kind = h.range ? 'Passage' : 'Paragraphe';
         const recovered=h.status==='recovered'?' · réancré':'';
-        html += `<button type="button" class="fav-card hl-card ${col.cls}" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">◆ ${this.esc(label)} · ${this.esc(kind)} · ${this.esc(col.label)}${recovered}</div><div class="fav-card-text">${this.esc(shown)}</div></button>`;
+        html += `<button type="button" class="fav-card hl-card ${col.cls}" data-csp-click="App.openUnit('${unit.unit_id}','${pid}')"><div class="fav-card-day">◆ ${this.esc(label)} · ${this.esc(kind)} · ${this.esc(col.label)}${recovered}</div><div class="fav-card-text">${this.esc(shown)}</div></button>`;
       });
     }
     if (staleHlList.length > 0) {
-      html += `<div class="espace-section-title" style="margin-top:${hlList.length?'16px':'0'}">Surlignages à vérifier · ${staleHlList.length}</div>`;
+      html += `<div class="espace-section-title" data-csp-style="margin-top:${hlList.length?'16px':'0'}">Surlignages à vérifier · ${staleHlList.length}</div>`;
       staleHlList.forEach(({h,pid,unit})=>{
         const label=unit?(unit.day_number?'Jour '+unit.day_number:'Appendice '+unit.appendix_number):pid;
         const saved=h.text||'Passage enregistré sans extrait textuel.';
-        html += `<div class="stale-hl-wrap"><div class="fav-card stale-hl-card"><div class="fav-card-day">⚠ ${this.esc(label)} · Surlignage non réancré</div><div class="fav-card-text">${this.esc(saved)}</div></div><button type="button" class="stale-hl-remove" onclick="App.removeHighlightRecord('${pid}','${h.id}')" aria-label="Retirer ce surlignage à vérifier">Retirer</button></div>`;
+        html += `<div class="stale-hl-wrap"><div class="fav-card stale-hl-card"><div class="fav-card-day">⚠ ${this.esc(label)} · Surlignage non réancré</div><div class="fav-card-text">${this.esc(saved)}</div></div><button type="button" class="stale-hl-remove" data-csp-click="App.removeHighlightRecord('${pid}','${h.id}')" aria-label="Retirer ce surlignage à vérifier">Retirer</button></div>`;
       });
     }
     const noteEntries = Object.values(State.notes).sort((a,b)=>(b.created_at||0)-(a.created_at||0));
     if (noteEntries.length > 0) {
-      html += `<div class="espace-section-title" style="margin-top:${hlCount>0?'16px':'0'}">Mes notes · ${noteEntries.length}</div>`;
+      html += `<div class="espace-section-title" data-csp-style="margin-top:${hlCount>0?'16px':'0'}">Mes notes · ${noteEntries.length}</div>`;
       noteEntries.forEach(note => {
         const unit = unitById(note.unit_id); if (!unit) return;
         const pid=note.paragraph_id;
         const label = unit.day_number ? 'Jour '+unit.day_number : 'Appendice '+unit.appendix_number;
         const date = new Date(note.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-        html += `<div class="note-espace-wrap" data-note-id="${this.esc(note.id)}"><button type="button" class="note-espace-card" onclick="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button><div class="note-espace-actions"><button type="button" class="note-espace-action" onclick="App.openNoteModal('${pid}','${note.id}')" aria-label="Modifier la note" title="Modifier">✎</button><button type="button" class="note-espace-action delete" onclick="App.deleteNote('${note.id}')" aria-label="Supprimer la note" title="Supprimer">×</button></div></div>`;
+        html += `<div class="note-espace-wrap" data-note-id="${this.esc(note.id)}"><button type="button" class="note-espace-card" data-csp-click="App.openUnit('${unit.unit_id}','${pid}')"><div class="note-espace-meta">✎ ${this.esc(label)} · ${date}</div><div class="note-espace-text">${this.esc(note.text)}</div></button><div class="note-espace-actions"><button type="button" class="note-espace-action" data-csp-click="App.openNoteModal('${pid}','${note.id}')" aria-label="Modifier la note" title="Modifier">✎</button><button type="button" class="note-espace-action delete" data-csp-click="App.deleteNote('${note.id}')" aria-label="Supprimer la note" title="Supprimer">×</button></div></div>`;
       });
     }
     if (!readCount && !hlCount && !noteCount) {
@@ -6774,24 +7480,40 @@ const App = {
     // Local-first backup controls. The timestamp is device-local metadata and is
     // deliberately NOT restored from another device's backup.
     let lastBackup=null; try { lastBackup=localStorage.getItem(SK.LAST_BACKUP); } catch(e) {}
-    let backupLabel='Aucune sauvegarde enregistrée sur cet appareil.';
-    if (lastBackup && Number.isFinite(Date.parse(lastBackup))) backupLabel='Dernière sauvegarde : '+new Date(lastBackup).toLocaleString('fr-FR');
+    let backupLabel='Aucune date de sauvegarde mémorisée sur cet appareil.';
+    if (lastBackup && Number.isFinite(Date.parse(lastBackup))) backupLabel='Dernier fichier de sauvegarde créé : '+new Date(lastBackup).toLocaleString('fr-FR');
     html += `
-      <div class="espace-section-title" style="margin-top:24px">Sauvegarde locale</div>
+      <div class="espace-section-title" data-csp-style="margin-top:24px">Sauvegarde locale</div>
       <div class="backup-card">
-        <div class="backup-status"><strong>Vos données restent sur cet appareil.</strong><br>${this.esc(backupLabel)} Aucun envoi automatique ni synchronisation cloud.</div>
+        <div class="backup-status"><strong>Aucun envoi automatique ni synchronisation cloud.</strong><br>Vos données d’utilisation sont conservées dans le stockage local de ce navigateur/appareil. ${this.esc(backupLabel)} Une sauvegarde JSON n’est créée que lorsque vous le demandez ; son emplacement dépend ensuite de votre navigateur et de vos réglages de fichiers.</div>
         <div class="backup-actions">
-          <button type="button" class="backup-btn primary" onclick="App.exportBackup()">↓ Sauvegarder</button>
-          <button type="button" class="backup-btn" onclick="App.chooseRestoreFile()">↥ Restaurer</button>
-          <button type="button" class="backup-btn" onclick="App.exportJournal()">≡ Exporter le journal</button>
+          <button type="button" class="backup-btn primary" data-csp-click="App.exportBackup()">↓ Sauvegarder</button>
+          <button type="button" class="backup-btn" data-csp-click="App.chooseRestoreFile()">↥ Restaurer</button>
+          <button type="button" class="backup-btn" data-csp-click="App.exportJournal()">≡ Exporter le journal</button>
         </div>
-      </div>`;
+      </div>
+      <details class="transfer-card">
+        <summary>⇄ Je change d’appareil</summary>
+        <div class="transfer-body">
+          <ol>
+            <li><strong>Ancien appareil :</strong> créez une sauvegarde JSON récente.</li>
+            <li>Transférez ce fichier vers un emplacement accessible depuis le nouvel appareil, par la méthode de votre choix.</li>
+            <li><strong>Nouvel appareil :</strong> ouvrez Marie une première fois, revenez ici, choisissez Restaurer, sélectionnez le JSON, vérifiez l’aperçu puis confirmez <strong>Remplacer mes données</strong>.</li>
+            <li>Gardez l’ancien appareil et le fichier jusqu’à avoir vérifié progression, notes, surlignages et positions de lecture sur le nouvel appareil.</li>
+          </ol>
+          <div class="transfer-warning"><strong>Remplacer, pas fusionner.</strong> La restauration remplace les données couvertes par la sauvegarde ; elle ne combine pas deux états différents. Le fichier JSON peut contenir des données personnelles d’utilisation et n’est pas chiffré par l’application.</div>
+          <div class="transfer-actions">
+            <button type="button" class="backup-btn primary" data-csp-click="App.exportBackup()">↓ Créer une sauvegarde</button>
+            <button type="button" class="backup-btn" data-csp-click="App.chooseRestoreFile()">↥ Restaurer sur cet appareil</button>
+          </div>
+        </div>
+      </details>`;
 
     const daysRead = daysReadCount();
     const dayTotal = mainDayTotal();
     const cycleReady = daysRead >= dayTotal;
     html += `
-      <div class="espace-section-title" style="margin-top:24px">Fin de cycle</div>
+      <div class="espace-section-title" data-csp-style="margin-top:24px">Fin de cycle</div>
       <div class="cycle-section">
         <div class="cycle-card${cycleReady ? ' ready' : ''}">
           <div class="cycle-icon">✶</div>
@@ -6801,11 +7523,11 @@ const App = {
               ? 'Vos surlignages et notes seront conservés.'
               : 'Vous pouvez recommencer à tout moment — utile si vous lisez aussi sur un autre appareil ou dans le livre. Vos surlignages et notes seront conservés.'}</div>
           </div>
-          <button class="cycle-btn" onclick="App.startNewCycle()">↺ Nouveau cycle</button>
+          <button class="cycle-btn" data-csp-click="App.startNewCycle()">↺ Nouveau cycle</button>
         </div>
       </div>
     `;
-    html += '<div style="height:24px"></div>';
+    html += '<div data-csp-style="height:24px"></div>';
     el.innerHTML = html;
   },
 
