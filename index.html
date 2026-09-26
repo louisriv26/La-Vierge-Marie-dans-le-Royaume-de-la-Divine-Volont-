@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-RvVBcOAzm80TWwbHK8Jyx73BDVfL5lEsiTNGZ+XYkZQ='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-pX2G7iu8qaPZFyDATxijk48fv887JR1WgEsOxp/KWkU='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -2540,7 +2540,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '42';
+const APP_VERSION = '43';
 const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
 const MARIE_CSP_ALLOWED_METHODS = new Set([
   'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
@@ -4088,6 +4088,79 @@ async function recoverExternalRestoreBeforeInit() {
     return !!(await inside());
   } catch(e) { return false; }
 }
+
+// V43: IndexedDB-backed transaction coordinator. localStorage remains the user-state
+// surface for compatibility, but recovery authority is no longer inferred from a
+// potentially stale localStorage journal observed by one renderer.
+const MARIE_STATE_TXN_COORD_DB = 'mjv-state-transaction-coordinator-v1';
+const MARIE_STATE_TXN_COORD_STORE = 'coordinator';
+const MARIE_STATE_TXN_COORD_KEY = 'latest';
+function openMarieStateTxnCoordinatorDb() {
+  return new Promise((resolve,reject)=>{
+    if (typeof indexedDB==='undefined') { reject(new Error('indexeddb_unavailable')); return; }
+    let req;
+    try { req=indexedDB.open(MARIE_STATE_TXN_COORD_DB,1); } catch(e) { reject(e); return; }
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if (!db.objectStoreNames.contains(MARIE_STATE_TXN_COORD_STORE)) db.createObjectStore(MARIE_STATE_TXN_COORD_STORE);
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error('indexeddb_open_failed'));
+    req.onblocked=()=>reject(new Error('indexeddb_open_blocked'));
+  });
+}
+async function getMarieStateTxnCoordinator() {
+  let db;
+  try {
+    db=await openMarieStateTxnCoordinatorDb();
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(MARIE_STATE_TXN_COORD_STORE,'readonly');
+      const req=tx.objectStore(MARIE_STATE_TXN_COORD_STORE).get(MARIE_STATE_TXN_COORD_KEY);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error||new Error('indexeddb_read_failed'));
+    });
+  } catch(e) { return null; }
+  finally { try { db?.close(); } catch(_) {} }
+}
+async function putMarieStateTxnCoordinator(record) {
+  let db;
+  try {
+    if (!record || record.kind!=='MJV_STATE_TXN_COORD_V1' || !record.txid || !Array.isArray(record.keys) || !record.snapshot || !record.intended || Pure.hasDangerousKey(record)) return false;
+    db=await openMarieStateTxnCoordinatorDb();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(MARIE_STATE_TXN_COORD_STORE,'readwrite');
+      tx.objectStore(MARIE_STATE_TXN_COORD_STORE).put(record,MARIE_STATE_TXN_COORD_KEY);
+      tx.oncomplete=()=>resolve();
+      tx.onerror=()=>reject(tx.error||new Error('indexeddb_write_failed'));
+      tx.onabort=()=>reject(tx.error||new Error('indexeddb_write_aborted'));
+    });
+    const verify=await getMarieStateTxnCoordinator();
+    return !!verify && verify.txid===record.txid && verify.status===record.status && JSON.stringify(verify.keys)===JSON.stringify(record.keys);
+  } catch(e) { return false; }
+  finally { try { db?.close(); } catch(_) {} }
+}
+async function deleteMarieStateTxnCoordinatorIf(txid) {
+  let db;
+  try {
+    db=await openMarieStateTxnCoordinatorDb();
+    const current=await getMarieStateTxnCoordinator();
+    if (!current || current.txid!==txid) return true;
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(MARIE_STATE_TXN_COORD_STORE,'readwrite');
+      tx.objectStore(MARIE_STATE_TXN_COORD_STORE).delete(MARIE_STATE_TXN_COORD_KEY);
+      tx.oncomplete=()=>resolve();
+      tx.onerror=()=>reject(tx.error||new Error('indexeddb_delete_failed'));
+      tx.onabort=()=>reject(tx.error||new Error('indexeddb_delete_aborted'));
+    });
+    const verify=await getMarieStateTxnCoordinator();
+    return !verify || verify.txid!==txid;
+  } catch(e) { return false; }
+  finally { try { db?.close(); } catch(_) {} }
+}
+function marieStateTxnId() {
+  if (typeof crypto!=='undefined' && typeof crypto.randomUUID==='function') return crypto.randomUUID();
+  return 'mjv43-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+}
 function restoreRawSubset(snapshot, keys) {
   if (!snapshot || typeof snapshot !== 'object' || !Array.isArray(keys)) return false;
   try {
@@ -4098,17 +4171,55 @@ function restoreRawSubset(snapshot, keys) {
     return true;
   } catch(e) { return false; }
 }
-function recoverInterruptedStateTransaction() {
-  let raw=null;
-  try { raw=localStorage.getItem(SK.STATE_TXN); } catch(e) { return false; }
-  if (!raw) return true;
-  try {
-    const tx=JSON.parse(raw);
-    if (!tx || tx.kind!=='MJV_STATE_TXN_V1' || !Array.isArray(tx.keys) || !tx.keys.every(k=>USER_STATE_TXN_KEYS.includes(k)) || !tx.snapshot || Pure.hasDangerousKey(tx)) return false;
-    const ok=restoreRawSubset(tx.snapshot,tx.keys);
-    if (ok) localStorage.removeItem(SK.STATE_TXN);
-    return ok;
-  } catch(e) { return false; }
+async function recoverInterruptedStateTransaction() {
+  // The IDB coordinator is the sole recovery authority for V43 transactions.
+  // A localStorage journal by itself may be stale in a peer renderer and is never
+  // sufficient reason to destructively restore old payload bytes.
+  const coord=await getMarieStateTxnCoordinator();
+  let markerRaw=null, marker=null;
+  try { markerRaw=localStorage.getItem(SK.STATE_TXN); } catch(e) { return false; }
+  if (markerRaw) {
+    try { marker=JSON.parse(markerRaw); } catch(_) { marker=null; }
+  }
+
+  if (coord) {
+    if (coord.kind!=='MJV_STATE_TXN_COORD_V1' || !coord.txid || !Array.isArray(coord.keys) ||
+        !coord.keys.every(k=>USER_STATE_TXN_KEYS.includes(k)) || !coord.snapshot || !coord.intended ||
+        Pure.hasDangerousKey(coord)) return false;
+    if (coord.status==='committed') {
+      // A durable coherent authority says the transaction completed. Never roll it back,
+      // even if this renderer still sees an obsolete journal marker.
+      try { if (markerRaw) localStorage.removeItem(SK.STATE_TXN); } catch(_) {}
+      return true;
+    }
+    if (coord.status!=='prepared') return false;
+
+    // A prepared coordinator cannot belong to an acknowledged commit: V43 only returns
+    // success after the coordinator is durably changed to `committed`. Under the global
+    // Marie Web Lock, it is therefore safe to recover this genuinely incomplete txn.
+    const current={};
+    try { for (const key of coord.keys) current[key]=localStorage.getItem(key); }
+    catch(e) { return false; }
+    for (const key of coord.keys) {
+      const before=Object.prototype.hasOwnProperty.call(coord.snapshot,key)?coord.snapshot[key]:null;
+      const intended=Object.prototype.hasOwnProperty.call(coord.intended,key)?coord.intended[key]:null;
+      if (current[key]!==before && current[key]!==intended) {
+        // A third state exists. Fail closed rather than overwrite data whose ownership
+        // cannot be proved from the authoritative coordinator.
+        return false;
+      }
+    }
+    const ok=restoreRawSubset(coord.snapshot,coord.keys);
+    if (!ok) return false;
+    try { localStorage.removeItem(SK.STATE_TXN); } catch(_) {}
+    return await deleteMarieStateTxnCoordinatorIf(coord.txid);
+  }
+
+  if (!markerRaw) return true;
+  // Legacy V42 journal with no coherent coordinator: it may be a stale observation of
+  // a transaction that already completed elsewhere. Never destructively roll it back.
+  // Clearing the marker is non-destructive and lets V43 establish a new coordinated txn.
+  try { localStorage.removeItem(SK.STATE_TXN); return true; } catch(e) { return false; }
 }
 
 function runMarieSerialized(label, task) {
@@ -4117,7 +4228,7 @@ function runMarieSerialized(label, task) {
     const inside=async()=>{
       _marieLockDepth++;
       try {
-        if (!recoverInterruptedStateTransaction() || !recoverInterruptedRestore()) {
+        if (!(await recoverInterruptedStateTransaction()) || !recoverInterruptedRestore()) {
           State.storageRecoveryFailed=true;
           return {ok:false,phase:'recovery',label,rolled_back:false};
         }
@@ -4147,7 +4258,7 @@ function rawEquivalentForUserStateKey(key, a, b) {
   return false;
 }
 
-function _atomicUserStateWriteUnlocked(payload, expectedRaw=null) {
+async function _atomicUserStateWriteUnlocked(payload, expectedRaw=null) {
   const keys=Object.keys(payload||{});
   if (!keys.length || !keys.every(k=>USER_STATE_TXN_KEYS.includes(k))) return {ok:false,phase:'scope',rolled_back:true};
   try { if (localStorage.getItem(SK.STATE_TXN) || localStorage.getItem(SK.RESTORE_TXN)) return {ok:false,phase:'pending_recovery',rolled_back:false}; }
@@ -4162,8 +4273,13 @@ function _atomicUserStateWriteUnlocked(payload, expectedRaw=null) {
   }
   const snapshot={};
   try { keys.forEach(k=>snapshot[k]=localStorage.getItem(k)); } catch(e) { return {ok:false,phase:'snapshot',rolled_back:true}; }
-  const tx={kind:'MJV_STATE_TXN_V1',created_at:new Date().toISOString(),keys,snapshot};
-  try { localStorage.setItem(SK.STATE_TXN,JSON.stringify(tx)); } catch(e) { return {ok:false,phase:'prepare',rolled_back:true}; }
+  const txid=marieStateTxnId();
+  const intended={}; keys.forEach(k=>intended[k]=Object.prototype.hasOwnProperty.call(payload,k)?payload[k]:null);
+  const coord={kind:'MJV_STATE_TXN_COORD_V1',txid,status:'prepared',created_at:new Date().toISOString(),keys:[...keys],snapshot:{...snapshot},intended:{...intended}};
+  if (!await putMarieStateTxnCoordinator(coord)) return {ok:false,phase:'prepare_coordinator',rolled_back:true};
+  const tx={kind:'MJV_STATE_TXN_V2',txid,created_at:coord.created_at,keys:[...keys],snapshot:{...snapshot},intended:{...intended}};
+  try { localStorage.setItem(SK.STATE_TXN,JSON.stringify(tx)); }
+  catch(e) { await deleteMarieStateTxnCoordinatorIf(txid); return {ok:false,phase:'prepare',rolled_back:true}; }
   const written=[];
   try {
     for (const key of keys) {
@@ -4172,12 +4288,18 @@ function _atomicUserStateWriteUnlocked(payload, expectedRaw=null) {
       if (localStorage.getItem(key)!==v) throw new Error('post_write_verification_failed:'+key);
       written.push(key);
     }
-    localStorage.removeItem(SK.STATE_TXN);
-    return {ok:true,phase:'commit',written,rolled_back:false};
+    const committed={...coord,status:'committed',committed_at:new Date().toISOString()};
+    if (!await putMarieStateTxnCoordinator(committed)) throw new Error('coordinator_commit_failed');
+    try { localStorage.removeItem(SK.STATE_TXN); } catch(_) {
+      // Safe to acknowledge: a stale marker can no longer trigger rollback because the
+      // durable coordinator says this txid is committed.
+    }
+    return {ok:true,phase:'commit',written,rolled_back:false,txid};
   } catch(e) {
-    const rolled=restoreRawSubset(snapshot,keys);
-    try { if (rolled) localStorage.removeItem(SK.STATE_TXN); } catch(_) {}
-    return {ok:false,phase:'write',written,rolled_back:rolled,error:String(e)};
+    // The call has not been acknowledged. Recover only through the authoritative prepared
+    // coordinator, never by trusting a renderer-local journal alone.
+    const rolled=await recoverInterruptedStateTransaction();
+    return {ok:false,phase:'write',written,rolled_back:!!rolled,error:String(e),txid};
   }
 }
 async function atomicUserStateWrite(payload, expectedRaw=null) {
@@ -4251,7 +4373,7 @@ function migrateFavoritesToHighlightsUnlocked() {
   } catch(e) { return {ok:false,phase:'migration',key:SK.FAVORITES,error:String(e)}; }
 }
 
-function loadStorageUnlocked() {
+async function loadStorageUnlocked() {
   State.storageRecoveryFailed=false;
   try { State.read = new Set(JSON.parse(localStorage.getItem(SK.READ) || '[]')); }
   catch(e) { State.read = new Set(); }
@@ -4291,7 +4413,7 @@ function loadStorageUnlocked() {
     State.textSize = m.level;
     const schema = localStorage.getItem(SK.TEXT_SIZE_SCHEMA);
     if (m.migrated || (rawTextSize !== null && schema !== TEXT_SIZE_SCHEMA_VERSION)) {
-      const repaired=_atomicUserStateWriteUnlocked({[SK.TEXT_SIZE]:State.textSize,[SK.TEXT_SIZE_SCHEMA]:TEXT_SIZE_SCHEMA_VERSION});
+      const repaired=await _atomicUserStateWriteUnlocked({[SK.TEXT_SIZE]:State.textSize,[SK.TEXT_SIZE_SCHEMA]:TEXT_SIZE_SCHEMA_VERSION});
       if (!repaired.ok) { State.storageRecoveryFailed=true; return false; }
     }
   } catch(e) { State.textSize = CFG.TEXT_DEFAULT; }
@@ -4305,7 +4427,7 @@ function loadStorageUnlocked() {
     State.activeAppendix = (aa >= 1 && aa <= CFG.APPENDICES) ? aa : null;
   } catch(e) { State.activeAppendix = null; }
   if (State.activeDay!==null && State.activeAppendix!==null) {
-    const repaired=_atomicUserStateWriteUnlocked({[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:String(State.activeAppendix)});
+    const repaired=await _atomicUserStateWriteUnlocked({[SK.ACTIVE_DAY]:'',[SK.ACTIVE_APPENDIX]:String(State.activeAppendix)});
     if (repaired.ok) State.activeDay=null;
     else { State.storageRecoveryFailed=true; return false; }
   }
@@ -4323,7 +4445,7 @@ function loadStorageUnlocked() {
   return true;
 }
 async function loadStorage() {
-  const result=await runMarieSerialized('load-storage',()=>({ok:loadStorageUnlocked()}));
+  const result=await runMarieSerialized('load-storage',async()=>({ok:await loadStorageUnlocked()}));
   return !!result?.ok;
 }
 
@@ -4446,14 +4568,14 @@ async function saveHlColor(expected=State.lastHlColor, intended=State.lastHlColo
   return saveScalarPersonal(SK.HL_COLOR,expected||null,intended||null,()=>{State.lastHlColor=intended;});
 }
 async function saveTextSize(expectedLevel, intendedLevel) {
-  return runMarieSerialized('text-size',()=>{
+  return runMarieSerialized('text-size',async()=>{
     let current=null,schema=null;
     try { current=localStorage.getItem(SK.TEXT_SIZE); schema=localStorage.getItem(SK.TEXT_SIZE_SCHEMA); }
     catch(e) { return {ok:false,phase:'snapshot',key:SK.TEXT_SIZE,error:String(e)}; }
     const currentLevel=Pure.migrateTextLevel(current,TEXT_LEVELS,TEXT_LEVEL_ORDER,CFG.TEXT_DEFAULT).level;
     if (currentLevel!==expectedLevel && currentLevel!==intendedLevel) return marieConflict(SK.TEXT_SIZE,'same_text_size_changed',current);
     if (schema!==TEXT_SIZE_SCHEMA_VERSION && schema!==null) return marieConflict(SK.TEXT_SIZE_SCHEMA,'text_size_schema_changed',schema);
-    const write=_atomicUserStateWriteUnlocked(
+    const write=await _atomicUserStateWriteUnlocked(
       {[SK.TEXT_SIZE]:intendedLevel,[SK.TEXT_SIZE_SCHEMA]:TEXT_SIZE_SCHEMA_VERSION},
       {[SK.TEXT_SIZE]:current,[SK.TEXT_SIZE_SCHEMA]:schema}
     );
@@ -4636,10 +4758,10 @@ const App = {
   // progress bar and stats tiles while rendering no card — permanently, since
   // the card is the only UI that can remove them.
   async reconcileStoredIds() {
-    const result=await runMarieSerialized('reconcile-stored-ids',()=>{
+    const result=await runMarieSerialized('reconcile-stored-ids',async()=>{
       const r=parseDurableReadUnlocked(), h=parseDurableHighlightsUnlocked(), n=parseDurableNotesUnlocked(), sp=parseDurableScrollUnlocked();
       if (!r.ok) return r; if (!h.ok) return h; if (!n.ok) return n; if (!sp.ok) return sp;
-      if (!loadStorageUnlocked()) return {ok:false,phase:'load_after_recovery'};
+      if (!(await loadStorageUnlocked())) return {ok:false,phase:'load_after_recovery'};
 
       const validUnitIds = new Set(Object.keys(State.unitIndex));
       const validParaIds = new Set(Object.keys(State.paraIndex));
