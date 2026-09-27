@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-pX2G7iu8qaPZFyDATxijk48fv887JR1WgEsOxp/KWkU='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-borsIWbMK2lHKP0jVQ0zwVmAv83TSz1jZ0PXK0K0jek='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -2060,7 +2060,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
       </div>
       <div class="topbar-actions">
         <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
-        <button class="topbar-action" id="dark-toggle-btn" data-csp-click="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
+        <button class="topbar-action" id="dark-toggle-btn" data-csp-click="App.openThemePicker(event)" aria-label="Thème" aria-haspopup="dialog" aria-expanded="false" aria-controls="theme-picker" title="Thème">◑</button>
         <button class="topbar-action" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
@@ -2207,7 +2207,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
       </button>
       <button class="wt-nav-btn" id="wnav-textsize" data-csp-click="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">Aᵃ</button>
       <button class="wt-nav-btn" id="wnav-aide" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide"><span class="wt-nav-icon">?</span></button>
-      <button class="wt-nav-btn" id="wnav-dark" data-csp-click="App.openThemePicker(event)" aria-label="Thème" title="Thème">◑</button>
+      <button class="wt-nav-btn" id="wnav-dark" data-csp-click="App.openThemePicker(event)" aria-label="Thème" aria-haspopup="dialog" aria-expanded="false" aria-controls="theme-picker" title="Thème">◑</button>
     </nav>
   </div>
 
@@ -2540,7 +2540,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '43';
+const APP_VERSION = '44';
 const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
 const MARIE_CSP_ALLOWED_METHODS = new Set([
   'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
@@ -5443,9 +5443,16 @@ const App = {
       } else {
         if (i === State.todayDayNum) cell.classList.add('today');
         if (State.read.has(unit.unit_id)) cell.classList.add('read');
-        if (State.activeDay === i) cell.classList.add('active-day');
-        const state = i === State.todayDayNum ? "aujourd'hui" : (State.read.has(unit.unit_id) ? 'lu' : 'non lu');
-        cell.setAttribute('aria-label', `Jour ${i} — ${state}`);
+        const isActivePracticeDay = State.activeDay === i;
+        if (isActivePracticeDay) {
+          cell.classList.add('active-day');
+          cell.setAttribute('aria-current', 'step');
+        }
+        const states = [];
+        if (i === State.todayDayNum) states.push("aujourd'hui");
+        if (isActivePracticeDay) states.push('pratique active');
+        states.push(State.read.has(unit.unit_id) ? 'lu' : 'non lu');
+        cell.setAttribute('aria-label', `Jour ${i} — ${states.join(' — ')}`);
         cell.addEventListener('click', () => this.openDay(i));
       }
       grid.appendChild(cell);
@@ -5458,10 +5465,16 @@ const App = {
       const unit = State.dayMap[d];
       if (!unit) return;
       const isRead = State.read.has(unit.unit_id);
+      const isActivePracticeDay = State.activeDay === d;
       cell.classList.toggle('read', isRead);
-      cell.classList.toggle('active-day', State.activeDay === d);
-      const state = d === State.todayDayNum ? "aujourd'hui" : (isRead ? 'lu' : 'non lu');
-      cell.setAttribute('aria-label', `Jour ${d} — ${state}`);
+      cell.classList.toggle('active-day', isActivePracticeDay);
+      if (isActivePracticeDay) cell.setAttribute('aria-current', 'step');
+      else cell.removeAttribute('aria-current');
+      const states = [];
+      if (d === State.todayDayNum) states.push("aujourd'hui");
+      if (isActivePracticeDay) states.push('pratique active');
+      states.push(isRead ? 'lu' : 'non lu');
+      cell.setAttribute('aria-label', `Jour ${d} — ${states.join(' — ')}`);
     });
   },
 
@@ -6022,7 +6035,7 @@ const App = {
       else this.restoreScroll('reader-scroll', unitId);
     }
     this.replaceRoute({open:'unit',id:unitId,pid:targetPid||null});
-    if (validTarget===false && arguments.length>1) this.showToast('Passage introuvable — ouverture du jour');
+    if (targetHit===null && arguments.length>1 && typeof arguments[1]==='string' && arguments[1]) this.showToast('Ce lien ne repère plus le passage précis. Le jour correspondant a été ouvert.');
     return true;
   },
 
@@ -6274,6 +6287,10 @@ const App = {
         setText(ids.prevLabel, this.shortRef(prevU));
         pb.onclick = () => this.openUnit(prevU.unit_id);
         pb.setAttribute('aria-label', 'Précédent : ' + prevU.title);
+      } else {
+        setText(ids.prevLabel, 'Début');
+        pb.onclick = null;
+        pb.setAttribute('aria-label', 'Début du corpus — aucun passage précédent');
       }
     }
     if (nb) {
@@ -6282,6 +6299,10 @@ const App = {
         setText(ids.nextLabel, this.shortRef(nextU));
         nb.onclick = () => this.openUnit(nextU.unit_id);
         nb.setAttribute('aria-label', 'Suivant : ' + nextU.title);
+      } else {
+        setText(ids.nextLabel, 'Fin');
+        nb.onclick = null;
+        nb.setAttribute('aria-label', 'Fin du corpus — aucun passage suivant');
       }
     }
     setText(ids.center, seq + ' / ' + totalUnits());
@@ -6290,13 +6311,13 @@ const App = {
   updateBar(unit, ids) {
     const isDone = State.read.has(unit.unit_id);
     setText(ids.completeIcon, isDone ? '✓' : '○');
-    setText(ids.completeLabel, isDone ? 'Lu' : 'Terminé');
+    setText(ids.completeLabel, 'Terminé');
     const cb = document.getElementById(ids.completeBtn);
     if (cb) {
       cb.classList.toggle('done', !!isDone);
       // State was conveyed only by glyph + colour; expose it to assistive tech.
       cb.setAttribute('aria-pressed', isDone ? 'true' : 'false');
-      cb.setAttribute('aria-label', isDone ? 'Marquer comme non lu' : 'Marquer ce jour comme terminé');
+      cb.setAttribute('aria-label', 'Terminé');
     }
 
     const isActiveDay = isUnitActive(unit);
@@ -6361,10 +6382,9 @@ const App = {
     }
     const unit=unitById(route.unit_id);
     if(!unit){this.replaceRoute(null);if(!isWide())this.showScreen('home');this.showToast('Jour ou appendice introuvable');return false;}
-    const hit=route.paragraph_id?findPara(route.paragraph_id):null;
-    const validPid=hit&&hit.unit.unit_id===unit.unit_id?route.paragraph_id:null;
-    this.openUnit(unit.unit_id,validPid);
-    if(route.paragraph_id&&!validPid)this.showToast('Passage introuvable — ouverture du jour');
+    // Preserve the original paragraph target so openUnit owns validation and
+    // emits at most one bounded fallback message for one stale route.
+    this.openUnit(unit.unit_id,route.paragraph_id||null);
     return true;
   },
 
@@ -7158,10 +7178,11 @@ const App = {
       aria-label="${THEME_LABELS[key]}"
       data-csp-click="App.pickTheme('${key}')"><span class="tp-btn-icon" aria-hidden="true">${THEME_ICONS[key]}</span>${THEME_LABELS[key]}</button>`).join('');
 
+    document.querySelectorAll('#dark-toggle-btn,#wnav-dark').forEach(btn => btn.setAttribute('aria-expanded', btn === anchor ? 'true' : 'false'));
     State.themePickerOpen = true;
     picker.classList.add('open');
     this.positionPickerNear('theme-picker', anchor);
-    this.onModalOpened('theme-picker');
+    this.onModalOpened('theme-picker', null, anchor || null);
   },
 
   async pickTheme(mode) {
@@ -7171,6 +7192,7 @@ const App = {
 
   closeThemePicker() {
     document.getElementById('theme-picker')?.classList.remove('open');
+    document.querySelectorAll('#dark-toggle-btn,#wnav-dark').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
     State.themePickerOpen = false;
     this.onModalClosed();
   },
@@ -7258,7 +7280,7 @@ const App = {
         <div class="help-key-grid">
           <div class="help-key"><strong>Aujourd’hui</strong><span>Le jour correspondant à la date actuelle, mis en valeur dans le calendrier.</span></div>
           <div class="help-key"><strong>Activer</strong><span>Le jour ou l’appendice que vous choisissez comme pratique personnelle, indépendamment de la date.</span></div>
-          <div class="help-key"><strong>Terminé / Lu</strong><span>Une unité que vous avez explicitement marquée comme lue ; elle compte dans votre progression.</span></div>
+          <div class="help-key"><strong>Terminé</strong><span>Une unité que vous avez explicitement marquée comme lue ; elle compte dans votre progression. Le bouton garde ce même nom avant et après le marquage ; la coche et son état indiquent si elle est déjà terminée.</span></div>
         </div>
         <div class="help-item"><div class="help-icon">✦</div><div class="help-text"><div class="help-label">Carte « Pour aujourd’hui »</div><div class="help-desc">Par défaut, elle suit le jour calendaire. Si vous activez un autre jour ou un appendice, elle suit votre <strong>pratique active</strong> et affiche sa petite pratique et son oraison jaculatoire. Le repère « Aujourd’hui » du calendrier continue, lui, d’indiquer la date réelle.</div></div></div>
         <div class="help-item"><div class="help-icon help-icon-text">1–31</div><div class="help-text"><div class="help-label">Cycle de 31 jours</div><div class="help-desc">Les ${dayCount} méditations restent toujours accessibles, même lorsque le mois civil compte moins de 31 jours. En février ou dans un mois plus court, utilisez <strong>Jours</strong> ou <strong>Activer</strong> pour poursuivre librement les Jours 29 à 31.</div></div></div>
