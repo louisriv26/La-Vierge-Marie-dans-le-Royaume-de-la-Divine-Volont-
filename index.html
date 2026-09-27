@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-da0ruCtF5GdTxyBFR9npw93e3R/pP9L4Vq3+6iFSqsk='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-ELkIYsEIZnSF3usiY+gWoV06fRdBQUHWFRpVY95pRbo='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -6036,7 +6036,7 @@ const App = {
       else this.restoreScroll('reader-scroll', unitId);
     }
     this.replaceRoute({open:'unit',id:unitId,pid:targetPid||null});
-    if (requestedTargetPid && !validTarget) this.showToast('Ce lien ne repère plus le passage précis. Le jour correspondant a été ouvert.');
+    if (requestedTargetPid && !validTarget) this.showToast(unit.day_number ? 'Ce lien ne repère plus le passage précis. Le jour correspondant a été ouvert.' : 'Ce lien ne repère plus le passage précis. L’appendice correspondant a été ouvert.');
     return true;
   },
 
