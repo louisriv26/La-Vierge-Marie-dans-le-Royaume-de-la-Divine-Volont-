@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-ELkIYsEIZnSF3usiY+gWoV06fRdBQUHWFRpVY95pRbo='; script-src-attr 'none'; style-src 'sha256-jWgar5qbLU9pqeISN1g1Xn0n1VwdFqPyIM1rc/FNDmc='; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-WRL0IR7PYtXSjmh2BFmo+zFjssinEVpEBfMohrQ5bag=';  script-src-attr 'none'; style-src 'sha256-wNKA4tTxZdYZfeAy3bNxRwn7/7Sc2th/l8+FCvag70c=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -1257,6 +1257,11 @@ h1, h2, h3, h4 {
 .help-key strong { display:block; color:var(--ink); font-size:13px; margin-bottom:2px; }
 .help-key span { display:block; color:var(--muted); font-size:12px; line-height:1.5; }
 .help-subtitle { margin:16px 0 9px; color:var(--ink); font-size:13px; font-weight:700; }
+.provenance-body p { margin:0 0 10px; }
+.provenance-body ul { margin:0 0 12px; padding-left:20px; }
+.provenance-body li { margin:0 0 7px; }
+.provenance-status { margin-top:10px; padding:10px 12px; border:0.5px solid var(--accent); border-radius:var(--radius-sm); background:var(--practice-bg); color:var(--ink); }
+.provenance-trace { overflow-wrap:anywhere; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--muted); }
 @media (min-width: 720px) { .help-key-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 
 /* v36 convergence: lightweight device-transfer guidance. It deliberately
@@ -2540,7 +2545,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '44';
+const APP_VERSION = '46';
 const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
 const MARIE_CSP_ALLOWED_METHODS = new Set([
   'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
@@ -7272,6 +7277,7 @@ const App = {
         <a href="#${helpPrefix}-donnees">Mon Espace</a>
         <a href="#${helpPrefix}-appareil">Appareil</a>
         <a href="#${helpPrefix}-assistance">Assistance</a>
+        <a href="#${helpPrefix}-sources">Sources & vérification</a>
         <a href="#${helpPrefix}-apropos">À propos</a>
       </nav>
 
@@ -7340,12 +7346,57 @@ const App = {
         <div class="help-item"><div class="help-icon help-icon-text">i</div><div class="help-text"><div class="help-label">Diagnostics</div><div class="help-desc">« Copier les diagnostics » place dans le presse-papiers uniquement des informations techniques utiles au dépannage — versions, cache, stockage, thème, disposition et identifiants de navigation — sans le contenu de vos notes ou surlignages.</div><button type="button" class="backup-btn" data-csp-click="App.copyDiagnostics()" data-csp-style="margin-top:8px">Copier les diagnostics</button></div></div>
       </section>
 
+      <section class="help-section" id="${helpPrefix}-sources" aria-labelledby="${helpPrefix}-sources-title">
+        <h2 class="help-section-title" id="${helpPrefix}-sources-title">✶ Sources et vérification des textes</h2>
+        <div class="help-note"><strong>En bref.</strong> Le texte de l’application est un <strong>corpus français contrôlé et corrigé</strong> à partir de témoins français et italiens dont la provenance et la dépendance éditoriale ont été examinées. Les éléments accessibles soutiennent le plus fortement les <strong>31 méditations principales comme noyau manuscrit de 1930</strong> ; les six appendices ont des histoires documentaires distinctes. Après 91 corrections ciblées, 8 lectures protégées et une nouvelle campagne numérique de recontrôle, <strong>aucun défaut textuel supplémentaire n’est actuellement démontré</strong>. Il ne s’agit ni d’une transcription diplomatique de l’autographe ni d’une édition critique officielle.</div>
+
+        <div class="help-item"><div class="help-icon help-icon-text">31</div><div class="help-text"><div class="help-label">Noyau principal</div><div class="help-desc">Les ${dayCount} méditations principales constituent le noyau le mieux soutenu par les sources accessibles pour le manuscrit marial daté du 6 mai 1930.</div></div></div>
+        <div class="help-item"><div class="help-icon help-icon-text">A1–A${appendixCount}</div><div class="help-text"><div class="help-label">Six appendices, plusieurs chaînes documentaires</div><div class="help-desc">Les appendices sont conservés séparément du cycle principal. Les notices italiennes accessibles rattachent la Circoncision, la Présentation/Purification, l’Épiphanie/Mages et Cana à d’autres cahiers attribués à Luisa ; la Visitation et Jésus perdu et retrouvé au Temple sont transmis, dans la famille éditoriale actuellement contrôlable, par la tradition imprimée de Don Benedetto Calvi.</div></div></div>
+        <div class="help-item"><div class="help-icon">✓</div><div class="help-text"><div class="help-label">État actuel de la vérification</div><div class="help-desc">Le corpus gouverné comprend ${unitCount} unités, 188 sections et ${paraCount} paragraphes stables. Les 8 lectures protégées et les 91 corrections documentées ont été recontrôlées avec les témoins numériques disponibles : aucune n’a dû être rouverte.</div></div></div>
+
+        <details class="transfer-card provenance-card">
+          <summary>Voir les sources, les contrôles et leurs limites</summary>
+          <div class="transfer-body provenance-body">
+            <div class="help-subtitle">Comment le texte français a été établi</div>
+            <p>Le texte de départ appartient à une famille française reçue, liée notamment à la tradition diffusée par le Père J. Gary / la Fraternité des Fils de la Divine Volonté. Il n’a pas été remplacé en bloc par une autre traduction. Lorsqu’un passage présentait une omission, une ambiguïté ou une différence de sens, le passage précis a été comparé aux témoins disponibles et seule la correction minimale suffisamment étayée a été retenue.</p>
+
+            <div class="help-subtitle">Principaux témoins contrôlés</div>
+            <ul>
+              <li><strong>AFLP / Jean-Claude Lemyze :</strong> photographies contrôlées de la 19e édition pour les 31 jours principaux. Cette traduction française est attestée au moins depuis 2016 ; son édition italienne de départ exacte n’a pas été identifiée.</li>
+              <li><strong>Don Pablo Martín :</strong> principal contrôle italien disponible en ligne. Sa notice présente le texte comme issu d’une copie manuscrite de l’autographe, avec des corrections grammaticales et des notes éditoriales. Ce n’est pas un fac-similé diplomatique.</li>
+              <li><strong>PDF italien complet de 84 pages :</strong> utile pour la complétude et les appendices. La comparaison ciblée de lectures sensibles, et surtout de son apparat éditorial très spécifique, le rattache à la même famille de transcription/édition que Pablo ou à une branche extrêmement proche. Il n’est donc pas compté comme une confirmation indépendante.</li>
+              <li><strong>Témoin espagnol :</strong> utilisé comme contrôle structurel et sémantique d’une tradition éditoriale qui affirme partir directement du manuscrit pour le noyau, tout en signalant elle-même des ajouts éditoriaux. Il ne remplace pas l’italien.</li>
+              <li><strong>Gamba et éditions historiques :</strong> leurs notices et éléments accessibles ont aidé à documenter la structure et la provenance, mais les corps complets de Gamba, Calvi 1932/1933/1937, Postulation 1997 et Résiac 2000 n’ont pas pu être collationnés intégralement en ligne. Leur absence n’est jamais traitée comme une confirmation implicite.</li>
+            </ul>
+
+            <div class="help-subtitle">Comment une divergence est tranchée</div>
+            <p>Le projet ne choisit pas mécaniquement la lecture majoritaire. La provenance, la dépendance possible entre témoins, le type de divergence et le contexte italien sont examinés avant toute décision. Plusieurs sites reproduisant la même famille de texte ne comptent pas comme plusieurs témoins indépendants.</p>
+
+            <div class="help-subtitle">Résultat de la campagne numérique</div>
+            <ul>
+              <li>8/8 lectures protégées maintenues ;</li>
+              <li>91/91 corrections documentées maintenues ;</li>
+              <li>0 passage à rouvrir immédiatement ;</li>
+              <li>0 nouveau défaut textuel démontré avec les témoins numériques actuellement accessibles.</li>
+            </ul>
+            <div class="provenance-status"><strong>Statut :</strong> aucun défaut textuel actuellement connu après clôture de la campagne numérique ; la vérification directe sur l’autographe et sur certaines éditions historiques reste réservée si un témoin supérieur devient accessible.</div>
+
+            <div class="help-subtitle">Éléments autour des 31 jours</div>
+            <p>L’Appel maternel, la prière quotidienne du mois de mai, le Fioretto et l’Offrande de la volonté humaine à la Reine du Ciel sont fortement associés à la transmission de l’ouvrage, mais ils restent distincts des 31 méditations numérotées dans le corpus actuel. Leur éventuelle présentation dans l’application relève d’une décision éditoriale séparée. Une consécration générique à la Divine Volonté ne doit pas être confondue avec l’Offrande mariale transmise avec cet ouvrage.</p>
+
+            <div class="help-subtitle">Traçabilité</div>
+            <p>Cette notice se rapporte au corpus <strong>v${this.esc(CORPUS_VERSION)}</strong>, soit ${unitCount} unités et ${paraCount} paragraphes.</p>
+            <div class="provenance-trace">SHA-256 corpus/days.json : 884b83aaf28e51d2eb6318f4f044e6d58568211f41d6df25c0ef43d4bb8560b8</div>
+          </div>
+        </details>
+      </section>
+
       <section class="help-section" id="${helpPrefix}-apropos" aria-labelledby="${helpPrefix}-apropos-title">
         <h2 class="help-section-title" id="${helpPrefix}-apropos-title">✶ À propos</h2>
         <p class="help-desc" data-csp-style="margin-bottom:12px"><strong>La Vierge Marie dans le Royaume de la Divine Volonté</strong> est une application de lecture et de méditation spirituelle fondée sur l’ouvrage du même titre de <strong>Luisa Piccarreta</strong>.</p>
         <div class="help-item"><div class="help-icon help-icon-text">v</div><div class="help-text"><div class="help-label">Versions</div><div class="help-desc">Application <strong>v${this.esc(APP_VERSION)}</strong> · corpus <strong>v${this.esc(CORPUS_VERSION)}</strong>. Le numéro affiché ici correspond au code réellement chargé.</div></div></div>
         <div class="help-item"><div class="help-icon help-icon-text">31</div><div class="help-text"><div class="help-label">Corpus intégré</div><div class="help-desc">Le manifeste identifie le corpus comme <strong>VM_DV</strong>, en français, auteur <strong>Luisa Piccarreta</strong>, version <strong>${this.esc(CORPUS_VERSION)}</strong> : ${dayCount} jours + ${appendixCount} appendices, soit ${unitCount} unités et ${paraCount} paragraphes.</div></div></div>
-        <div class="help-item"><div class="help-icon">§</div><div class="help-text"><div class="help-label">Provenance éditoriale</div><div class="help-desc">Le manifeste fourni avec cette version ne désigne pas une édition imprimée particulière ; l’application n’en attribue donc pas une. Toute correction du texte ou de sa segmentation relève d’une validation séparée du corpus. Utilisez « Signaler le passage courant » si vous repérez une anomalie.</div></div></div>
+        <div class="help-item"><div class="help-icon">§</div><div class="help-text"><div class="help-label">Provenance et vérification</div><div class="help-desc">La section <strong>Sources et vérification des textes</strong> décrit la provenance du corpus, les principaux témoins contrôlés, les corrections documentées et les limites de la validation. Utilisez « Signaler le passage courant » si vous repérez une anomalie.</div></div></div>
         <div class="help-item"><div class="help-icon help-icon-text">Aa</div><div class="help-text"><div class="help-label">Informations techniques</div><div class="help-desc">Les polices de lecture sont fournies localement avec l’application ; leur chargement normal ne nécessite pas Google Fonts. L’application fonctionne sans compte et ne synchronise pas automatiquement vos données personnelles.</div></div></div>
       </section>
 
