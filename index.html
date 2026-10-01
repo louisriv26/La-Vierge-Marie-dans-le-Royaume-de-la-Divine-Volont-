@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-WRL0IR7PYtXSjmh2BFmo+zFjssinEVpEBfMohrQ5bag=';  script-src-attr 'none'; style-src 'sha256-wNKA4tTxZdYZfeAy3bNxRwn7/7Sc2th/l8+FCvag70c=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-IAuw7hiy7tvhICyaouaATWnyPKpHURKepsfyG8dEzoI=';  script-src-attr 'none'; style-src 'sha256-UHNKEL4ABmM8M6cctg/n/fh6eERkTe/otwA2LZqzdRw=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -2545,7 +2545,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '46';
+const APP_VERSION = '47';
 const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
 const MARIE_CSP_ALLOWED_METHODS = new Set([
   'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
