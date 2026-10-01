@@ -1626,7 +1626,7 @@ html[data-text-level="xlarge"] .help-nav a { min-height: 44px; }
 
 /* Version badge */
 .version-badge {
-  font-size: 10px;
+  font-size: 12px;
   color: rgba(255,255,255,0.45);
   font-family: var(--font-ui);
   letter-spacing: 0.04em;
@@ -2291,7 +2291,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
               <span id="wide-activate-icon">✦</span> <span id="wide-activate-label">Activer</span>
             </button>
             <button class="wrt-btn" data-csp-click="App.shareDay()" aria-label="Partager ce jour"><span aria-hidden="true">↑</span> Partager</button>
-            <button class="wrt-btn" data-csp-click="App.copyCurrentLink()">↗ Lien</button>
+            <button class="wrt-btn" data-csp-click="App.copyCurrentLink()" aria-label="Copier le lien de ce passage">↗ Lien</button>
           </div>
         </div>
 
@@ -5446,13 +5446,13 @@ const App = {
         cell.disabled = true;
         cell.setAttribute('aria-label', `Jour ${i} — indisponible`);
       } else {
-        if (i === State.todayDayNum) cell.classList.add('today');
+        const isToday = i === State.todayDayNum;
+        if (isToday) cell.classList.add('today');
         if (State.read.has(unit.unit_id)) cell.classList.add('read');
         const isActivePracticeDay = State.activeDay === i;
-        if (isActivePracticeDay) {
-          cell.classList.add('active-day');
-          cell.setAttribute('aria-current', 'step');
-        }
+        if (isActivePracticeDay) cell.classList.add('active-day');
+        if (isToday) cell.setAttribute('aria-current', 'date');
+        else if (isActivePracticeDay) cell.setAttribute('aria-current', 'step');
         const states = [];
         if (i === State.todayDayNum) states.push("aujourd'hui");
         if (isActivePracticeDay) states.push('pratique active');
@@ -5470,10 +5470,13 @@ const App = {
       const unit = State.dayMap[d];
       if (!unit) return;
       const isRead = State.read.has(unit.unit_id);
+      const isToday = d === State.todayDayNum;
       const isActivePracticeDay = State.activeDay === d;
+      cell.classList.toggle('today', isToday);
       cell.classList.toggle('read', isRead);
       cell.classList.toggle('active-day', isActivePracticeDay);
-      if (isActivePracticeDay) cell.setAttribute('aria-current', 'step');
+      if (isToday) cell.setAttribute('aria-current', 'date');
+      else if (isActivePracticeDay) cell.setAttribute('aria-current', 'step');
       else cell.removeAttribute('aria-current');
       const states = [];
       if (d === State.todayDayNum) states.push("aujourd'hui");
@@ -7683,9 +7686,9 @@ const App = {
       <div class="backup-card">
         <div class="backup-status"><strong>Aucun envoi automatique ni synchronisation cloud.</strong><br>Vos données d’utilisation sont conservées dans le stockage local de ce navigateur/appareil. ${this.esc(backupLabel)} Une sauvegarde JSON n’est créée que lorsque vous le demandez ; son emplacement dépend ensuite de votre navigateur et de vos réglages de fichiers.</div>
         <div class="backup-actions">
-          <button type="button" class="backup-btn primary" data-csp-click="App.exportBackup()">↓ Sauvegarder</button>
-          <button type="button" class="backup-btn" data-csp-click="App.chooseRestoreFile()">↥ Restaurer</button>
-          <button type="button" class="backup-btn" data-csp-click="App.exportJournal()">≡ Exporter le journal</button>
+          <button type="button" class="backup-btn primary" data-csp-click="App.exportBackup()" aria-label="Sauvegarder">↓ Sauvegarder</button>
+          <button type="button" class="backup-btn" data-csp-click="App.chooseRestoreFile()" aria-label="Restaurer">↥ Restaurer</button>
+          <button type="button" class="backup-btn" data-csp-click="App.exportJournal()" aria-label="Exporter le journal lisible">≡ Exporter le journal</button>
         </div>
       </div>
       <details class="transfer-card">
@@ -7699,8 +7702,8 @@ const App = {
           </ol>
           <div class="transfer-warning"><strong>Remplacer, pas fusionner.</strong> La restauration remplace les données couvertes par la sauvegarde ; elle ne combine pas deux états différents. Le fichier JSON peut contenir des données personnelles d’utilisation et n’est pas chiffré par l’application.</div>
           <div class="transfer-actions">
-            <button type="button" class="backup-btn primary" data-csp-click="App.exportBackup()">↓ Créer une sauvegarde</button>
-            <button type="button" class="backup-btn" data-csp-click="App.chooseRestoreFile()">↥ Restaurer sur cet appareil</button>
+            <button type="button" class="backup-btn primary" data-csp-click="App.exportBackup()" aria-label="Sauvegarder">↓ Sauvegarder</button>
+            <button type="button" class="backup-btn" data-csp-click="App.chooseRestoreFile()" aria-label="Restaurer">↥ Restaurer</button>
           </div>
         </div>
       </details>`;
