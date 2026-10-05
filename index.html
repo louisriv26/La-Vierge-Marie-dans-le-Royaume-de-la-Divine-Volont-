@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-WRL0IR7PYtXSjmh2BFmo+zFjssinEVpEBfMohrQ5bag=';  script-src-attr 'none'; style-src 'sha256-wNKA4tTxZdYZfeAy3bNxRwn7/7Sc2th/l8+FCvag70c=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-DskC9Qq2vYz7bLGjQUxNFPaRhsGmzM7wAw2wuD9BalU=';  script-src-attr 'none'; style-src 'sha256-X+alw71E9z1gwVLE2alnZO8PiwGYASUVtnHgYi/s3oI=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -71,6 +71,7 @@ window.APP_BASE = (function() {
 :root {
   --primary: #2C4A7C;
   --primary-light: #3D6399;
+  --primary-action-hover-bg: #3D6399;
   --accent: #C9A84C;
   --accent-light: #E8C96A;
   /* Foreground-safe variants. --accent is a decorative gold that only reaches
@@ -122,7 +123,7 @@ window.APP_BASE = (function() {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --primary: #5E92CC; --primary-light: #78A8DE;
+    --primary: #5E92CC; --primary-light: #78A8DE; --primary-action-hover-bg:#3D6399;
     --accent: #D4A843; --accent-light: #E8C45A;
     /* On the dark ivory (#1A1720) the gold is already legible, so the
        foreground variant is the lighter tone rather than a darker one. */
@@ -135,11 +136,11 @@ window.APP_BASE = (function() {
     --soul-bg: #1E1B2C; --mary-bg: #1A1F30;
     --practice-bg: #1E1C12; --prayer-bg: #1A1720;
     --note-bg: #1C1A0C; --note-border: #C9A84C;
-    --prayer-text: #78A8DE;
+    --prayer-text: #78A8DE; --danger:#E6655A;
   }
 }
 [data-theme="dark"] {
-    --primary: #5E92CC; --primary-light: #78A8DE;
+    --primary: #5E92CC; --primary-light: #78A8DE; --primary-action-hover-bg:#3D6399;
     --accent: #D4A843; --accent-light: #E8C45A;
     /* On the dark ivory (#1A1720) the gold is already legible, so the
        foreground variant is the lighter tone rather than a darker one. */
@@ -152,7 +153,7 @@ window.APP_BASE = (function() {
     --soul-bg: #1E1B2C; --mary-bg: #1A1F30;
     --practice-bg: #1E1C12; --prayer-bg: #1A1720;
     --note-bg: #1C1A0C; --note-border: #C9A84C;
-    --prayer-text: #78A8DE;
+    --prayer-text: #78A8DE; --danger:#E6655A;
 }
 
 @media (forced-colors: active) {
@@ -826,7 +827,7 @@ html, body {
 .hero-excerpt { font-family: var(--font-reader); font-size: 14px; color: var(--muted); line-height: 1.65; font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px; }
 .hero-cta { display: flex; align-items: center; justify-content: space-between; }
 .hero-read-btn { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; background: var(--hero-bg); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-ui); transition: background 0.15s; }
-.hero-read-btn:hover { background: var(--primary-light); }
+.hero-read-btn:hover { background: var(--primary-action-hover-bg); }
 .hero-nav-btns { display: flex; gap: 6px; }
 .hero-nav-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; background: transparent; font-size: 16px; transition: all 0.15s; }
 .hero-nav-btn:hover { color: var(--primary); border-color: var(--primary); }
@@ -839,6 +840,7 @@ html, body {
 .search-icon { color: var(--muted); font-size: 13px; flex-shrink: 0; }
 .search-input { flex: 1; min-width: 0; min-height: 44px; border: none; background: transparent; color: var(--ink); font-size: 16px; font-family: var(--font-ui); outline: none; }
 .search-input::placeholder { color: var(--muted); }
+.note-textarea::placeholder { color: var(--muted); }
 .search-clear { color: var(--muted); font-size: 14px; cursor: pointer; min-width: 44px; min-height: 44px; padding: 9px 11px; margin: -9px -6px -9px 0; display: none; background: transparent; border: none; line-height: 1; }
 .search-clear.visible { display: block; }
 .search-empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; font-style: italic; }
@@ -1105,7 +1107,7 @@ h1, h2, h3, h4 {
 .modal-btn-cancel { background: transparent; color: var(--muted); }
 .modal-btn-cancel:hover { background: var(--ivory-deep); }
 .modal-btn-save { background: var(--hero-bg); color: #fff; border-color: var(--hero-bg); }
-.modal-btn-save:hover { background: var(--primary-light); }
+.modal-btn-save:hover { background: var(--primary-action-hover-bg); }
 
 /* Toast */
 .toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--ivory); padding: 9px 18px; border-radius: 20px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 100; white-space: nowrap; }
@@ -1214,7 +1216,7 @@ h1, h2, h3, h4 {
 .backup-btn { min-height: 44px; padding: 9px 10px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--ivory); color: var(--ink); font-size: 12px; font-weight: 600; font-family: var(--font-ui); cursor: pointer; line-height: 1.3; }
 .backup-btn:hover, .backup-btn:focus-visible { border-color: var(--primary); color: var(--primary); }
 .backup-btn.primary { background: var(--hero-bg); border-color: var(--hero-bg); color: #fff; }
-.backup-btn.primary:hover, .backup-btn.primary:focus-visible { color: #fff; background: var(--primary-light); }
+.backup-btn.primary:hover, .backup-btn.primary:focus-visible { color: #fff; background: var(--primary-action-hover-bg); }
 .restore-summary { display: grid; gap: 8px; }
 .restore-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); padding-bottom: 7px; border-bottom: 0.5px solid var(--border-light); }
 .restore-row strong { color: var(--ink); font-weight: 600; text-align: right; }
@@ -1533,7 +1535,7 @@ html[data-text-level="xlarge"] .help-nav a { min-height: 44px; }
 
 /* Dark mode toggle button icon update */
 [data-theme="dark"] #dark-toggle-btn,
-[data-theme="dark"] #wnav-dark { opacity: 0.6; }
+[data-theme="dark"] #wnav-dark { opacity: 1; }
 .ws-today-card {
   border-top: 0.5px solid var(--accent);
   background: var(--practice-bg);
@@ -1627,7 +1629,7 @@ html[data-text-level="xlarge"] .help-nav a { min-height: 44px; }
 /* Version badge */
 .version-badge {
   font-size: 10px;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.65);
   font-family: var(--font-ui);
   letter-spacing: 0.04em;
   cursor: default;
@@ -2545,7 +2547,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '46';
+const APP_VERSION = '49';
 const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
 const MARIE_CSP_ALLOWED_METHODS = new Set([
   'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
