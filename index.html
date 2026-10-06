@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-QniZMdy5vRK61d63mrffbRX3k26aq1EgLkbnVRDTcD4=';  script-src-attr 'none'; style-src 'sha256-6ZHBNMEQxZ2yw362OfuH6b5eGdaoq6Ce00gU4mtPxMc=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-UtUyr+5dpaN2MYUxa/Q1JEaj7hmN47cM2qdW66q+/Jk=';  script-src-attr 'none'; style-src 'sha256-XF9s/WVRcgQNGBxY30tapLZVZ/S0WeNIQpnJiyewf8o=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -160,6 +160,8 @@ window.APP_BASE = (function() {
   .cal-cell.read, .ws-cal-cell.read, .app-circle.read, .list-day-circle.read-circle, .ws-day-circle.read-c { border: 2px solid CanvasText; }
   .cal-cell.read::after, .ws-cal-cell.read::after, .app-circle.read::after, .list-day-circle.read-circle::after, .ws-day-circle.read-c::after { color: CanvasText; background: Canvas; }
   .cycle-card.ready .cycle-btn, .action-btn.complete-btn.done, .wrt-btn.done, .action-btn.active-day-btn { border: 2px solid ButtonText; }
+  .cal-cell.today, .ws-cal-cell.today { border: 2px solid Highlight; box-shadow: none; }
+  .textsize-option[aria-pressed="true"] { border: 2px solid Highlight; }
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -895,6 +897,11 @@ h1, h2, h3, h4 {
   :root:not([data-theme="light"]) :focus-visible { outline-color: var(--accent-light); }
 }
 [data-theme="dark"] :focus-visible { outline-color: var(--accent-light); }
+/* Wide top bar is navy in the light theme, so the generic --primary ring would
+   be 1:1 against its background. Keep the ring visibly contrasting there. */
+#wide-topbar .wt-nav-btn:focus-visible { outline-color: var(--accent-light); }
+/* transfer-card clips overflow by design; keep its summary focus ring inside. */
+.transfer-card > summary:focus-visible { outline-offset: -3px; }
 
 /* Full-text search results — passage snippets, distinct from unit cards */
 .search-group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 14px 4px 7px; }
@@ -2067,7 +2074,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
         <div class="mobile-version" id="mobile-version" data-csp-click="App.debugTap()">v—</div>
       </div>
       <div class="topbar-actions">
-        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
+        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel(event)" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
         <button class="topbar-action" id="dark-toggle-btn" data-csp-click="App.openThemePicker(event)" aria-label="Thème" aria-haspopup="dialog" aria-expanded="false" aria-controls="theme-picker" title="Thème">◑</button>
         <button class="topbar-action" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
@@ -2095,7 +2102,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
     <div class="topbar">
       <div><h1 class="topbar-title" id="mobile-list-title">Les 31 Jours</h1><div class="topbar-sub" id="mobile-list-sub">31 méditations · 6 appendices</div></div>
       <div class="topbar-actions">
-        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
+        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel(event)" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
         <button class="topbar-action" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
@@ -2117,7 +2124,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
         <div class="reader-topbar-title" id="reader-topbar-title"></div>
       </div>
       <div class="reader-topbar-actions">
-        <button class="reader-icon-btn mobile-textsize-trigger" id="btn-textsize" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel">Aᵃ</button>
+        <button class="reader-icon-btn mobile-textsize-trigger" id="btn-textsize" data-csp-click="App.toggleTextsizePanel(event)" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel">Aᵃ</button>
         <button class="reader-icon-btn" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
@@ -2154,7 +2161,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
     <div class="textsize-panel" id="textsize-panel" role="dialog" aria-label="Taille du texte">
       <div class="textsize-panel-head">
         <div class="textsize-panel-label">Taille du texte</div>
-        <button type="button" class="textsize-panel-close" data-csp-click="App.toggleTextsizePanel()" aria-label="Fermer le réglage de taille du texte">✕</button>
+        <button type="button" class="textsize-panel-close" data-csp-click="App.toggleTextsizePanel(event)" aria-label="Fermer le réglage de taille du texte">✕</button>
       </div>
       <div class="textsize-options" role="group" aria-label="Taille du texte">
         <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" data-csp-click="App.applyTextSize('small')">Petit</button>
@@ -2168,7 +2175,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
     <div class="topbar">
       <div><h1 class="topbar-title">Mon Espace</h1><div class="topbar-sub">Surlignés · Notes · Progression</div></div>
       <div class="topbar-actions">
-        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel()" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
+        <button class="topbar-action mobile-textsize-trigger" data-csp-click="App.toggleTextsizePanel(event)" aria-label="Taille du texte" aria-expanded="false" aria-controls="textsize-panel" title="Taille du texte">Aᵃ</button>
         <button class="topbar-action" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide">?</button>
       </div>
     </div>
@@ -2213,7 +2220,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
       <button class="wt-nav-btn" data-primary-nav="true" id="wnav-espace" data-csp-click="App.wideNav('espace')" aria-label="Mon Espace" aria-pressed="false">
         <span class="wt-nav-icon">♡</span> Mon Espace
       </button>
-      <button class="wt-nav-btn" id="wnav-textsize" data-csp-click="App.toggleWideTextsizePanel()" aria-label="Taille du texte" aria-expanded="false">Aᵃ</button>
+      <button class="wt-nav-btn" id="wnav-textsize" data-csp-click="App.toggleWideTextsizePanel(event)" aria-label="Taille du texte" aria-expanded="false">Aᵃ</button>
       <button class="wt-nav-btn" id="wnav-aide" data-csp-click="App.openHelp()" aria-label="Aide" title="Aide"><span class="wt-nav-icon">?</span></button>
       <button class="wt-nav-btn" id="wnav-dark" data-csp-click="App.openThemePicker(event)" aria-label="Thème" aria-haspopup="dialog" aria-expanded="false" aria-controls="theme-picker" title="Thème">◑</button>
     </nav>
@@ -2226,7 +2233,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
   </div>
 
   <!-- Text size panel (wide) -->
-  <div id="wide-textsize-panel">
+  <div id="wide-textsize-panel" role="dialog" aria-label="Taille du texte">
     <div class="textsize-panel-label">Taille du texte</div>
     <div class="textsize-options" role="group" aria-label="Taille du texte">
       <button type="button" class="textsize-option" data-text-level="small" aria-pressed="false" data-csp-click="App.applyTextSize('small')">Petit</button>
@@ -2315,6 +2322,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
 
       <!-- Aide panel (inside main, replaces reader content) -->
       <div id="wide-aide" data-csp-style="display:none;flex:1;overflow-y:auto;background:var(--ivory);">
+        <h1 class="sr-only">Aide</h1>
         <div data-csp-style="position:sticky;top:0;z-index:2;background:var(--ivory);padding:10px 28px 0;display:flex;justify-content:flex-end;">
           <button class="v38-help-close" data-csp-click="App.closeHelp()" data-csp-style="background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);cursor:pointer;" aria-label="Fermer l’aide">✕ Fermer</button>
         </div>
@@ -2471,7 +2479,7 @@ html[data-text-level] #cycle-reset-modal .modal-subtitle {
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div class="modal-title" id="cycle-reset-title">Recommencer le cycle</div>
-      <div class="modal-subtitle">Cette action remet uniquement votre progression à zéro.</div>
+      <div class="modal-subtitle">Cette action remet à zéro votre progression, votre pratique active et vos positions de lecture.</div>
     </div>
     <div class="modal-body"><div id="cycle-reset-message"></div></div>
     <div class="modal-footer">
@@ -2548,7 +2556,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '50';
+const APP_VERSION = '51';
 const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
 const MARIE_CSP_ALLOWED_METHODS = new Set([
   'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
@@ -3285,6 +3293,10 @@ const Pure = {
   },
 
   // ── Range highlighting ──────────────────────────────────────────────
+  rangesOverlap(aStart,aEnd,bStart,bEnd) {
+    return aStart < bEnd && aEnd > bStart;
+  },
+
   // Takes the paragraph's source text and its highlight records, and returns
   // the usable range highlights: clamped to the text, overlaps dropped, sorted.
   // A range that no longer fits the text (corpus edited under a saved
@@ -3738,6 +3750,8 @@ const Pure = {
     eq('range: unknown colour falls back to gold', Pure.paragraphHtml(body, [R(3,7,'nope')], CC).indexOf('hl-gold') > -1, true);
     // overlap must never nest marks
     eq('range: overlap dropped', (Pure.paragraphHtml(body, [R(3,10), R(5,12)], CC).match(/<mark/g) || []).length, 1);
+    eq('range: overlap predicate', Pure.rangesOverlap(3,10,5,12), true);
+    eq('range: touching predicate', Pure.rangesOverlap(0,2,2,6), false);
     eq('range: touching ranges both kept', (Pure.paragraphHtml(body, [R(0,2), R(2,6)], CC).match(/<mark/g) || []).length, 2);
     // clamping / stale offsets after a corpus edit
     eq('range: end past text is clamped', Pure.paragraphHtml('abc', [R(1,99)], CC), 'a<mark class="hl-mark hl-gold">bc</mark>');
@@ -4699,6 +4713,7 @@ function showUpdateBanner() {
   let banner = document.getElementById('update-banner');
   if (!banner) {
     banner = document.createElement('div'); banner.className='update-banner'; banner.id='update-banner';
+    banner.setAttribute('role','status'); banner.setAttribute('aria-live','polite');
     banner.innerHTML='<span id="update-banner-text">Nouvelle version disponible</span><button type="button">Actualiser</button>';
     banner.querySelector('button').onclick=()=>{
       const reason=updateReloadBlockReason();
@@ -4713,7 +4728,7 @@ function showUpdateBanner() {
 if ('serviceWorker' in navigator) {
   const hadController=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('message', e=>{
-    if (e.data?.type==='SW_UPDATED' && hadController) showUpdateBanner();
+    if (e.data?.type==='SW_UPDATED' && hadController && typeof e.data?.version==='string' && e.data.version!==APP_VERSION) showUpdateBanner();
   });
 }
 
@@ -5002,11 +5017,11 @@ const App = {
         this.closeTextsizePanel();
       }
       if (!e.target.closest('#wide-textsize-panel') && !e.target.closest('#wnav-textsize')) {
-        document.getElementById('wide-textsize-panel').classList.remove('open');
+        this.closeWideTextsizePanel(false);
       }
       // Dismiss the colour picker on an outside tap (the control itself is
       // excluded so tapping it again doesn't close-then-reopen)
-      if (State.hlPickerPid && !e.target.closest('#hl-picker') && !e.target.closest('.para-hl-btn') && !e.target.closest('#sel-bar')) {
+      if (State.hlPickerPid && !e.target.closest('#hl-picker') && !e.target.closest('.para-hl-btn') && !e.target.closest('[data-hlid]') && !e.target.closest('#sel-bar')) {
         this.closeHlPicker();
       }
       if (State.themePickerOpen && !e.target.closest('#theme-picker') && !e.target.closest('#dark-toggle-btn') && !e.target.closest('#wnav-dark')) {
@@ -5047,7 +5062,7 @@ const App = {
     }
 
     // Escape-to-close and Tab-trapping for every dialog
-    document.addEventListener('keydown', e => this.handleModalKeydown(e));
+    document.addEventListener('keydown', e => { if (!this.handleTextsizeKeydown(e)) this.handleModalKeydown(e); });
 
     // Tell the user their favourites moved rather than letting them wonder
     // where the Favori button went.
@@ -6025,7 +6040,7 @@ const App = {
       this.updateWideActionBar(unit);
       if (targetPid) this.scrollToParagraph('wide-reader-scroll', targetPid);
       else this.restoreScroll('wide-reader-scroll', unitId);
-      document.getElementById('wide-textsize-panel').classList.remove('open');
+      this.closeWideTextsizePanel(false);
     } else {
       // Mobile: populate mobile reader
       document.getElementById('reader-day-badge').textContent = badge;
@@ -6295,7 +6310,7 @@ const App = {
       if (prevU) {
         setText(ids.prevLabel, this.shortRef(prevU));
         pb.onclick = () => this.openUnit(prevU.unit_id);
-        pb.setAttribute('aria-label', 'Précédent : ' + prevU.title);
+        pb.setAttribute('aria-label', this.shortRef(prevU) + ', précédent : ' + prevU.title);
       } else {
         setText(ids.prevLabel, 'Début');
         pb.onclick = null;
@@ -6307,7 +6322,7 @@ const App = {
       if (nextU) {
         setText(ids.nextLabel, this.shortRef(nextU));
         nb.onclick = () => this.openUnit(nextU.unit_id);
-        nb.setAttribute('aria-label', 'Suivant : ' + nextU.title);
+        nb.setAttribute('aria-label', this.shortRef(nextU) + ', suivant : ' + nextU.title);
       } else {
         setText(ids.nextLabel, 'Fin');
         nb.onclick = null;
@@ -6339,8 +6354,8 @@ const App = {
       ab.classList.toggle('active', isActiveDay);
       ab.setAttribute('aria-pressed', isActiveDay ? 'true' : 'false');
       ab.setAttribute('aria-label', isActiveDay
-        ? 'Jour de pratique actif — appuyez pour réinitialiser'
-        : 'Définir comme jour de pratique');
+        ? 'Actif — jour de pratique; appuyez pour réinitialiser'
+        : 'Activer ce jour de pratique');
     }
   },
 
@@ -6468,11 +6483,11 @@ const App = {
   startNewCycle() {
     const daysRead=daysReadCount(), dayTotal=mainDayTotal();
     const msg=daysRead>=dayTotal
-      ? 'Votre progression sera remise à zéro. Vos surlignages et notes seront conservés.'
-      : `${daysRead} / ${dayTotal} jours sont marqués comme lus sur cet appareil — cette progression sera remise à zéro. Vos surlignages et notes seront conservés.`;
+      ? 'Votre progression, votre pratique active et vos positions de lecture seront remises à zéro. Vos surlignages et notes seront conservés.'
+      : `${daysRead} / ${dayTotal} jours sont marqués comme lus sur cet appareil — la progression, la pratique active et les positions de lecture seront remises à zéro. Vos surlignages et notes seront conservés.`;
     document.getElementById('cycle-reset-message').textContent=msg;
     document.getElementById('cycle-reset-modal').classList.add('open');
-    this.onModalOpened('cycle-reset-modal','cycle-reset-confirm');
+    this.onModalOpened('cycle-reset-modal');
   },
   closeCycleResetModal(e) {
     if (e && e.target!==document.getElementById('cycle-reset-modal')) return;
@@ -6504,32 +6519,76 @@ const App = {
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   },
-  closeTextsizePanel() {
+  closeTextsizePanel(restoreFocus=false) {
     const panel = document.getElementById('textsize-panel');
+    const wasOpen=!!panel?.classList.contains('open');
     panel?.classList.remove('open');
     document.querySelectorAll('.mobile-textsize-trigger').forEach(btn => {
       btn.classList.remove('active');
       btn.setAttribute('aria-expanded','false');
     });
+    const opener=this._mobileTextsizeOpener; this._mobileTextsizeOpener=null;
+    if (wasOpen && restoreFocus && this.isVisibleFocusTarget(opener)) {
+      try { opener.focus({preventScroll:true}); } catch(e) { try{opener.focus();}catch(_){} }
+    }
   },
-  toggleTextsizePanel() {
+  toggleTextsizePanel(event) {
     const panel = document.getElementById('textsize-panel');
     if (!panel) return;
-    if (panel.classList.contains('open')) { this.closeTextsizePanel(); return; }
+    if (panel.classList.contains('open')) { this.closeTextsizePanel(true); return; }
+    this.closeWideTextsizePanel(false);
+    this._mobileTextsizeOpener=event?.currentTarget || document.activeElement;
     panel.classList.add('open');
     document.querySelectorAll('.mobile-textsize-trigger').forEach(btn => {
       btn.classList.add('active');
       btn.setAttribute('aria-expanded','true');
     });
     this.syncTextSizeControls();
+    const active=panel.querySelector('.textsize-option[aria-pressed="true"]');
+    setTimeout(()=>{ try{active?.focus({preventScroll:true});}catch(e){try{active?.focus();}catch(_){}} },0);
   },
-  toggleWideTextsizePanel() {
+  closeWideTextsizePanel(restoreFocus=false) {
+    const panel=document.getElementById('wide-textsize-panel');
+    const wasOpen=!!panel?.classList.contains('open');
+    panel?.classList.remove('open');
+    const btn=document.getElementById('wnav-textsize');
+    btn?.classList.remove('active'); btn?.setAttribute('aria-expanded','false');
+    const opener=this._wideTextsizeOpener; this._wideTextsizeOpener=null;
+    if (wasOpen && restoreFocus && this.isVisibleFocusTarget(opener)) {
+      try { opener.focus({preventScroll:true}); } catch(e) { try{opener.focus();}catch(_){} }
+    }
+  },
+  toggleWideTextsizePanel(event) {
     const panel = document.getElementById('wide-textsize-panel');
-    const isOpen = panel.classList.toggle('open');
+    if (!panel) return;
+    if (panel.classList.contains('open')) { this.closeWideTextsizePanel(true); return; }
+    this.closeTextsizePanel(false);
+    this._wideTextsizeOpener=event?.currentTarget || document.activeElement;
+    panel.classList.add('open');
     const btn = document.getElementById('wnav-textsize');
-    btn.classList.toggle('active', isOpen);
-    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    if (isOpen) this.syncTextSizeControls();
+    btn?.classList.add('active'); btn?.setAttribute('aria-expanded','true');
+    this.syncTextSizeControls();
+    const active=panel.querySelector('.textsize-option[aria-pressed="true"]');
+    setTimeout(()=>{ try{active?.focus({preventScroll:true});}catch(e){try{active?.focus();}catch(_){}} },0);
+  },
+  handleTextsizeKeydown(e) {
+    const mobile=document.getElementById('textsize-panel');
+    const wide=document.getElementById('wide-textsize-panel');
+    const panel=mobile?.classList.contains('open')?mobile:(wide?.classList.contains('open')?wide:null);
+    if (!panel) return false;
+    if (e.key==='Escape') {
+      e.preventDefault();
+      if (panel===mobile) this.closeTextsizePanel(true); else this.closeWideTextsizePanel(true);
+      return true;
+    }
+    if (e.key!=='Tab') return false;
+    const items=this.focusablesIn(panel);
+    if (!items.length) { e.preventDefault(); return true; }
+    const first=items[0], last=items[items.length-1];
+    if (!panel.contains(document.activeElement)) { e.preventDefault(); first.focus(); return true; }
+    if (e.shiftKey && document.activeElement===first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement===last) { e.preventDefault(); first.focus(); }
+    return true;
   },
   async applyTextSize(level, save=true) {
     const unit=currentUnit(), scrollId=isWide()?'wide-reader-scroll':'reader-scroll';
@@ -6830,6 +6889,8 @@ const App = {
   async applyRangeHighlight(pid, start, end, colour, text) {
     const col=safeColor(colour), recs=hlRecords(pid).map(h=>Object.assign({},h));
     const hit=findPara(pid), para=hit&&hit.para;
+    const overlap=recs.some(h=>h && h.status!=='stale' && h.range && Pure.rangesOverlap(start,end,h.range.start,h.range.end));
+    if (overlap) { this.showToast('Ce passage chevauche un surlignage existant'); return; }
     recs.push({id:newHlId(),color:col,range:{start,end},text:text||(para?para.text.slice(start,end):''),ts:Date.now(),text_fingerprint:para?.fingerprint_sha256||null,corpus_version:CORPUS_VERSION,status:'active',recovery:null});
     const nextMap=new Map(State.highlights); nextMap.set(pid,Pure.dedupeHls(recs));
     if (!await this.commitHighlights(pid,nextMap,{toast:'Passage surligné ◆'})) return;
@@ -7526,7 +7587,7 @@ const App = {
     document.getElementById('restore-summary').innerHTML=rows.map(([a,b])=>`<div class="restore-row"><span>${this.esc(a)}</span><strong>${this.esc(b)}</strong></div>`).join('');
     const er=document.getElementById('restore-errors');
     if (p.warnings.length) { er.hidden=false; er.textContent='Avertissement : la version du corpus diffère, mais tous les identifiants de cette sauvegarde existent dans le corpus actuel.'; } else { er.hidden=true; er.textContent=''; }
-    document.getElementById('restore-modal').classList.add('open'); this.onModalOpened('restore-modal','restore-confirm-btn');
+    document.getElementById('restore-modal').classList.add('open'); this.onModalOpened('restore-modal');
   },
 
   closeRestoreModal(e) {
@@ -7632,7 +7693,8 @@ const App = {
     staleHlList.sort((a,b)=>(b.h.ts||0)-(a.h.ts||0));
 
     const readCount = State.read.size, noteCount = Object.keys(State.notes).length, hlCount = hlList.length + staleHlList.length;
-    let html = `<div class="stat-grid">
+    let html = containerId==='wide-espace' ? '<h1 class="sr-only">Mon Espace</h1>' : '';
+    html += `<div class="stat-grid">
       <div class="stat-card"><div class="stat-num blue">${readCount}</div><div class="stat-label">Jours lus</div></div>
       <div class="stat-card"><div class="stat-num" data-csp-style="color:var(--highlight-accent)">${hlCount}</div><div class="stat-label">Surlignés</div></div>
       <div class="stat-card"><div class="stat-num green">${noteCount}</div><div class="stat-label">Notes</div></div>
