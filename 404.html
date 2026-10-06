@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xlfV6Dw7+dgYPoo67II3ooSPMVymB6XtUyuU/OzL8LY='; script-src-attr 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=./index.html">
 <title>La Vierge Marie dans le Royaume de la Divine Volonté</title>
 </head>
 <body>
+<script>
+(function(){
+  var parts=location.pathname.split('/').filter(Boolean);
+  var base=(location.hostname.endsWith('.github.io') && parts.length) ? '/'+parts[0]+'/' : '/';
+  location.replace(base + location.search + location.hash);
+})();
+</script>
 </body>
 </html>
