@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-UtUyr+5dpaN2MYUxa/Q1JEaj7hmN47cM2qdW66q+/Jk=';  script-src-attr 'none'; style-src 'sha256-XF9s/WVRcgQNGBxY30tapLZVZ/S0WeNIQpnJiyewf8o=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5W39i2zGuGfDHZfKEwbuS1MKiblbrLnqr7G2guPiZGU=' 'sha256-uP/3DHnPNw1vmYSQP5yW5xJHcF8kq3ep0KjSabSZxAY=' 'sha256-PbtK8loifjKh8dtaG2ACkv55S502mJolPhZtinglOz8=';  script-src-attr 'none'; style-src 'sha256-XF9s/WVRcgQNGBxY30tapLZVZ/S0WeNIQpnJiyewf8o=';  style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; child-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <script>
 // Apply dark mode immediately to avoid flash; set theme button icon.
@@ -2556,7 +2556,7 @@ const currentThemeMode = () => {
 };
 const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-const APP_VERSION = '51';
+const APP_VERSION = '51.1';
 const MARIE_CSP_ACTION_ATTRS = Object.freeze({click:'data-csp-click',input:'data-csp-input',change:'data-csp-change',toggle:'data-csp-toggle'});
 const MARIE_CSP_ALLOWED_METHODS = new Set([
   'debugTap','onSearch','openThemePicker','openHelp','clearSearch','toggleTextsizePanel','toggleComplete','activateDay','shareDay','copyCurrentLink','applyTextSize','closeHelp','showScreen','openJours','openSearchNav','wideNav','toggleWideTextsizePanel','removeHighlightFromPicker','highlightSelection','noteSelection','copySelection','closeSelectionActions','finishOnboarding','closeTodayModal','hideDebug','copyDiagnostics','closeNoteModal','saveNote','handleRestoreFile','closeRestoreModal','commitRestore','closeCycleResetModal','confirmNewCycle','onMarkClick','openUnit','openTodayModal','openDay','openSearchResult','showMoreSearchResults','setSearchTitlesExpanded','onHighlightBtn','onParagraphContextTap','openNoteModal','deleteNote','pickHlColor','pickTheme','reportCurrentTextIssue','removeHighlightRecord','exportBackup','chooseRestoreFile','exportJournal','startNewCycle'
@@ -4726,9 +4726,8 @@ function showUpdateBanner() {
   }
 }
 if ('serviceWorker' in navigator) {
-  const hadController=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('message', e=>{
-    if (e.data?.type==='SW_UPDATED' && hadController && typeof e.data?.version==='string' && e.data.version!==APP_VERSION) showUpdateBanner();
+    if (e.data?.type==='SW_UPDATED' && typeof e.data?.version==='string' && e.data.version!==APP_VERSION) showUpdateBanner();
   });
 }
 
@@ -5154,6 +5153,14 @@ const App = {
   checkLayoutBucket() {
     const nowWide = isWide();
     if (nowWide === State.lastWide) return;
+    const mobileTextPanel=document.getElementById('textsize-panel');
+    const wideTextPanel=document.getElementById('wide-textsize-panel');
+    const textsizeWasOpen=!!(mobileTextPanel?.classList.contains('open') || wideTextPanel?.classList.contains('open'));
+    // A layout flip can hide the shell that owns an open text-size dialog.
+    // Close both logical popovers before reconciling so a hidden .open panel
+    // can never keep keyboard focus trapped in the old layout.
+    this.closeTextsizePanel(false);
+    this.closeWideTextsizePanel(false);
     // Do not sample the old layout's scroll container here. By the time the
     // media-query/resize callback runs, CSS may already have hidden that shell
     // and browsers report its scrollTop as 0, which used to erase the semantic
@@ -5162,6 +5169,16 @@ const App = {
     // semantic record is the authoritative hand-off between layout buckets.
     State.lastWide = nowWide;
     this.reconcileLayout();
+    if (textsizeWasOpen) {
+      requestAnimationFrame(()=>{
+        const target=nowWide
+          ? document.getElementById('wnav-textsize')
+          : Array.from(document.querySelectorAll('.mobile-textsize-trigger')).find(el=>this.isVisibleFocusTarget(el));
+        if (this.isVisibleFocusTarget(target)) {
+          try { target.focus({preventScroll:true}); } catch(e) { try{target.focus();}catch(_){} }
+        }
+      });
+    }
   },
 
   // Called when the viewport crosses the wide/mobile threshold (rotation, iPad
@@ -6574,7 +6591,9 @@ const App = {
   handleTextsizeKeydown(e) {
     const mobile=document.getElementById('textsize-panel');
     const wide=document.getElementById('wide-textsize-panel');
-    const panel=mobile?.classList.contains('open')?mobile:(wide?.classList.contains('open')?wide:null);
+    const mobileOpen=!!(mobile?.classList.contains('open') && this.isVisibleFocusTarget(mobile));
+    const wideOpen=!!(wide?.classList.contains('open') && this.isVisibleFocusTarget(wide));
+    const panel=mobileOpen?mobile:(wideOpen?wide:null);
     if (!panel) return false;
     if (e.key==='Escape') {
       e.preventDefault();
