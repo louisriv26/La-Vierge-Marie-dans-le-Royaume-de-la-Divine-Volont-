@@ -1,5 +1,5 @@
 // ── Version — must match APP_VERSION in index.html ───────────────────
-const VERSION = '50';
+const VERSION = '51';
 
 // Stage 8 CACHE-SCOPE-COLL-01: Cache Storage ownership is deployment-scope
 // specific. This prevents a sibling deployment on the same origin from deleting
@@ -122,7 +122,7 @@ self.addEventListener('activate', e => {
     );
     await self.clients.claim();
     const clients = await self.clients.matchAll({ type: 'window' });
-    clients.forEach(c => c.postMessage({ type: 'SW_UPDATED' }));
+    clients.forEach(c => c.postMessage({ type: 'SW_UPDATED', version: VERSION }));
   })());
 });
 
